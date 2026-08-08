@@ -14,37 +14,30 @@ function LogoMark({ className = "" }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <circle cx="9" cy="31" r="3" fill="currentColor" />
+      <circle cx="13" cy="27" r="4.5" fill="#3A36E0" />
       <path
-        d="M9 23A8 8 0 0 1 17 31"
-        stroke="currentColor"
-        strokeWidth="3"
+        d="M19.5 27C19.5 20.6487 24.6487 15.5 31 15.5"
+        stroke="#3A36E0"
+        strokeWidth="3.2"
         strokeLinecap="round"
       />
       <path
-        d="M9 18A13 13 0 0 1 22 31"
-        stroke="currentColor"
-        strokeWidth="3"
+        d="M19.5 33.5C19.5 23.2827 27.7827 15 38 15"
+        stroke="#FF8A34"
+        strokeWidth="3.2"
         strokeLinecap="round"
-        opacity="0.65"
-      />
-      <path
-        d="M9 13A18 18 0 0 1 27 31"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        opacity="0.35"
+        opacity="0.5"
       />
     </svg>
   );
 }
 
-function Logo({ mark = "text-tap", word = "text-ink" }) {
+function Logo({ word = "text-ink" }) {
   return (
     <a href="#top" className="flex items-center gap-2.5 shrink-0" aria-label="OmniTap home">
-      <LogoMark className={`w-7 h-7 ${mark}`} />
+      <LogoMark className="w-7 h-7" />
       <span className={`font-display font-semibold text-[19px] tracking-tight ${word}`}>
-        Omni<span className={mark}>Tap</span>
+        OmniTap
       </span>
     </a>
   );
