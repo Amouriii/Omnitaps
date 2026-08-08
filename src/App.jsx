@@ -34,10 +34,10 @@ function LogoMark({ className = "" }) {
 
 function Logo({ word = "text-ink" }) {
   return (
-    <a href="#top" className="flex items-center gap-2.5 shrink-0" aria-label="OmniTap home">
+    <a href="#top" className="flex items-center gap-2.5 shrink-0" aria-label="OmniTaps home">
       <LogoMark className="w-7 h-7" />
       <span className={`font-display font-semibold text-[19px] tracking-tight ${word}`}>
-        OmniTap
+        OmniTaps
       </span>
     </a>
   );
@@ -145,7 +145,7 @@ const STEPS = [
   {
     n: "01",
     title: "Connect",
-    desc: "Add OmniTap to your site, tables, and entrance in an afternoon. No developers, no downtime.",
+    desc: "Add OmniTaps to your site, tables, and entrance in an afternoon. No developers, no downtime.",
   },
   {
     n: "02",
@@ -239,7 +239,7 @@ export default function App() {
             Digitize your entire business with one tap.
           </h1>
           <p className="text-[17px] leading-[1.6] text-ink-muted max-w-md mb-9">
-            OmniTap replaces the six different logins, vendors, and subscriptions
+            OmniTaps replaces the six different logins, vendors, and subscriptions
             running your restaurant or store with a single connected platform —
             website, menus, reservations, reviews, WiFi, and support.
           </p>
@@ -296,7 +296,7 @@ export default function App() {
             Six tools your team already needs. One place to run them.
           </h2>
           <p className="text-[16px] leading-[1.6] text-ink-muted">
-            Every OmniTap module shares the same customer record, so a WiFi login,
+            Every OmniTaps module shares the same customer record, so a WiFi login,
             a booking, and a review all build the same picture of who walked in.
           </p>
         </div>
@@ -438,7 +438,7 @@ export default function App() {
         </div>
 
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-6 border-t border-hairline flex flex-col sm:flex-row justify-between gap-2 text-[13px] text-ink-faint">
-          <span>© {new Date().getFullYear()} OmniTap, Inc. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} OmniTaps, Inc. All rights reserved.</span>
           <span className="font-mono">Built for businesses that never close.</span>
         </div>
       </footer>
