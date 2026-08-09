@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { items as SERVICES } from "../data/items";
 
@@ -122,15 +122,29 @@ const STEPS = [
 /* ================================================================== */
 export default function Home() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const firstMobileLink = useRef(null);
+
+    useEffect(() => {
+        function onKey(e) {
+            if (e.key === "Escape") setMobileOpen(false);
+        }
+        if (mobileOpen) {
+            // focus first link in mobile menu for screen reader / keyboard users
+            requestAnimationFrame(() => firstMobileLink.current?.focus());
+            window.addEventListener("keydown", onKey);
+        }
+        return () => window.removeEventListener("keydown", onKey);
+    }, [mobileOpen]);
 
     return (
         <div id="top" className="min-h-screen w-full bg-porcelain text-ink font-body">
+            <a href="#main" className="sr-only focus:not-sr-only absolute left-4 top-4 z-50 bg-surface/95 text-sm rounded-md px-3 py-2">Skip to content</a>
             {/* ---------------- NAV ---------------- */}
             <header className="sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
                     <Logo />
 
-                    <nav className="hidden md:flex items-center gap-8">
+                    <nav aria-label="Primary" className="hidden md:flex items-center gap-8">
                         {NAV_LINKS.map((l) => (
                             <a key={l.label} href={l.href} className="nav-link text-[15px]">
                                 {l.label}
@@ -152,6 +166,7 @@ export default function Home() {
                         className="md:hidden p-2 -mr-2 text-ink"
                         aria-label={mobileOpen ? "Close menu" : "Open menu"}
                         aria-expanded={mobileOpen}
+                        aria-controls="mobile-menu"
                         onClick={() => setMobileOpen((v) => !v)}
                     >
                         {mobileOpen ? (
@@ -163,13 +178,14 @@ export default function Home() {
                 </div>
 
                 {mobileOpen && (
-                    <div className="md:hidden border-t border-hairline bg-porcelain px-5 pb-6 pt-2">
-                        <nav className="flex flex-col gap-1">
-                            {NAV_LINKS.map((l) => (
+                    <div id="mobile-menu" className="md:hidden border-t border-hairline bg-porcelain px-5 pb-6 pt-2">
+                        <nav aria-label="Primary" className="flex flex-col gap-1">
+                            {NAV_LINKS.map((l, idx) => (
                                 <a
                                     key={l.label}
                                     href={l.href}
                                     onClick={() => setMobileOpen(false)}
+                                    ref={idx === 0 ? firstMobileLink : null}
                                     className="py-2.5 text-[15px] text-ink-muted"
                                 >
                                     {l.label}
@@ -186,6 +202,8 @@ export default function Home() {
                     </div>
                 )}
             </header>
+
+            <main id="main" tabIndex="-1">
 
             {/* ---------------- HERO ---------------- */}
             <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-8 md:pt-24 md:pb-16 grid md:grid-cols-2 gap-14 items-center">
@@ -347,7 +365,9 @@ export default function Home() {
             </section>
 
             {/* ---------------- FOOTER ---------------- */}
-            <footer className="border-t border-hairline">
+            </main>
+
+        <footer className="border-t border-hairline" aria-label="Footer">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 grid sm:grid-cols-2 md:grid-cols-4 gap-10">
                     <div>
                         <Logo />
