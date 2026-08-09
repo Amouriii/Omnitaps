@@ -1,0 +1,823 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  STAFF
+  ANALYST
+}
+
+enum TenantStatus {
+  ACTIVE
+  TRIAL
+  PAUSED
+  SUSPENDED
+}
+
+enum TenantPlan {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum TenantMemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  ANALYST
+  SUPPORT
+}
+
+enum MenuEventType {
+  SCAN
+  VIEW
+  CLICK
+}
+
+enum WebsiteBlockType {
+  HERO
+  HOURS
+  MENU_EMBED
+  GALLERY
+  CTA
+  MAP
+  CONTACT_FORM
+  CUSTOM
+}
+
+enum WifiAuthType {
+  OPEN
+  WPA
+  WPA2
+  WPA3
+}
+
+enum WifiSessionStatus {
+  ACTIVE
+  DISCONNECTED
+  EXPIRED
+}
+
+enum ReviewSourceType {
+  GATE
+  GOOGLE
+  FORM
+  MANUAL
+}
+
+enum ReviewStatus {
+  NEW
+  TRIAGED
+  RESOLVED
+  ARCHIVED
+}
+
+enum ChatbotKnowledgeSourceType {
+  MENU
+  HOURS
+  WIFI
+  FAQ
+  DOCUMENT
+  URL
+  MANUAL
+}
+
+enum ChatbotConversationStatus {
+  OPEN
+  HANDOFF
+  CLOSED
+}
+
+enum ChatbotMessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  authId    String   @unique
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  role      UserRole @default(OWNER)
+
+  ownedTenants            Tenant[]            @relation("TenantOwner")
+  memberships             TenantMember[]
+  reviewFeedbackCreated   ReviewFeedback[]    @relation("ReviewCreatedBy")
+  reviewFeedbackAssigned  ReviewFeedback[]    @relation("ReviewAssignedTo")
+  chatbotHandoffsAssigned ChatbotHandover[]   @relation("ChatbotAssignedTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+model Tenant {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  subdomain   String?      @unique
+  status      TenantStatus  @default(ACTIVE)
+  plan        TenantPlan   @default(STARTER)
+  timezone    String       @default("UTC")
+  locale      String       @default("en")
+  ownerUserId String?
+
+  ownerUser      User?           @relation("TenantOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  members        TenantMember[]
+  domains        TenantDomain[]
+  customers      Customer[]
+  menu           Menu?
+  website        Website?
+  wifiNetworks   WifiNetwork[]
+  reviewProfile  ReviewProfile?
+  chatbot        ChatbotBot?
+  menuScanEvents MenuScanEvent[]
+  reviewCampaigns ReviewCampaign[]
+  reviewGateVisits ReviewGateVisit[]
+  reviewFeedbacks ReviewFeedback[]
+  chatbotConversations ChatbotConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([plan])
+}
+
+model TenantMember {
+  id       String           @id @default(cuid())
+  tenantId String
+  userId   String
+  role     TenantMemberRole @default(EDITOR)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, role])
+  @@index([userId, role])
+}
+
+model TenantDomain {
+  id         String     @id @default(cuid())
+  tenantId   String
+  hostname   String     @unique
+  type       DomainType @default(CUSTOM)
+  isPrimary  Boolean    @default(false)
+  verifiedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, isPrimary])
+}
+
+model Customer {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  externalReference  String?
+  firstName          String?
+  lastName           String?
+  email              String?
+  phone              String?
+  consentToMarketing Boolean  @default(false)
+  lastSeenAt         DateTime?
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuScanEvents      MenuScanEvent[]
+  wifiSessions        WifiSession[]
+  reviewGateVisits    ReviewGateVisit[]
+  reviewFeedback      ReviewFeedback[]
+  chatbotConversations ChatbotConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, externalReference])
+  @@index([tenantId, email])
+  @@index([tenantId, phone])
+  @@index([tenantId, lastSeenAt])
+}
+
+model Menu {
+  id           String  @id @default(cuid())
+  tenantId     String  @unique
+  name         String
+  slug         String
+  isPublished  Boolean @default(false)
+  primaryColor String?
+  secondaryColor String?
+  logoUrl      String?
+  themeJson    Json?
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categories      MenuCategory[]
+  modifierGroups  MenuModifierGroup[]
+  allergenCatalog MenuAllergen[]
+  scanEvents      MenuScanEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([slug])
+  @@index([tenantId, isPublished])
+}
+
+model MenuCategory {
+  id          String  @id @default(cuid())
+  menuId      String
+  slug        String
+  name        String
+  description String?
+  sortOrder   Int     @default(0)
+  isVisible   Boolean @default(true)
+
+  menu  Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([menuId, slug])
+  @@index([menuId, sortOrder])
+}
+
+model MenuItem {
+  id             String  @id @default(cuid())
+  categoryId     String
+  slug           String
+  name           String
+  description    String?
+  priceCents     Int
+  currency       String  @default("USD")
+  imageUrl       String?
+  isAvailable    Boolean @default(true)
+  outOfStockNote String?
+  sortOrder      Int     @default(0)
+
+  category             MenuCategory              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  allergenLinks        MenuItemAllergen[]
+  modifierGroupLinks   MenuModifierGroupItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categoryId, slug])
+  @@index([categoryId, sortOrder])
+  @@index([isAvailable])
+}
+
+model MenuModifierGroup {
+  id            String  @id @default(cuid())
+  menuId        String
+  name          String
+  minSelections Int     @default(0)
+  maxSelections Int?
+  sortOrder     Int     @default(0)
+  isRequired    Boolean @default(false)
+
+  menu    Menu                      @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  options MenuModifierOption[]
+  items   MenuModifierGroupItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([menuId, name])
+  @@index([menuId, sortOrder])
+}
+
+model MenuModifierOption {
+  id              String  @id @default(cuid())
+  modifierGroupId String
+  name            String
+  priceDeltaCents Int     @default(0)
+  sortOrder       Int     @default(0)
+  isAvailable     Boolean @default(true)
+
+  modifierGroup MenuModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([modifierGroupId, name])
+  @@index([modifierGroupId, sortOrder])
+}
+
+model MenuModifierGroupItem {
+  modifierGroupId String
+  menuItemId      String
+
+  modifierGroup MenuModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem          @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([modifierGroupId, menuItemId])
+  @@index([menuItemId])
+}
+
+model MenuAllergen {
+  id       String  @id @default(cuid())
+  menuId   String
+  slug     String
+  name     String
+  isActive Boolean @default(true)
+
+  menu  Menu             @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  items MenuItemAllergen[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([menuId, slug])
+  @@index([menuId, isActive])
+}
+
+model MenuItemAllergen {
+  menuItemId     String
+  menuAllergenId String
+
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  menuAllergen MenuAllergen @relation(fields: [menuAllergenId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([menuItemId, menuAllergenId])
+  @@index([menuAllergenId])
+}
+
+model MenuScanEvent {
+  id          String        @id @default(cuid())
+  tenantId    String
+  menuId      String
+  customerId  String?
+  eventType   MenuEventType @default(SCAN)
+  scannedAt   DateTime      @default(now())
+  userAgent   String?
+  ipHash      String?
+  referrer    String?
+  landingPath String?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menu     Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, scannedAt])
+  @@index([menuId, scannedAt])
+  @@index([customerId, scannedAt])
+  @@index([eventType, scannedAt])
+}
+
+model Website {
+  id         String  @id @default(cuid())
+  tenantId   String  @unique
+  slug       String
+  name       String
+  subdomain  String? @unique
+  isPublished Boolean @default(false)
+  themeJson  Json?
+  jsonLd     Json?
+
+  tenant         Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  domains        WebsiteDomain[]
+  pages          WebsitePage[]
+  assets         WebsiteAsset[]
+  formSubmissions WebsiteFormSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([slug])
+  @@index([tenantId, isPublished])
+}
+
+model WebsiteDomain {
+  id         String   @id @default(cuid())
+  websiteId  String
+  hostname   String   @unique
+  isPrimary  Boolean  @default(false)
+  verifiedAt DateTime?
+  pathPrefix String   @default("/")
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([websiteId, isPrimary])
+}
+
+model WebsitePage {
+  id              String  @id @default(cuid())
+  websiteId       String
+  slug            String
+  path            String
+  title           String
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+  isHome          Boolean @default(false)
+  isPublished     Boolean @default(false)
+  sortOrder       Int     @default(0)
+  structuredData  Json?
+
+  website         Website                @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  blocks          WebsiteBlock[]
+  formSubmissions WebsiteFormSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([websiteId, path])
+  @@unique([websiteId, slug])
+  @@index([websiteId, sortOrder])
+  @@index([path])
+  @@index([isPublished, isHome])
+}
+
+model WebsiteBlock {
+  id        String          @id @default(cuid())
+  pageId    String
+  blockType WebsiteBlockType
+  sortOrder Int             @default(0)
+  config    Json
+
+  page WebsitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId, sortOrder])
+  @@index([blockType])
+}
+
+model WebsiteAsset {
+  id        String  @id @default(cuid())
+  websiteId String
+  kind      String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([websiteId, kind, sortOrder])
+}
+
+model WebsiteFormSubmission {
+  id        String  @id @default(cuid())
+  websiteId String
+  pageId    String?
+  name      String?
+  email     String?
+  phone     String?
+  message   String
+  status    String  @default("new")
+  meta      Json?
+
+  website Website      @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  page    WebsitePage? @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([websiteId, createdAt])
+  @@index([pageId, createdAt])
+  @@index([status, createdAt])
+}
+
+model WifiNetwork {
+  id                 String       @id @default(cuid())
+  tenantId           String
+  name               String
+  ssid               String
+  password           String?
+  authType           WifiAuthType @default(WPA2)
+  hidden             Boolean      @default(false)
+  qrSlug             String
+  qrPayload          String?
+  isActive           Boolean      @default(true)
+  leadCaptureEnabled Boolean      @default(false)
+
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accessPoints WifiAccessPoint[]
+  splashPage   WifiSplashPage?
+  sessions     WifiSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, qrSlug])
+  @@unique([tenantId, ssid])
+  @@index([tenantId, isActive])
+  @@index([tenantId, authType])
+}
+
+model WifiAccessPoint {
+  id         String  @id @default(cuid())
+  networkId  String
+  name       String
+  macAddress String  @unique
+  ipAddress  String?
+  branchLabel String?
+  status     String  @default("online")
+  lastSeenAt DateTime?
+
+  network  WifiNetwork   @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  sessions WifiSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([networkId, status])
+  @@index([networkId, lastSeenAt])
+}
+
+model WifiSplashPage {
+  id                           String  @id @default(cuid())
+  networkId                    String  @unique
+  headline                     String?
+  body                         String?
+  consentLabel                 String?
+  captureEmail                 Boolean @default(false)
+  capturePhone                 Boolean @default(false)
+  requiresConsent              Boolean @default(true)
+  revealCredentialsAfterSubmit  Boolean @default(true)
+
+  network WifiNetwork @relation(fields: [networkId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WifiSession {
+  id            String            @id @default(cuid())
+  networkId     String
+  accessPointId  String?
+  customerId    String?
+  status        WifiSessionStatus @default(ACTIVE)
+  startedAt     DateTime          @default(now())
+  endedAt       DateTime?
+  userAgent     String?
+  ipHash        String?
+  referrer      String?
+  consentGiven  Boolean           @default(false)
+  contactEmail  String?
+  contactPhone  String?
+  sessionToken  String?           @unique
+
+  network     WifiNetwork      @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  accessPoint WifiAccessPoint? @relation(fields: [accessPointId], references: [id], onDelete: SetNull)
+  customer    Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([networkId, startedAt])
+  @@index([accessPointId, startedAt])
+  @@index([customerId, startedAt])
+  @@index([status, startedAt])
+}
+
+model ReviewProfile {
+  id              String  @id @default(cuid())
+  tenantId        String  @unique
+  publicSlug      String
+  googlePlaceId   String
+  googleReviewUrl String
+  thresholdRating Int     @default(4)
+  isActive        Boolean @default(true)
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns   ReviewCampaign[]
+  gateVisits  ReviewGateVisit[]
+  feedback    ReviewFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, publicSlug])
+  @@unique([googlePlaceId])
+  @@index([tenantId, isActive])
+}
+
+model ReviewCampaign {
+  id          String  @id @default(cuid())
+  profileId   String
+  tenantId    String
+  name        String
+  slug        String
+  routePath   String
+  isActive    Boolean @default(true)
+  redirectUrl String?
+
+  profile    ReviewProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  gateVisits ReviewGateVisit[]
+  feedback   ReviewFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([profileId, slug])
+  @@unique([tenantId, routePath])
+  @@index([tenantId, isActive])
+}
+
+model ReviewGateVisit {
+  id                 String           @id @default(cuid())
+  profileId          String
+  campaignId         String?
+  tenantId           String
+  customerId         String?
+  source             ReviewSourceType @default(GATE)
+  rating             Int?
+  routePath          String?
+  referrer           String?
+  userAgent          String?
+  ipHash             String?
+  googleRedirectedAt DateTime?
+
+  profile  ReviewProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  campaign ReviewCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  feedbacks ReviewFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([campaignId, createdAt])
+  @@index([rating, createdAt])
+}
+
+model ReviewFeedback {
+  id               String           @id @default(cuid())
+  tenantId         String
+  profileId        String
+  campaignId       String?
+  gateVisitId      String?
+  customerId       String?
+  createdByUserId  String?
+  assignedToUserId String?
+  source           ReviewSourceType  @default(FORM)
+  status           ReviewStatus      @default(NEW)
+  rating           Int?
+  subject          String?
+  message          String
+  internalNotes    String?
+
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  profile    ReviewProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  campaign   ReviewCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  gateVisit  ReviewGateVisit? @relation(fields: [gateVisitId], references: [id], onDelete: SetNull)
+  customer   Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy  User?           @relation("ReviewCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  assignedTo User?           @relation("ReviewAssignedTo", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@index([profileId, createdAt])
+  @@index([campaignId, createdAt])
+  @@index([assignedToUserId, status])
+}
+
+model ChatbotBot {
+  id                  String  @id @default(cuid())
+  tenantId            String  @unique
+  name                String
+  slug                String
+  publicPath          String
+  systemPrompt        String?
+  confidenceThreshold Float   @default(0.65)
+  handoverThreshold   Float   @default(0.4)
+  isActive            Boolean @default(true)
+
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  knowledgeSources  ChatbotKnowledgeSource[]
+  conversations     ChatbotConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@unique([tenantId, publicPath])
+  @@index([tenantId, isActive])
+}
+
+model ChatbotKnowledgeSource {
+  id            String                     @id @default(cuid())
+  botId         String
+  sourceType    ChatbotKnowledgeSourceType
+  title         String
+  sourceUrl     String?
+  content       Json?
+  isActive      Boolean                    @default(true)
+  lastIndexedAt DateTime?
+
+  bot ChatbotBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([botId, sourceType])
+  @@index([botId, isActive])
+}
+
+model ChatbotConversation {
+  id               String                   @id @default(cuid())
+  botId            String
+  tenantId         String
+  customerId       String?
+  status           ChatbotConversationStatus @default(OPEN)
+  channel          String                   @default("web")
+  confidenceScore  Float?
+  handoverRequired Boolean                  @default(false)
+  startedAt        DateTime                 @default(now())
+  endedAt          DateTime?
+  routePath        String?
+
+  bot      ChatbotBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+  tenant   Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  messages ChatbotMessage[]
+  handover ChatbotHandover?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([botId, startedAt])
+  @@index([tenantId, status, startedAt])
+  @@index([customerId, startedAt])
+}
+
+model ChatbotMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  role           ChatbotMessageRole
+  content        String
+  confidenceScore Float?
+  tokenCount     Int?
+  modelName      String?
+
+  conversation ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId, createdAt])
+  @@index([role, createdAt])
+}
+
+model ChatbotHandover {
+  id               String  @id @default(cuid())
+  conversationId   String  @unique
+  assignedToUserId String?
+  reason           String
+  status           String  @default("open")
+  notes            String?
+
+  conversation ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  assignedTo   User?               @relation("ChatbotAssignedTo", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToUserId, status])
+}
