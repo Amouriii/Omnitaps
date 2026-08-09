@@ -9,7 +9,7 @@ export default function ItemDetail() {
 
     if (!item) {
         return (
-            <main id="main" className="min-h-screen flex flex-col items-center justify-center bg-porcelain text-ink" role="main" tabIndex="-1">
+            <main id="main" className="min-h-screen flex flex-col items-center justify-center bg-porcelain text-ink" tabIndex="-1">
                 <h1 className="text-2xl font-bold mb-4">Module Not Found</h1>
                 <button onClick={() => navigate("/")} className="btn-primary px-6 py-2 rounded-lg">
                     Back to Overview
@@ -19,7 +19,7 @@ export default function ItemDetail() {
     }
 
     return (
-        <main id="main" className="min-h-screen bg-porcelain text-ink font-body p-8" role="main" tabIndex="-1">
+        <main id="main" className="min-h-screen bg-porcelain text-ink font-body p-8" tabIndex="-1">
             <div className="max-w-3xl mx-auto bg-surface rounded-2xl shadow-sm border border-hairline p-8 md:p-12">
                 <button
                     onClick={() => navigate("/")}

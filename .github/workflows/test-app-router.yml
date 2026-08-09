@@ -1,0 +1,30 @@
+name: test-app-router
+
+on:
+  push:
+    paths:
+      - "src/App.jsx"
+      - "src/main.jsx"
+      - "src/pages/**"
+      - "src/components/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test-app-router.yml"
+      - ".github/workflows/test-module-template.yml"
+  pull_request:
+    paths:
+      - "src/App.jsx"
+      - "src/main.jsx"
+      - "src/pages/**"
+      - "src/components/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test-app-router.yml"
+      - ".github/workflows/test-module-template.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-module-template.yml
+    with:
+      module_name: app-router
+      paths_json: '["src/App.jsx","src/main.jsx","src/pages/**","src/components/**"]'
