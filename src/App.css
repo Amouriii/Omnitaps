@@ -101,6 +101,16 @@
   background: var(--color-tap-dark);
   transform: translateY(-1px);
 }
+.btn-primary:focus-visible {
+  box-shadow: 0 12px 30px -14px rgba(21,94,239,0.6);
+  transform: translateY(-1px);
+}
+.btn-primary svg {
+  transition: transform 0.18s ease;
+}
+.btn-primary:hover svg {
+  transform: translateX(4px);
+}
 
 .btn-ghost {
   border: 1.5px solid var(--color-hairline-strong);
@@ -110,4 +120,8 @@
 .btn-ghost:hover {
   border-color: var(--color-tap);
   background: var(--color-tap-soft);
+}
+.btn-ghost:focus-visible {
+  outline: 3px solid rgba(21,94,239,0.12);
+  outline-offset: 2px;
 }

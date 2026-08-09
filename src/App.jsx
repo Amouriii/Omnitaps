@@ -449,6 +449,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import ItemDetail from "./pages/ItemDetail";
+import Changelog from "./pages/Changelog";
+import NotFound from "./pages/NotFound";
 import "./App.css";
 
 export default function App() {
@@ -457,6 +459,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/items/:id" element={<ItemDetail />} />
+        <Route path="/changelog" element={<Changelog />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
