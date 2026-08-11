@@ -7,6 +7,11 @@ on:
       - "src/main.jsx"
       - "src/pages/**"
       - "src/components/**"
+      - "src/modules/**"
+      - "src/lib/**"
+      - "api/**"
+      - "shared/**"
+      - "vercel.json"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/test-app-router.yml"
@@ -17,6 +22,11 @@ on:
       - "src/main.jsx"
       - "src/pages/**"
       - "src/components/**"
+      - "src/modules/**"
+      - "src/lib/**"
+      - "api/**"
+      - "shared/**"
+      - "vercel.json"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/test-app-router.yml"
@@ -27,4 +37,4 @@ jobs:
     uses: ./.github/workflows/test-module-template.yml
     with:
       module_name: app-router
-      paths_json: '["src/App.jsx","src/main.jsx","src/pages/**","src/components/**"]'
+      paths_json: '["src/App.jsx","src/main.jsx","src/pages/**","src/components/**","src/modules/**","src/lib/**","api/**","shared/**"]'

@@ -5,13 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "prisma generate && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate",
+    "setup": "node scripts/setup.mjs",
+    "db:push": "prisma db push",
+    "db:seed": "node --env-file=.env prisma/seed.js",
+    "db:seed-http": "node scripts/seed-http.mjs",
+    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "launch": "node scripts/launch.mjs"
+  },
+  "prisma": {
+    "seed": "node --env-file=.env prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@supabase/supabase-js": "^2.112.3",
     "lucide-react": "^1.28.0",
+    "prisma": "^6.19.3",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

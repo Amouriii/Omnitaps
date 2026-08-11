@@ -152,7 +152,10 @@ export default function Home() {
                         ))}
                     </nav>
 
-                    <div className="hidden md:block">
+                    <div className="hidden md:flex items-center gap-4">
+                        <Link to="/login" className="nav-link text-[15px]">
+                            Admin
+                        </Link>
                         <a
                             href="#cta"
                             className="btn-primary rounded-lg px-4.5 py-2.5 text-[14px] font-semibold px-5"
@@ -192,13 +195,20 @@ export default function Home() {
                                 </a>
                             ))}
                         </nav>
-                        <a
-                            href="#cta"
-                            onClick={() => setMobileOpen(false)}
-                            className="btn-primary mt-3 block text-center rounded-lg px-5 py-3 text-[14px] font-semibold"
-                        >
-                            Book a Demo
-                        </a>
+                            <Link
+                                to="/login"
+                                onClick={() => setMobileOpen(false)}
+                                className="py-2.5 text-[15px] text-ink-muted"
+                            >
+                                Admin
+                            </Link>
+                            <a
+                                href="#cta"
+                                onClick={() => setMobileOpen(false)}
+                                className="btn-primary mt-3 block text-center rounded-lg px-5 py-3 text-[14px] font-semibold"
+                            >
+                                Book a Demo
+                            </a>
                     </div>
                 )}
             </header>
@@ -358,6 +368,12 @@ export default function Home() {
                             >
                                 Talk to Sales
                             </a>
+                        </div>
+                        <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-white/55">
+                            <Link to="/r/demo/review" className="hover:text-white transition-colors">Review funnel</Link>
+                            <Link to="/menu/demo" className="hover:text-white transition-colors">Guest menu</Link>
+                            <Link to="/r/demo/wifi" className="hover:text-white transition-colors">Wi‑Fi QR</Link>
+                            <Link to="/s/demo" className="hover:text-white transition-colors">Tenant site</Link>
                         </div>
                     </div>
                 </div>

@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * REFERENCE (Next.js App Router) — not executed by the Vite SPA.
+ * Live review funnel: src/pages/ReviewGate.jsx at /r/:tenantId/review
+ */
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, ExternalLink, MessageSquareText, ShieldAlert, Star } from "lucide-react";
 

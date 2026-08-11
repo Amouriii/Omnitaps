@@ -1,3 +1,8 @@
+/**
+ * REFERENCE (Next.js App Router) — not executed by the Vite SPA.
+ * Live short-link handler: /api/r/[tenantId]/menu.js
+ * Public path /r/:tenantId/menu is rewritten to that Vercel function.
+ */
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 
