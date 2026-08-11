@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function Changelog() {
   return (
-    <div className="min-h-screen bg-porcelain text-ink font-body">
+    <main id="main" className="min-h-screen bg-porcelain text-ink font-body" tabIndex="-1">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -18,6 +18,6 @@ export default function Changelog() {
 
         <ChangelogList />
       </div>
-    </div>
+    </main>
   );
 }

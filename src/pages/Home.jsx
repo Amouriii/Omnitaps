@@ -204,9 +204,8 @@ export default function Home() {
             </header>
 
             <main id="main" tabIndex="-1">
-
-            {/* ---------------- HERO ---------------- */}
-            <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-8 md:pt-24 md:pb-16 grid md:grid-cols-2 gap-14 items-center">
+                {/* ---------------- HERO ---------------- */}
+                <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-8 md:pt-24 md:pb-16 grid md:grid-cols-2 gap-14 items-center">
                 <div>
                     <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5">
                         Digital infrastructure for hospitality &amp; retail
@@ -260,10 +259,10 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            </section>
+                </section>
 
-            {/* ---------------- SERVICES (bento) ---------------- */}
-            <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
+                {/* ---------------- SERVICES (bento) ---------------- */}
+                <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
                 <div className="max-w-xl mb-12">
                     <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
                         The platform
@@ -297,10 +296,10 @@ export default function Home() {
                         </Link>
                     ))}
                 </div>
-            </section>
+                </section>
 
-            {/* ---------------- HOW IT WORKS ---------------- */}
-            <section id="how-it-works" className="border-y border-hairline bg-surface">
+                {/* ---------------- HOW IT WORKS ---------------- */}
+                <section id="how-it-works" className="border-y border-hairline bg-surface">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
                     <div className="max-w-xl mb-14">
                         <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-3">
@@ -333,10 +332,10 @@ export default function Home() {
                         ))}
                     </div>
                 </div>
-            </section>
+                </section>
 
-            {/* ---------------- BOTTOM CTA ---------------- */}
-            <section id="cta" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
+                {/* ---------------- BOTTOM CTA ---------------- */}
+                <section id="cta" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
                 <div className="relative overflow-hidden rounded-3xl bg-ink px-8 py-16 md:px-16 md:py-20 text-center">
                     <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-tap opacity-20 blur-2xl" />
                     <div className="pointer-events-none absolute -bottom-24 -left-14 w-72 h-72 rounded-full bg-brass opacity-15 blur-2xl" />
@@ -362,12 +361,12 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            </section>
+                </section>
 
-            {/* ---------------- FOOTER ---------------- */}
+                {/* ---------------- FOOTER ---------------- */}
             </main>
 
-        <footer className="border-t border-hairline" aria-label="Footer">
+            <footer className="border-t border-hairline" aria-label="Footer">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 grid sm:grid-cols-2 md:grid-cols-4 gap-10">
                     <div>
                         <Logo />

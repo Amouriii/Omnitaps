@@ -1,0 +1,30 @@
+name: test-module-pages
+
+on:
+  push:
+    paths:
+      - "src/pages/ItemDetail.jsx"
+      - "src/pages/Changelog.jsx"
+      - "src/pages/NotFound.jsx"
+      - "src/data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test-module-pages.yml"
+      - ".github/workflows/test-module-template.yml"
+  pull_request:
+    paths:
+      - "src/pages/ItemDetail.jsx"
+      - "src/pages/Changelog.jsx"
+      - "src/pages/NotFound.jsx"
+      - "src/data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/test-module-pages.yml"
+      - ".github/workflows/test-module-template.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-module-template.yml
+    with:
+      module_name: module-pages
+      paths_json: '["src/pages/ItemDetail.jsx","src/pages/Changelog.jsx","src/pages/NotFound.jsx","src/data/**"]'
