@@ -450,6 +450,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import ItemDetail from "./pages/ItemDetail";
 import Changelog from "./pages/Changelog";
+import ReviewGate from "./pages/ReviewGate";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -460,6 +461,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/changelog" element={<Changelog />} />
+        <Route path="/r/:tenantId/review" element={<ReviewGate />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
