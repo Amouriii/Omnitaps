@@ -59,7 +59,7 @@ Required env families:
    - Admin captive APIs authorize via **`profiles`** (`lib/wifi/profiles-auth.ts`), not `enterprise_members`.
    - Captive tables (`wifi_devices`, `wifi_sessions`, `subscription_plans`) coexist with Prisma `WifiNetwork` / QR Wi‑Fi — different names, different product surfaces.
    - RADIUS UDP CoA on Vercel is unreliable; checkout webhook fires CoA **non-blocking** and should not delay Stripe ACK. Prefer a worker later for durable CoA.
-5. **Design tokens** (marketing + enterprise demo): porcelain/surface/ink/tap/brass/hairline, Instrument Sans, mono labels, `rounded-3xl` — align with `Home.jsx` / `AdminDashboard.jsx`.
+5. **Design tokens** (marketing + guest + operator): porcelain/surface/ink/tap/brass/hairline, Instrument Sans / `font-display`, IBM Plex Mono labels, `rounded-3xl` cards, `rounded-xl` buttons — align with `Home.jsx` / `DemoHub.jsx` / `ConsoleChrome.jsx`. Wordmark is **Omnitaps**.
 
 ---
 
@@ -132,6 +132,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 |------|--------|
 | Routes | `src/App.jsx` |
 | Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx` |
+| Operator chrome | `src/components/console/ConsoleChrome.jsx` — `/admin`, `/demo/dashboard`, `/login` |
 | Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
 | Chatbot matcher | `api/_lib/chatbotMatch.js`, `api/chatbot/message.js` |
 | Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
@@ -168,6 +169,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 
 ### 2026-08-12
 
+- Operator UX: `/admin`, `/demo/dashboard`, and `/login` share `ConsoleChrome` (Omnitaps wordmark, Site / Demo Café / Website / Dashboard / Admin nav, product empty/loading/error states). QR food-menu admin at `/admin/menu` is unchanged as a separate surface.
 - Guest demo UX: `/demo` hub, Home “Try demos” nav, DemoChrome on café guest pages.
 - `/s/demo` now loads the Prisma Demo Café website (not marketing Home). `/menu/demo` falls back to the Prisma public menu when no Supabase enterprise slug `demo` exists.
 - Seed expanded: ~10 menu items (Drinks/Plates/Sweets), hours/map/CTA website blocks, Wi‑Fi splash, chatbot knowledge. Re-run `npm run db:seed` locally.

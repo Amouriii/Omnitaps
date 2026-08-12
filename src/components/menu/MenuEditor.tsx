@@ -69,8 +69,8 @@ export function MenuEditor({ enterpriseId, role, className }: MenuEditorProps) {
   if (role !== "enterprise_admin") {
     return (
       <div className={className} role="status">
-        <p className="text-[14px] text-ink-muted">
-          Menu editing is restricted to enterprise administrators.
+        <p className="rounded-2xl bg-porcelain px-4 py-3 text-[14px] text-ink-muted">
+          Only location admins can edit this menu. You can still browse the live shortcuts.
         </p>
       </div>
     );
@@ -181,8 +181,11 @@ export function MenuEditor({ enterpriseId, role, className }: MenuEditorProps) {
 
   if (loading) {
     return (
-      <div className={className}>
-        <p className="text-[14px] text-ink-muted">Loading menu editor…</p>
+      <div className={className} role="status" aria-label="Loading menu editor">
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl border border-hairline bg-porcelain" />
+          <div className="h-24 animate-pulse rounded-2xl border border-hairline bg-porcelain" />
+        </div>
       </div>
     );
   }
@@ -192,11 +195,17 @@ export function MenuEditor({ enterpriseId, role, className }: MenuEditorProps) {
       {(error || actionError) && (
         <p
           role="alert"
-          className="mb-4 rounded-2xl border border-hairline bg-porcelain px-4 py-3 text-[14px] text-ink"
+          className="mb-4 rounded-2xl border border-brass/25 bg-brass-soft px-4 py-3 text-[14px] text-brass-dark"
         >
           {actionError ?? error}
         </p>
       )}
+
+      {sortedItems.length === 0 ? (
+        <p className="mb-4 rounded-2xl bg-porcelain px-4 py-3 text-[14px] text-ink-muted">
+          No navigation items yet. Add the first shortcut below.
+        </p>
+      ) : null}
 
       <ul className="m-0 list-none space-y-4 p-0">
         {sortedItems.map((item, index) => {

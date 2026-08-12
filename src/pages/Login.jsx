@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import ConsoleChrome, { ConsoleStatusCard } from "../components/console/ConsoleChrome";
 import { useAuth } from "../lib/auth";
 
 export default function Login() {
@@ -33,74 +34,73 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#faf9f7_0%,#eef2f8_100%)] text-ink">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-12">
-        <div className="mb-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">OmniTaps admin</p>
-          <h1 className="mt-2 font-display text-[32px] font-semibold tracking-[-0.02em]">Sign in</h1>
-          <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
-            Enterprise operators only. Guest menu, review, and Wi‑Fi pages stay public.
-          </p>
-        </div>
-
-        {!configured ? (
-          <div className="rounded-3xl border border-hairline bg-surface p-6" role="alert">
-            <p className="text-[15px] leading-[1.7] text-ink-muted">
-              Auth is not configured. Add Supabase URL and anon key to your environment, then restart.
-            </p>
-            <Link to="/" className="mt-4 inline-block text-[14px] text-tap hover:underline">
-              Back to home
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.35)]">
-            <label className="block">
-              <span className="mb-2 block text-[13px] font-medium">Email</span>
-              <input
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-2xl border border-hairline bg-porcelain px-4 py-3 text-[15px] focus:border-tap focus:outline-none"
-                disabled={submitting}
-              />
-            </label>
-
-            <label className="mt-4 block">
-              <span className="mb-2 block text-[13px] font-medium">Password</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-2xl border border-hairline bg-porcelain px-4 py-3 text-[15px] focus:border-tap focus:outline-none"
-                disabled={submitting}
-              />
-            </label>
-
-            {error ? (
-              <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-900" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
+    <ConsoleChrome
+      eyebrow="Sign in"
+      title="Welcome back"
+      subtitle="Manage locations from Admin. Guest menu, reviews, and Wi‑Fi stay public."
+      variant="auth"
+    >
+      {!configured ? (
+        <ConsoleStatusCard eyebrow="Setup" title="Sign-in is not configured" role="alert">
+          <p>Add the Supabase URL and anon key to your environment, then restart.</p>
+          <Link to="/" className="mt-4 inline-block text-[14px] font-medium text-tap hover:text-ink">
+            Back to home
+          </Link>
+        </ConsoleStatusCard>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto max-w-md rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] sm:p-8"
+        >
+          <label className="block">
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.16em] text-ink-faint">
+              Email
+            </span>
+            <input
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-xl border border-hairline bg-porcelain px-4 py-3 text-[15px] focus:border-tap focus:outline-none"
               disabled={submitting}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-ink px-5 py-3.5 text-[15px] font-semibold text-white disabled:opacity-70"
-            >
-              {submitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-        )}
+            />
+          </label>
 
-        <Link to="/" className="mt-6 text-center text-[14px] text-ink-muted hover:text-ink">
-          ← Back to marketing site
-        </Link>
-      </div>
-    </main>
+          <label className="mt-4 block">
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.16em] text-ink-faint">
+              Password
+            </span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border border-hairline bg-porcelain px-4 py-3 text-[15px] focus:border-tap focus:outline-none"
+              disabled={submitting}
+            />
+          </label>
+
+          {error ? (
+            <p
+              className="mt-4 rounded-xl border border-brass/25 bg-brass-soft px-4 py-3 text-[14px] text-brass-dark"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-primary mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3.5 text-[15px] font-semibold disabled:opacity-70"
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+      )}
+    </ConsoleChrome>
   );
 }

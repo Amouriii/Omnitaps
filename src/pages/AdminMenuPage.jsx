@@ -138,7 +138,7 @@ export default function AdminMenuPage() {
             ← Enterprise console
           </Link>
           <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
-            OmniTaps
+            Omnitaps
           </Link>
         </div>
       </header>

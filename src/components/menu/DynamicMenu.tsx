@@ -107,7 +107,11 @@ export function DynamicMenu({ enterpriseId, role, className }: DynamicMenuProps)
   if (loading) {
     return (
       <nav className={className} aria-busy="true">
-        <p className="text-[13px] text-ink-muted">Loading menu…</p>
+        <div className="space-y-2" role="status">
+          <div className="h-9 animate-pulse rounded-xl bg-porcelain" />
+          <div className="h-9 animate-pulse rounded-xl bg-porcelain" />
+          <div className="h-9 animate-pulse rounded-xl bg-porcelain" />
+        </div>
       </nav>
     );
   }
@@ -115,7 +119,9 @@ export function DynamicMenu({ enterpriseId, role, className }: DynamicMenuProps)
   if (error) {
     return (
       <nav className={className} role="alert">
-        <p className="text-[13px] text-ink-muted">Unable to load menu: {error}</p>
+        <p className="rounded-xl bg-brass-soft px-3 py-2 text-[13px] text-brass-dark">
+          Couldn’t load shortcuts.
+        </p>
       </nav>
     );
   }
@@ -123,13 +129,15 @@ export function DynamicMenu({ enterpriseId, role, className }: DynamicMenuProps)
   if (tree.length === 0) {
     return (
       <nav className={className}>
-        <p className="text-[13px] text-ink-muted">No menu items available.</p>
+        <p className="rounded-xl bg-porcelain px-3 py-2 text-[13px] text-ink-muted">
+          No shortcuts yet. Add them in the menu editor.
+        </p>
       </nav>
     );
   }
 
   return (
-    <nav className={className} aria-label="Enterprise menu">
+    <nav className={className} aria-label="Shortcuts">
       <MenuBranch nodes={tree} />
     </nav>
   );

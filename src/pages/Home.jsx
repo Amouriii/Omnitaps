@@ -379,13 +379,10 @@ export default function Home() {
                                 Talk to Sales
                             </a>
                         </div>
-                        <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-white/55">
-                            <Link to="/r/demo/review" className="hover:text-white transition-colors">Review funnel</Link>
-                            <Link to="/menu/demo" className="hover:text-white transition-colors">Guest menu</Link>
-                            <Link to="/r/demo/wifi" className="hover:text-white transition-colors">Wi‑Fi QR</Link>
-                            <Link to="/s/demo" className="hover:text-white transition-colors">Website demo</Link>
-                            <Link to="/demo" className="hover:text-white transition-colors">Demo Café hub</Link>
-                            <Link to="/demo/dashboard" className="hover:text-white transition-colors">Dashboard demo</Link>
+                        <div className="mt-8 text-[13px] text-white/55">
+                            <Link to="/demo" className="hover:text-white transition-colors">
+                                Demo Café Hub
+                            </Link>
                         </div>
                     </div>
                 </div>
