@@ -1,0 +1,17 @@
+---
+description: Keep MEMORY.md updated with project facts on every material change
+alwaysApply: true
+---
+
+# Project memory
+
+Before substantial work, skim `MEMORY.md` at the repo root for stack, routes, dual Prisma/Supabase domains, and known issues.
+
+After you add, remove, or materially change features, routes, APIs, schema/migrations, env vars, demos, or ops notes:
+
+1. Update the relevant sections in `MEMORY.md` (snapshot, routes, modules, source map, known issues).
+2. Set **Last updated** to today's date.
+3. Append a short dated bullet under **Changelog (memory log)**.
+4. Never write secrets into `MEMORY.md` — env var names only.
+
+Skip updates for typo-only or purely internal refactors that do not change product knowledge.
