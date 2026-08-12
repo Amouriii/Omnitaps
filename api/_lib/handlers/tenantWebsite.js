@@ -3,9 +3,9 @@ import {
   enforceRateLimit,
   methodNotAllowed,
   sendJson,
-} from "../../_lib/security.js";
-import { getDemoCafeWebsitePayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
-import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
+} from "../security.js";
+import { getDemoCafeWebsitePayload, isDemoTenantParam } from "../demoCafe.js";
+import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../tenants.js";
 
 const BLOCK_TYPE_MAP = {
   HERO: "hero",

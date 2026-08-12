@@ -2,6 +2,9 @@
  * Adapts Vercel-style (req, res) handlers for Vite's Connect middleware in local dev.
  */
 
+import { dispatchApi } from "./dispatch.js";
+import { isApiPath } from "./matchRoute.js";
+
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -15,20 +18,9 @@ export function createViteApiMiddleware(routes) {
   return async function omnitapsApiMiddleware(req, res, next) {
     const url = new URL(req.url || "/", "http://localhost");
     const pathname = url.pathname;
+    const mightBeApi = isApiPath(pathname) || pathname.startsWith("/r/");
 
-    let matched = null;
-    let params = {};
-
-    for (const route of routes) {
-      const result = matchRoute(route.pattern, pathname);
-      if (result) {
-        matched = route;
-        params = result.params;
-        break;
-      }
-    }
-
-    if (!matched) {
+    if (!mightBeApi) {
       next();
       return;
     }
@@ -43,7 +35,7 @@ export function createViteApiMiddleware(routes) {
     vercelLikeReq.method = req.method;
     vercelLikeReq.headers = req.headers;
     vercelLikeReq.url = `${pathname}${url.search}`;
-    vercelLikeReq.query = { ...Object.fromEntries(url.searchParams.entries()), ...params };
+    vercelLikeReq.query = { ...Object.fromEntries(url.searchParams.entries()) };
     vercelLikeReq.body = undefined;
     vercelLikeReq.rawBody = rawBody;
     vercelLikeReq.socket = req.socket;
@@ -78,39 +70,9 @@ export function createViteApiMiddleware(routes) {
       },
     };
 
-    try {
-      await matched.handler(vercelLikeReq, vercelLikeRes);
-    } catch (error) {
-      console.error("[vite-api]", error);
-      if (!res.headersSent) {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ error: "Internal server error." }));
-      }
+    const handled = await dispatchApi(vercelLikeReq, vercelLikeRes, routes);
+    if (!handled) {
+      next();
     }
   };
-}
-
-function matchRoute(pattern, pathname) {
-  const patternParts = pattern.split("/").filter(Boolean);
-  const pathParts = pathname.split("/").filter(Boolean);
-
-  if (patternParts.length !== pathParts.length) {
-    return null;
-  }
-
-  const params = {};
-  for (let i = 0; i < patternParts.length; i += 1) {
-    const part = patternParts[i];
-    const value = pathParts[i];
-    if (part.startsWith(":")) {
-      params[part.slice(1)] = decodeURIComponent(value);
-      continue;
-    }
-    if (part !== value) {
-      return null;
-    }
-  }
-
-  return { params };
 }

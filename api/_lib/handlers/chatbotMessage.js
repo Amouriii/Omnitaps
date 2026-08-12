@@ -5,12 +5,12 @@ import {
   readJsonBody,
   sanitizeText,
   sendJson,
-} from "../_lib/security.js";
-import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../_lib/tenants.js";
+} from "../security.js";
+import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../tenants.js";
 import { z } from "zod";
-import { parseWithSchema } from "../_lib/validation.js";
-import { FALLBACK_REPLY, loadActiveKnowledgeSources, matchChatbotReply } from "../_lib/chatbot/index.js";
-import { getDemoCafeKnowledgeSources, isDemoTenantParam } from "../_lib/demoCafe.js";
+import { parseWithSchema } from "../validation.js";
+import { FALLBACK_REPLY, loadActiveKnowledgeSources, matchChatbotReply } from "../chatbot/index.js";
+import { getDemoCafeKnowledgeSources, isDemoTenantParam } from "../demoCafe.js";
 
 const chatbotMessageSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),

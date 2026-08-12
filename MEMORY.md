@@ -52,11 +52,11 @@ Required env families:
    - **Prisma tenants** power public guest routes (`/menu/:tenantId`, `/r/:tenantId/*`, `/s/:tenantId`, `/admin` APIs).
    - **Supabase enterprises** power the enterprise console demo, realtime menu editor, module gating, and captive Wi‑Fi portal tables.
 2. **Frontend** lives in `src/` (Vite). Entry routing: `src/App.jsx`.
-3. **API** lives in `api/` (Vercel Node handlers). Vite adapts them in local dev via `api/_lib/viteAdapter.js` (buffers `rawBody` for Stripe).
+3. **API** is one Vercel Serverless Function: `api/[[...path]].js` (Hobby 12-function cap). It dispatches via `api/_lib/routeTable.js` + `api/_lib/dispatch.js` (`:params` merged into `req.query`). Handlers live under `api/_lib/handlers/` so they are not counted as functions. Vite uses the same table/dispatcher (`api/_lib/viteAdapter.js` buffers `rawBody`). Unmatched `/api/*` returns 404 JSON (not the SPA). Catch-all has `bodyParser: false` and `maxDuration: 30` so Stripe webhooks still see raw bytes.
 4. **Captive Wi‑Fi = Path A (wired, no Next runtime)**
    - Handlers authored as Web `Request`/`Response` under `app/api/v1/**/route.ts`.
-   - Production: thin `api/v1/**/*.ts` wrappers use `wrapWebHandlers` (`api/_lib/webHandlerAdapter.js`).
-   - Local Vite: `vite.config.js` loads the same route modules via `ssrLoadModule` (do not rely on plain Node `import` of `.ts`).
+   - Production: thin `api/_lib/handlers/v1*.ts` wrappers use `wrapWebHandlers` (`api/_lib/webHandlerAdapter.js`).
+   - Local Vite: `vite.config.js` loads the same `app/api/v1/**/route.ts` modules via `ssrLoadModule` (do not rely on plain Node `import` of `.ts`).
    - UI pages live at task paths `app/(portal)/wifi-guest/*` and `app/(dashboard)/enterprise/wifi/*`; `src/pages/WifiGuest*` / `EnterpriseWifi*` re-export them into React Router.
    - **Do not** apply raw `db/schema/wifi.ts` `wifiSchemaSql` — it conflicts with UUID `enterprises` / `profiles` from migrations 001–004. Use `005_wifi_captive_portal.sql` only.
    - Admin captive APIs authorize via **`profiles`** (`lib/wifi/profiles-auth.ts`), not `enterprise_members`.
@@ -114,7 +114,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 - **Wi‑Fi (tenant / QR)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
 - **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
-- **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback. File map below.
+- **Chatbot** — bots, knowledge, conversations (Prisma + `api/_lib/handlers/chatbotMessage.js`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback. File map below.
 - **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
 
 ---
@@ -151,7 +151,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Operator chrome | `src/components/console/ConsoleChrome.jsx` — `/admin`, `/demo/dashboard`, `/login` |
 | Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
 | Chatbot (SPA) | `src/modules/chatbot/` — widget, client helper, prompts, types |
-| Chatbot (API) | `api/chatbot/message.js`, `api/_lib/chatbot/` (match, knowledge, prompts, future AI SDK) |
+| Chatbot (API) | `api/_lib/handlers/chatbotMessage.js`, `api/_lib/chatbot/` (match, knowledge, prompts, future AI SDK) |
 | Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
 | Auth (enterprise / profiles) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
 | Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx` |
@@ -159,7 +159,10 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Module gate | `src/components/auth/ModuleGuard.tsx`, `src/components/WifiModuleGate.jsx` |
 | Menu realtime | `src/hooks/useRealtimeMenu.ts`, `src/components/menu/*` |
 | Captive route logic | `app/api/v1/captive/*`, `app/api/v1/admin/wifi/*` |
-| Captive Vercel wrappers | `api/v1/captive/*`, `api/v1/admin/wifi/*` |
+| Captive Vercel wrappers | `api/_lib/handlers/v1*.ts` (loaded by the catch-all) |
+| Catch-all function | `api/[[...path]].js` — only Serverless Function under `api/` |
+| Route table / dispatch | `api/_lib/routeTable.js`, `api/_lib/dispatch.js`, `api/_lib/matchRoute.js` |
+| Guest/admin Node handlers | `api/_lib/handlers/*.js` |
 | Web↔Node adapter | `api/_lib/webHandlerAdapter.js`, `api/_lib/lazyWebHandler.js` |
 | Profiles auth helper | `lib/wifi/profiles-auth.ts` |
 | Wi‑Fi libs | `lib/wifi/{mac-utils,HMAC-verifier,quota-calculator,radius-client}.ts` |
@@ -180,14 +183,14 @@ Guest chat is a Vite widget + Vercel Node handler. Do **not** add Next.js `app/a
 | `src/modules/chatbot/prompts/` | SPA system-prompt / greeting templates |
 | `src/modules/chatbot/types.ts` | Shared client types (not a copy of Prisma schema) |
 | `src/modules/chatbot/index.ts` | Barrel exports |
-| `api/chatbot/message.js` | Live JSON handler (rate limit, persist turns, keyword reply) |
+| `api/_lib/handlers/chatbotMessage.js` | Live JSON handler (rate limit, persist turns, keyword reply) |
 | `api/_lib/chatbot/match.js` | Keyword matcher (current production reply path) |
 | `api/_lib/chatbot/knowledge.js` | Load active knowledge sources |
 | `api/_lib/chatbot/prompts.js` | Server prompt assembly |
 | `api/_lib/chatbot/ai.js` | Stub for later `ai` SDK (`generateText` / `streamText` via AI Gateway) |
 | `api/_lib/chatbotMatch.js` | Compatibility re-export of the matcher |
 
-Runtime today: keyword match only. A later pass may install `ai` and add a stream handler under `api/chatbot/` without converting the SPA to Next.js.
+Runtime today: keyword match only. A later pass may install `ai` and add a stream handler under `api/_lib/handlers/` (wired in the catch-all table) without converting the SPA to Next.js.
 
 ---
 
@@ -211,6 +214,7 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 
 ### 2026-08-12
 
+- Production APIs are a single Vercel catch-all (`api/[[...path]].js`) with `bodyParser: false`; handlers moved to `api/_lib/handlers/` so Hobby stays under the 12-function cap. Public `/api/*` URLs unchanged. Vite middleware uses the same route table + dispatcher; v1 still SSR-loads `app/api/v1/**/route.ts`.
 - Guest demo APIs fall back to `api/_lib/demoCafe.js` so website, menu, Wi‑Fi QR, and chatbot render without Prisma TCP. `/menu/demo` always uses the café menu (not an empty QR list). Café website drops the extra tenant chrome; chat launcher is docked with safe-area offset.
 - `npm run db:seed` no longer dies on Prisma “Can't reach database server” when `.env` still has `[YOUR-PASSWORD]`; it seeds Demo Café over HTTPS (`scripts/seed-http.mjs`) instead. Placeholder URL detection lives in `api/_lib/databaseUrl.js`.
 - Demo Café guest brand: scoped `.demo-cafe-theme` (espresso/cream/terracotta/brass, Fraunces display) on guest demo routes only; product tokens unchanged.

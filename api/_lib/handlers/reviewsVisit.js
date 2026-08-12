@@ -1,4 +1,4 @@
-import { getPrisma, isDatabaseConfigured } from "../_lib/prisma.js";
+import { getPrisma, isDatabaseConfigured } from "../prisma.js";
 import {
   databaseUnavailable,
   enforceRateLimit,
@@ -8,8 +8,8 @@ import {
   readJsonBody,
   sanitizeText,
   sendJson,
-} from "../_lib/security.js";
-import { parseWithSchema, reviewVisitSchema } from "../_lib/validation.js";
+} from "../security.js";
+import { parseWithSchema, reviewVisitSchema } from "../validation.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

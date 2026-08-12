@@ -3,9 +3,9 @@ import {
   enforceRateLimit,
   methodNotAllowed,
   sendJson,
-} from "../../_lib/security.js";
-import { getDemoCafeMenuPayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
-import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
+} from "../security.js";
+import { getDemoCafeMenuPayload, isDemoTenantParam } from "../demoCafe.js";
+import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../tenants.js";
 
 function formatPrice(priceCents, currency = "USD") {
   try {

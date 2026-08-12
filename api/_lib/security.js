@@ -89,6 +89,16 @@ export function sanitizeEmail(value) {
 
 export function readJsonBody(req) {
   return new Promise((resolve, reject) => {
+    if (Buffer.isBuffer(req.rawBody) || typeof req.rawBody === "string") {
+      const raw = Buffer.isBuffer(req.rawBody) ? req.rawBody.toString("utf8") : req.rawBody;
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch {
+        reject(new Error("Invalid JSON body"));
+      }
+      return;
+    }
+
     if (req.body && typeof req.body === "object") {
       resolve(req.body);
       return;

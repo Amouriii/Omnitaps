@@ -1,4 +1,4 @@
-import { getPrisma, isDatabaseConfigured } from "../../_lib/prisma.js";
+import { getPrisma, isDatabaseConfigured } from "../prisma.js";
 import {
   databaseUnavailable,
   enforceRateLimit,
@@ -6,11 +6,11 @@ import {
   hashValue,
   methodNotAllowed,
   sendJson,
-} from "../../_lib/security.js";
+} from "../security.js";
 
 /**
  * Port of src/app/r/[tenantId]/menu/route.ts for Vite + Vercel Functions.
- * Live path: /r/:tenantId/menu → rewritten to this function.
+ * Live path: /r/:tenantId/menu → rewritten to /api/r/:tenantId/menu (catch-all).
  */
 export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") {

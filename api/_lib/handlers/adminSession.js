@@ -3,9 +3,9 @@ import {
   enforceRateLimit,
   methodNotAllowed,
   sendJson,
-} from "../_lib/security.js";
-import { getPrisma, isDatabaseConfigured } from "../_lib/prisma.js";
-import { isSupabaseConfigured, requireAuthUser } from "../_lib/auth.js";
+} from "../security.js";
+import { getPrisma, isDatabaseConfigured } from "../prisma.js";
+import { isSupabaseConfigured, requireAuthUser } from "../auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {

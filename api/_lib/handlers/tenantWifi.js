@@ -3,10 +3,10 @@ import {
   enforceRateLimit,
   methodNotAllowed,
   sendJson,
-} from "../../_lib/security.js";
-import { getDemoCafeWifiPayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
-import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
-import { buildWifiPayload } from "../../_lib/wifiPayload.js";
+} from "../security.js";
+import { getDemoCafeWifiPayload, isDemoTenantParam } from "../demoCafe.js";
+import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../tenants.js";
+import { buildWifiPayload } from "../wifiPayload.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
