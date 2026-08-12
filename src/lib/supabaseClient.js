@@ -9,6 +9,10 @@ export function isAuthConfigured() {
 
 let client;
 
+/**
+ * Shared browser Supabase client (QR menu realtime, auth, enterprise admin).
+ * Returns null when VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are unset.
+ */
 export function getSupabaseBrowserClient() {
   if (!isAuthConfigured()) {
     return null;
@@ -26,3 +30,20 @@ export function getSupabaseBrowserClient() {
 
   return client;
 }
+
+/**
+ * Same singleton as getSupabaseBrowserClient(), but throws if env is missing.
+ * Use from menu hooks/components that require a live connection.
+ */
+export function requireSupabase() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error(
+      "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+    );
+  }
+  return supabase;
+}
+
+/** Initialized client when configured; otherwise null. */
+export const supabase = getSupabaseBrowserClient();

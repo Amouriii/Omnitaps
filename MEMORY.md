@@ -49,8 +49,16 @@ Required env families:
    - **Prisma tenants** power public guest routes (`/menu/:tenantId`, `/r/:tenantId/*`, `/s/:tenantId`, `/admin` APIs).
    - **Supabase enterprises** power the enterprise console demo, realtime menu editor, module gating, and captive Wi‑Fi portal tables.
 2. **Frontend** lives in `src/` (Vite). Entry routing: `src/App.jsx`.
-3. **API** lives in `api/` (Vercel Node handlers). Vite adapts them in local dev via `api/_lib/viteAdapter.js` / related adapters.
-4. **Parallel Next-style trees** (`app/`, `components/wifi/`, `lib/wifi/`, `app/api/...`) exist for captive Wi‑Fi; Vite pages under `src/pages/` re-export or mirror those UIs. Prefer keeping Vite routes working as the production path.
+3. **API** lives in `api/` (Vercel Node handlers). Vite adapts them in local dev via `api/_lib/viteAdapter.js` (buffers `rawBody` for Stripe).
+4. **Captive Wi‑Fi = Path A (wired, no Next runtime)**
+   - Handlers authored as Web `Request`/`Response` under `app/api/v1/**/route.ts`.
+   - Production: thin `api/v1/**/*.ts` wrappers use `wrapWebHandlers` (`api/_lib/webHandlerAdapter.js`).
+   - Local Vite: `vite.config.js` loads the same route modules via `ssrLoadModule` (do not rely on plain Node `import` of `.ts`).
+   - UI pages live at task paths `app/(portal)/wifi-guest/*` and `app/(dashboard)/enterprise/wifi/*`; `src/pages/WifiGuest*` / `EnterpriseWifi*` re-export them into React Router.
+   - **Do not** apply raw `db/schema/wifi.ts` `wifiSchemaSql` — it conflicts with UUID `enterprises` / `profiles` from migrations 001–004. Use `005_wifi_captive_portal.sql` only.
+   - Admin captive APIs authorize via **`profiles`** (`lib/wifi/profiles-auth.ts`), not `enterprise_members`.
+   - Captive tables (`wifi_devices`, `wifi_sessions`, `subscription_plans`) coexist with Prisma `WifiNetwork` / QR Wi‑Fi — different names, different product surfaces.
+   - RADIUS UDP CoA on Vercel is unreliable; checkout webhook fires CoA **non-blocking** and should not delay Stripe ACK. Prefer a worker later for durable CoA.
 5. **Design tokens** (marketing + enterprise demo): porcelain/surface/ink/tap/brass/hairline, Instrument Sans, mono labels, `rounded-3xl` — align with `Home.jsx` / `AdminDashboard.jsx`.
 
 ---
@@ -64,19 +72,31 @@ Required env families:
 | `/changelog` | Changelog |
 | `/menu/:tenantId` | Public QR menu |
 | `/r/:tenantId/review` | Review gate |
-| `/r/:tenantId/wifi` | Legacy/simple Wi‑Fi access |
+| `/r/:tenantId/wifi` | Legacy/simple Wi‑Fi access (Prisma QR) |
 | `/s/demo` | Website demo (renders Home) |
 | `/s/:tenantId` | Tenant website preview |
 | `/login` | Supabase login |
-| `/admin` | Admin dashboard (seeded user) |
-| `/demo/dashboard` | Enterprise console demo |
+| `/admin` | Admin dashboard (Prisma-provisioned user) |
+| `/demo/dashboard` | Enterprise console demo (Supabase `profiles`) |
 | `/enterprise` | Redirect → `/demo/dashboard` |
-| `/enterprise/wifi` | Enterprise Wi‑Fi telemetry dashboard |
-| `/enterprise/wifi/settings` | Wi‑Fi settings |
+| `/enterprise/wifi` | Captive telemetry (gated: `WifiModuleGate` + `wifi` module) |
+| `/enterprise/wifi/settings` | Captive settings |
 | `/enterprise/wifi/plans` | Plan editor |
-| `/wifi-guest` | Captive portal landing |
-| `/wifi-guest/session` | Guest session / usage |
-| `/wifi-guest/checkout` | Paid upgrade checkout |
+| `/wifi-guest` | Captive portal landing (public) |
+| `/wifi-guest/session` | Guest session / usage (public) |
+| `/wifi-guest/checkout` | Paid upgrade checkout (public) |
+
+### Captive / admin APIs
+
+| Path | Methods | Notes |
+|------|---------|--------|
+| `/api/v1/captive/authenticate` | GET, POST | Gateway HMAC grant |
+| `/api/v1/captive/session-status` | GET, POST, PATCH | Poll / SSE-style status |
+| `/api/v1/captive/checkout` | GET, POST | Plans list; Stripe session + webhook (`bodyParser: false`) |
+| `/api/v1/admin/wifi/telemetry` | GET | Bearer + `profiles` |
+| `/api/v1/admin/wifi/settings` | GET, PATCH, POST, DELETE | Bearer + admin `profiles` role |
+
+Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src/lib/auth.jsx` on session change).
 
 ---
 
@@ -84,11 +104,11 @@ Required env families:
 
 - **Menu** — public menu + scan events (Prisma); enterprise realtime menu (`DynamicMenu`, `MenuEditor`) on Supabase `menu_items`
 - **Reviews** — review gate, campaigns, feedback (Prisma)
-- **Wi‑Fi (tenant)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
-- **Wi‑Fi (captive / enterprise)** — plans, quotas, telemetry, Stripe checkout; migrations `005_wifi_captive_portal.sql`; APIs under `api/v1/captive/*` and `api/v1/admin/wifi/*`
+- **Wi‑Fi (tenant / QR)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
+- **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
 - **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`)
-- **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql`
+- **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
 
 ---
 
@@ -98,10 +118,10 @@ Required env families:
 2. `002_task_1_2_tenant_isolation.sql` — `get_user_enterprise_id()`
 3. `003_task_1_3_rls_policies.sql` — RLS
 4. `004_task_1_4_indexes_realtime.sql` — indexes + realtime publication
-5. `005_wifi_captive_portal.sql` — captive portal schema
+5. `005_wifi_captive_portal.sql` — captive columns on `enterprises` + `wifi_devices` / `wifi_sessions` / `subscription_plans`
 6. `006_qr_menu_items.sql` — QR menu items additions
 
-Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable).
+Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable). Apply **005 before** seed if using captive plans/HMAC columns.
 
 ---
 
@@ -110,15 +130,20 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Area | Paths |
 |------|--------|
 | Routes | `src/App.jsx` |
-| Auth (admin SPA) | `src/lib/auth.jsx` |
-| Auth (enterprise) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
+| Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
+| Auth (enterprise / profiles) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
 | Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx` |
-| Guest Wi‑Fi UI | `src/pages/WifiGuest*.tsx`, `components/wifi/portal/*` |
+| Guest Wi‑Fi UI | `src/pages/WifiGuest*.tsx` → `app/(portal)/wifi-guest/*`, `components/wifi/portal/*` |
 | Module gate | `src/components/auth/ModuleGuard.tsx`, `src/components/WifiModuleGate.jsx` |
 | Menu realtime | `src/hooks/useRealtimeMenu.ts`, `src/components/menu/*` |
-| Captive APIs | `api/v1/captive/*`, `api/v1/admin/wifi/*` |
+| Captive route logic | `app/api/v1/captive/*`, `app/api/v1/admin/wifi/*` |
+| Captive Vercel wrappers | `api/v1/captive/*`, `api/v1/admin/wifi/*` |
+| Web↔Node adapter | `api/_lib/webHandlerAdapter.js`, `api/_lib/lazyWebHandler.js` |
+| Profiles auth helper | `lib/wifi/profiles-auth.ts` |
+| Wi‑Fi libs | `lib/wifi/{mac-utils,HMAC-verifier,quota-calculator,radius-client}.ts` |
+| Schema (do not apply raw) | `db/schema/wifi.ts` (types/Zod only for agents; DB = migration 005) |
 | Prisma schema | `prisma/schema.prisma` |
-| Deploy | `vercel.json`, `scripts/launch.mjs` |
+| Deploy | `vercel.json` (CSP allows Stripe), `scripts/launch.mjs` |
 
 ---
 
@@ -127,7 +152,10 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 - Local Prisma/admin APIs fail if `DATABASE_URL` still has a placeholder password (`[YOUR-PASSWORD]`). Supabase JS + service role can still work for Auth/REST.
 - After changing any `VITE_*` value, redeploy (or `npm run launch`) so the client bundle picks them up.
 - Realtime: avoid duplicate channel names when `DynamicMenu` and `MenuEditor` both subscribe — use unique channel IDs.
-- Dual trees (`app/` Next-style vs `src/` Vite): keep behavior in sync when editing Wi‑Fi UIs/APIs.
+- Dual trees (`app/` handler/UI sources vs `src/` Vite mounts): edit the `app/` / `components/wifi/` sources; keep re-exports in `src/pages/*` thin.
+- `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
+- Captive ops checklist: apply migration `005`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
+- Demo `gateway_hmac_secret` from seed must be rotated outside local/demo use.
 
 ---
 
@@ -139,7 +167,8 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 - Added enterprise console demo at `/demo/dashboard`; `/enterprise` redirects there; marketing website demo at `/s/demo`.
 - Restyled enterprise console to Omnitaps design tokens.
 - Added Wi‑Fi captive portal module (migration 005, guest + admin pages, Stripe-related env, `api/v1/*`).
-- Commit `9518211` pushed to `main`.
+- **Path A wiring complete:** `webHandlerAdapter`, Vite `ssrLoadModule` routes, React Router mounts, profiles auth, non-blocking CoA, seed enables `wifi` + demo HMAC/plans; commit `9518211` on `main`.
+- Memory refreshed with captive API table, Path A constraints, and dual-auth (`/admin` vs enterprise) caveats.
 - Removed root `task2.xml`.
 - Created this `MEMORY.md` + Cursor rule to keep it updated.
 

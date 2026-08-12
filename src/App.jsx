@@ -10,10 +10,12 @@ const ItemDetail = lazy(() => import("./pages/ItemDetail"));
 const Changelog = lazy(() => import("./pages/Changelog"));
 const ReviewGate = lazy(() => import("./pages/ReviewGate"));
 const MenuPublic = lazy(() => import("./pages/MenuPublic"));
+const CustomerMenuPage = lazy(() => import("./pages/CustomerMenuPage"));
 const WifiAccess = lazy(() => import("./pages/WifiAccess"));
 const WebsitePreview = lazy(() => import("./pages/WebsitePreview"));
 const Login = lazy(() => import("./pages/Login"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminMenuPage = lazy(() => import("./pages/AdminMenuPage"));
 const EnterpriseConsole = lazy(() => import("./pages/EnterpriseConsole"));
 const WifiGuestLanding = lazy(() => import("./pages/WifiGuestLanding"));
 const WifiGuestSession = lazy(() => import("./pages/WifiGuestSession"));
@@ -42,7 +44,8 @@ export default function App() {
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/r/:tenantId/review" element={<ReviewGate />} />
             <Route path="/r/:tenantId/wifi" element={<WifiAccess />} />
-            <Route path="/menu/:tenantId" element={<MenuPublic />} />
+            <Route path="/menu/:restaurantId" element={<CustomerMenuPage />} />
+            <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
             {/* Website module demo: Omnitaps marketing site */}
             <Route path="/s/demo" element={<Home />} />
             <Route path="/s/:tenantId" element={<WebsitePreview />} />
@@ -86,6 +89,8 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="/admin/menu" element={<AdminMenuPage />} />
+            <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
