@@ -17,7 +17,9 @@
 | Primary auth | Supabase Auth (email) |
 | Data (core product) | Postgres via **Prisma** (`prisma/schema.prisma`) — tenants, menu, reviews, wifi, website, chatbot |
 | Data (enterprise nav / captive) | **Supabase** SQL migrations under `supabase/migrations/` — enterprises, profiles, menu_items, enterprise_modules, Wi‑Fi captive tables |
-| Demo tenant slug | `demo` |
+| Demo tenant slug | `demo` (Prisma guest) |
+| Enterprise console slug | `demo-enterprise` |
+| Guest QR enterprise slug | `demo` (after `seed_enterprise_nav.sql`) |
 
 ---
 
@@ -27,7 +29,8 @@
 npm run setup     # install, prisma push, seed demo + admin
 npm run dev       # Vite (APIs mounted locally)
 npm run build     # prisma generate && vite build
-npm run db:seed   # re-seed Prisma demo
+npm run db:seed   # re-seed Demo Café (Prisma TCP, or HTTPS if DATABASE_URL is a placeholder)
+npm run db:seed-http  # same café seed via Supabase REST (no Postgres TCP)
 npm run launch    # build + sync env to Vercel + production deploy
 ```
 
@@ -59,7 +62,10 @@ Required env families:
    - Admin captive APIs authorize via **`profiles`** (`lib/wifi/profiles-auth.ts`), not `enterprise_members`.
    - Captive tables (`wifi_devices`, `wifi_sessions`, `subscription_plans`) coexist with Prisma `WifiNetwork` / QR Wi‑Fi — different names, different product surfaces.
    - RADIUS UDP CoA on Vercel is unreliable; checkout webhook fires CoA **non-blocking** and should not delay Stripe ACK. Prefer a worker later for durable CoA.
-5. **Design tokens** (marketing + guest + operator): porcelain/surface/ink/tap/brass/hairline, Instrument Sans / `font-display`, IBM Plex Mono labels, `rounded-3xl` cards, `rounded-xl` buttons — align with `Home.jsx` / `DemoHub.jsx` / `ConsoleChrome.jsx`. Wordmark is **Omnitaps**.
+5. **Design tokens**
+   - **Omnitaps product** (marketing Home, `/login`, `ConsoleChrome`, `/admin`, `/demo/dashboard`): porcelain `#faf9f7` / surface `#ffffff` / ink `#12151a` / tap `#155eef` / brass `#b8873b` / hairline `#e7e4dd`, Instrument Sans, IBM Plex Mono. Defined in `src/index.css` `@theme`.
+   - **Demo Café guest brand** (scoped `.demo-cafe-theme`, not a global rewrite): cream paper porcelain `#f3eadc`, surface `#faf4ea`, espresso ink `#2c1b12`, terracotta accent (reuses `--color-tap`) `#c45c26`, brass-gold `#c4a35a`, hairline `#e4d4c0`. Display **Fraunces**, body Instrument Sans. CSS: `src/styles/demoCafe.css`. Applied by `CafeThemeGate` on `/demo`, `/menu/demo`, `/menu-prisma/demo`, `/s/demo`, `/r/demo/*` only — **not** `/demo/dashboard`.
+   - Wordmark is **Omnitaps** on product surfaces; guest chrome says **Demo Café · Harbor Lane**.
 
 ---
 
@@ -122,7 +128,16 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 5. `005_wifi_captive_portal.sql` — captive columns on `enterprises` + `wifi_devices` / `wifi_sessions` / `subscription_plans`
 6. `006_qr_menu_items.sql` — QR menu items additions
 
-Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable). Apply **005 before** seed if using captive plans/HMAC columns.
+Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The SQL now upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
+
+### Demo Café seed contents (Prisma `npm run db:seed`)
+
+- Tenant slug `demo`, name Demo Café, address 14 Harbor Lane, Demo City.
+- Website blocks: HERO, MENU_EMBED, HOURS, MAP, GALLERY, CTA — CTAs to `/menu/demo`, `/r/demo/review`, `/r/demo/wifi`.
+- Menu: Drinks / Plates / Sweets (~12 items); House Latte + Avocado Toast popular; Seasonal Shakshuka sold out; allergens on relevant items.
+- Wi‑Fi: SSID `{slug}-guest` (demo-guest), WPA2 `WIFI:` QR payload; splash headline/body for Demo Café guest Wi‑Fi. Password is the documented demo value in `prisma/seed.js`.
+- Review profile: Google place URL kept; `/r/demo/review` loads it from `/api/reviews/visit`.
+- Chatbot knowledge: HOURS, MENU, WIFI, FAQ (reviews + location/parking/reservations).
 
 ---
 
@@ -131,7 +146,8 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Area | Paths |
 |------|--------|
 | Routes | `src/App.jsx` |
-| Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx` |
+| Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx`, `src/components/demo/CafeThemeGate.jsx`, `src/styles/demoCafe.css` |
+| Demo Café API fallback | `api/_lib/demoCafe.js` — website/menu/wifi/chat when Prisma is down |
 | Operator chrome | `src/components/console/ConsoleChrome.jsx` — `/admin`, `/demo/dashboard`, `/login` |
 | Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
 | Chatbot (SPA) | `src/modules/chatbot/` — widget, client helper, prompts, types |
@@ -177,14 +193,17 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 
 ## Known issues / ops
 
-- Local Prisma/admin APIs fail if `DATABASE_URL` still has a placeholder password (`[YOUR-PASSWORD]`). Supabase JS + service role can still work for Auth/REST.
+- Local Prisma/admin APIs fail if `DATABASE_URL` still has a placeholder password (`[YOUR-PASSWORD]`). Unencoded brackets also break URL parsing. Supabase JS + service role can still work for Auth/REST. `npm run db:seed` now detects that and falls back to `db:seed-http` (PostgREST). Paste the real URI from Supabase → Database settings to use Prisma TCP.
+- Guest Demo Café routes (`/s/demo`, `/menu/demo`, `/r/demo/wifi`, chatbot on the café site) serve Harbor Lane content from `api/_lib/demoCafe.js` when Prisma is unconfigured or the demo tenant/rows are missing. `/admin` still needs a real `DATABASE_URL`.
 - After changing any `VITE_*` value, redeploy (or `npm run launch`) so the client bundle picks them up.
 - Realtime: avoid duplicate channel names when `DynamicMenu` and `MenuEditor` both subscribe — use unique channel IDs.
 - Dual trees (`app/` handler/UI sources vs `src/` Vite mounts): edit the `app/` / `components/wifi/` sources; keep re-exports in `src/pages/*` thin.
 - `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
 - Captive ops checklist: apply migration `005`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
 - Demo `gateway_hmac_secret` from seed must be rotated outside local/demo use.
-- Richer Demo Café content (menu, website blocks, Wi‑Fi splash, chatbot knowledge) requires a local re-seed: `npm run db:seed`.
+- Richer Demo Café content (menu, website blocks including gallery, Wi‑Fi splash, chatbot knowledge) requires `npm run db:seed`.
+- `/menu/demo` shows Prisma café dishes after that seed. After `006` + `supabase/seed_enterprise_nav.sql`, the same URL can resolve the Supabase enterprise slug `demo` and `qr_menu_items` instead.
+- Demo Café visual theme is CSS-variable scoped; do not restyle Home / ConsoleChrome / login to terracotta.
 
 ---
 
@@ -192,6 +211,10 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 
 ### 2026-08-12
 
+- Guest demo APIs fall back to `api/_lib/demoCafe.js` so website, menu, Wi‑Fi QR, and chatbot render without Prisma TCP. `/menu/demo` always uses the café menu (not an empty QR list). Café website drops the extra tenant chrome; chat launcher is docked with safe-area offset.
+- `npm run db:seed` no longer dies on Prisma “Can't reach database server” when `.env` still has `[YOUR-PASSWORD]`; it seeds Demo Café over HTTPS (`scripts/seed-http.mjs`) instead. Placeholder URL detection lives in `api/_lib/databaseUrl.js`.
+- Demo Café guest brand: scoped `.demo-cafe-theme` (espresso/cream/terracotta/brass, Fraunces display) on guest demo routes only; product tokens unchanged.
+- Seed: Harbor Lane café copy, 12 menu items, gallery block, Wi‑Fi splash, chatbot FAQ; Supabase seed adds slug `demo` + `qr_menu_items`. Review gate uses seeded Google URL from visit API.
 - Chatbot folder map: SPA under `src/modules/chatbot/` (widget, lib, prompts, types); API libs under `api/_lib/chatbot/`. Keyword matcher and `ChatWidget` remain the live path; AI SDK not installed yet.
 - Operator UX: `/admin`, `/demo/dashboard`, and `/login` share `ConsoleChrome` (Omnitaps wordmark, Site / Demo Café / Website / Dashboard / Admin nav, product empty/loading/error states). QR food-menu admin at `/admin/menu` is unchanged as a separate surface.
 - Guest demo UX: `/demo` hub, Home “Try demos” nav, DemoChrome on café guest pages.

@@ -56,8 +56,9 @@ export default async function handler(req, res) {
       },
       select: {
         id: true,
+        name: true,
         reviewProfile: {
-          select: { id: true, isActive: true },
+          select: { id: true, isActive: true, googleReviewUrl: true },
         },
       },
     });
@@ -93,6 +94,8 @@ export default async function handler(req, res) {
     sendJson(res, 201, {
       id: visit.id,
       createdAt: visit.createdAt,
+      tenantName: tenant.name,
+      googleReviewUrl: tenant.reviewProfile.googleReviewUrl || null,
     });
   } catch (error) {
     console.error("[review-visit]", error);

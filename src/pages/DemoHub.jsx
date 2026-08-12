@@ -30,8 +30,9 @@ const CARDS = [
 
 export default function DemoHub() {
   return (
-    <main className="min-h-screen bg-porcelain text-ink font-body">
-      <div className="border-b border-hairline bg-porcelain/85 backdrop-blur">
+    <main className="relative min-h-screen overflow-hidden bg-porcelain text-ink font-body">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] cafe-glow" />
+      <div className="relative border-b border-hairline bg-porcelain/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Guest demos</p>
           <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
@@ -40,15 +41,17 @@ export default function DemoHub() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Demo Café</p>
+      <div className="relative mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Harbor Lane · Demo Café</p>
         <h1 className="mt-3 font-display text-[36px] font-semibold tracking-[-0.02em] sm:text-[44px]">
           Walk the guest experience
         </h1>
         <p className="mt-4 max-w-2xl text-[16px] leading-[1.7] text-ink-muted">
-          These pages are the public Demo Café tenant (slug <span className="font-mono text-ink">demo</span>
-          ). Re-seed locally with <span className="font-mono text-[13px] text-ink">npm run db:seed</span> to
-          load the richer menu, Wi‑Fi splash, website blocks, and chatbot answers.
+          Public pages for the Demo Café tenant (slug <span className="font-mono text-ink">demo</span>
+          ). Re-seed with <span className="font-mono text-[13px] text-ink">npm run db:seed</span> for the
+          full menu, Wi‑Fi splash, website, and chatbot. Apply{" "}
+          <span className="font-mono text-[13px] text-ink">supabase/seed_enterprise_nav.sql</span> if you
+          want the Supabase QR menu at the same URL.
         </p>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2">

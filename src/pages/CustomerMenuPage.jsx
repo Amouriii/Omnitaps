@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import DemoChrome, { isDemoSlug } from "../components/demo/DemoChrome";
+import { isDemoSlug } from "../components/demo/DemoChrome";
 import PublicMenu from "../components/menu/PublicMenu";
 import { resolveRestaurant } from "../lib/qrMenu/resolveRestaurant";
 import MenuPublic from "./MenuPublic";
 
 export default function CustomerMenuPage() {
   const { restaurantId: restaurantParam = "" } = useParams();
+
+  if (isDemoSlug(restaurantParam)) {
+    return <MenuPublic tenantId={restaurantParam} />;
+  }
+
+  return <EnterpriseOrPrismaMenu restaurantParam={restaurantParam} />;
+}
+
+function EnterpriseOrPrismaMenu({ restaurantParam }) {
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [usePrismaFallback, setUsePrismaFallback] = useState(false);
@@ -46,7 +55,6 @@ export default function CustomerMenuPage() {
 
   return (
     <main className="min-h-screen bg-porcelain text-ink font-body">
-      <DemoChrome slug={isDemoSlug(restaurantParam) ? restaurantParam : restaurant?.slug} />
       <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>

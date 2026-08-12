@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import DemoChrome from "../components/demo/DemoChrome";
 import PrismaPublicMenu from "../components/menu/PrismaPublicMenu";
 import { ApiError, apiRequest } from "../lib/apiClient";
 
@@ -47,7 +46,6 @@ export default function MenuPublic({ tenantId: tenantIdProp } = {}) {
 
   return (
     <main className="min-h-screen bg-porcelain text-ink font-body">
-      <DemoChrome slug={tenantId} />
       <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
@@ -56,9 +54,11 @@ export default function MenuPublic({ tenantId: tenantIdProp } = {}) {
               {data?.menu?.name || data?.tenant?.name || "Menu"}
             </h1>
           </div>
-          <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
-            Omnitaps
-          </Link>
+          {tenantId === "demo" ? null : (
+            <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
+              Omnitaps
+            </Link>
+          )}
         </div>
 
         <PrismaPublicMenu data={data} loading={loading} error={error} />

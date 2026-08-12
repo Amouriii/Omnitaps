@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
+import { isUsableDatabaseUrl } from "../api/_lib/databaseUrl.js";
 
 const prisma = new PrismaClient();
 
@@ -7,6 +8,14 @@ const TENANT_SLUG = process.env.SEED_TENANT_SLUG || "demo";
 const TENANT_NAME = process.env.SEED_TENANT_NAME || "Demo Café";
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || "";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || "";
+const WIFI_PASSWORD = "omnitaps-demo";
+const CAFE_ADDRESS = "14 Harbor Lane, Demo City";
+const CAFE_HOURS = [
+  { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
+  { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
+];
+const CAFE_HOURS_TEXT =
+  `${TENANT_NAME} is open Monday–Friday 7:00 AM–6:00 PM and Saturday–Sunday 8:00 AM–5:00 PM. The kitchen closes 30 minutes before the door. Walk-ins welcome; we do not take table reservations.`;
 
 function buildWifiPayload({ ssid, authType, password, hidden = false }) {
   const escape = (value) => String(value).replace(/([\\;,:"])/g, "\\$1");
@@ -123,16 +132,16 @@ async function seedTenant(ownerUserId) {
       name: `${TENANT_NAME} Menu`,
       slug: "main",
       isPublished: true,
-      primaryColor: "#155eef",
-      secondaryColor: "#b8873b",
+      primaryColor: "#c45c26",
+      secondaryColor: "#c4a35a",
     },
     create: {
       tenantId: tenant.id,
       name: `${TENANT_NAME} Menu`,
       slug: "main",
       isPublished: true,
-      primaryColor: "#155eef",
-      secondaryColor: "#b8873b",
+      primaryColor: "#c45c26",
+      secondaryColor: "#c4a35a",
     },
   });
 
@@ -201,6 +210,15 @@ async function seedTenant(ownerUserId) {
             isAvailable: true,
             sortOrder: 3,
           },
+          {
+            slug: "house-filter",
+            name: "House Filter",
+            description: "Rotating single origin, batch-brewed. Ask the bar for today's origin.",
+            priceCents: 375,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 4,
+          },
         ],
       },
     },
@@ -249,6 +267,21 @@ async function seedTenant(ownerUserId) {
             isAvailable: true,
             sortOrder: 2,
             allergenLinks: { create: [{ menuAllergenId: gluten.id }] },
+          },
+          {
+            slug: "ham-gruyere-croissant",
+            name: "Ham & Gruyère Croissant",
+            description: "Buttery croissant, smoked ham, melted Gruyère, Dijon.",
+            priceCents: 950,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 3,
+            allergenLinks: {
+              create: [
+                { menuAllergenId: gluten.id },
+                { menuAllergenId: dairy.id },
+              ],
+            },
           },
         ],
       },
@@ -333,10 +366,11 @@ async function seedTenant(ownerUserId) {
     },
   });
 
+  const wifiSsid = `${TENANT_SLUG}-guest`;
   const wifiPayload = buildWifiPayload({
-    ssid: `${TENANT_SLUG}-guest`,
+    ssid: wifiSsid,
     authType: "WPA2",
-    password: "omnitaps-demo",
+    password: WIFI_PASSWORD,
     hidden: false,
   });
 
@@ -349,8 +383,8 @@ async function seedTenant(ownerUserId) {
         where: { id: existingWifi.id },
         data: {
           name: "Guest Wi‑Fi",
-          ssid: `${TENANT_SLUG}-guest`,
-          password: "omnitaps-demo",
+          ssid: wifiSsid,
+          password: WIFI_PASSWORD,
           authType: "WPA2",
           hidden: false,
           qrPayload: wifiPayload,
@@ -362,8 +396,8 @@ async function seedTenant(ownerUserId) {
         data: {
           tenantId: tenant.id,
           name: "Guest Wi‑Fi",
-          ssid: `${TENANT_SLUG}-guest`,
-          password: "omnitaps-demo",
+          ssid: wifiSsid,
+          password: WIFI_PASSWORD,
           authType: "WPA2",
           hidden: false,
           qrSlug: "main",
@@ -373,18 +407,21 @@ async function seedTenant(ownerUserId) {
         },
       });
 
+  const wifiSplashHeadline = `${TENANT_NAME} guest Wi‑Fi`;
+  const wifiSplashBody = `This is ${TENANT_NAME} guest Wi‑Fi for visitors on the floor. Scan the QR with your phone camera to join, or copy the password if you are on a laptop. Network name is ${wifiSsid}.`;
+
   await prisma.wifiSplashPage.upsert({
     where: { networkId: wifiNetwork.id },
     update: {
-      headline: `Join ${TENANT_NAME} Wi‑Fi`,
-      body: "This is a demo guest network. Scan the QR on your phone, or copy the password below if you are testing on a laptop. SSID and password are shown on this page.",
+      headline: wifiSplashHeadline,
+      body: wifiSplashBody,
       requiresConsent: false,
       revealCredentialsAfterSubmit: true,
     },
     create: {
       networkId: wifiNetwork.id,
-      headline: `Join ${TENANT_NAME} Wi‑Fi`,
-      body: "This is a demo guest network. Scan the QR on your phone, or copy the password below if you are testing on a laptop. SSID and password are shown on this page.",
+      headline: wifiSplashHeadline,
+      body: wifiSplashBody,
       requiresConsent: false,
       revealCredentialsAfterSubmit: true,
     },
@@ -417,8 +454,8 @@ async function seedTenant(ownerUserId) {
         slug: "home",
         path: "/",
         title: TENANT_NAME,
-        metaTitle: `${TENANT_NAME} | OmniTaps`,
-        metaDescription: "Digital hospitality powered by OmniTaps.",
+        metaTitle: `${TENANT_NAME} · Harbor Lane`,
+        metaDescription: `${TENANT_NAME} at ${CAFE_ADDRESS}. Coffee, all-day plates, and a quiet corner to sit.`,
         isHome: true,
         isPublished: true,
         sortOrder: 0,
@@ -429,6 +466,8 @@ async function seedTenant(ownerUserId) {
     where: { id: homePage.id },
     data: {
       title: TENANT_NAME,
+      metaTitle: `${TENANT_NAME} · Harbor Lane`,
+      metaDescription: `${TENANT_NAME} at ${CAFE_ADDRESS}. Coffee, all-day plates, and a quiet corner to sit.`,
       isHome: true,
       isPublished: true,
     },
@@ -442,10 +481,10 @@ async function seedTenant(ownerUserId) {
         blockType: "HERO",
         sortOrder: 0,
         config: {
-          eyebrow: "Neighborhood café",
+          eyebrow: "Harbor Lane",
           title: TENANT_NAME,
           description:
-            "Coffee, all-day plates, and a quiet corner to sit. Scan a table QR for the menu, guest Wi‑Fi, or a review — or ask the café assistant on this page.",
+            "Espresso, all-day plates, and a quiet corner facing the harbor. Scan a table QR for the menu, guest Wi‑Fi, or a review — or ask the café assistant on this page.",
           badge: "Open today",
           primaryCta: { label: "View menu", href: `/menu/${TENANT_SLUG}` },
           secondaryCta: { label: "Leave a review", href: `/r/${TENANT_SLUG}/review` },
@@ -457,15 +496,16 @@ async function seedTenant(ownerUserId) {
         sortOrder: 1,
         config: {
           title: "On the counter today",
-          description: "A snapshot of the guest menu. Full list lives at the QR menu.",
+          description: "A snapshot of the guest menu. The full list lives on the table QR.",
           categories: [
             {
               title: "Drinks",
               items: [
-                { name: "House Latte", price: "$4.50", description: "Espresso, steamed milk", badge: "Popular" },
+                { name: "House Latte", price: "$4.50", description: "Double espresso, steamed milk", badge: "Popular" },
                 { name: "Flat White", price: "$4.75", description: "Ristretto and microfoam" },
-                { name: "Iced Oat Cortado", price: "$5.25" },
+                { name: "Iced Oat Cortado", price: "$5.25", description: "Espresso and oat milk over ice" },
                 { name: "Citrus Iced Tea", price: "$3.50" },
+                { name: "House Filter", price: "$3.75", description: "Rotating single origin" },
               ],
             },
             {
@@ -474,6 +514,7 @@ async function seedTenant(ownerUserId) {
                 { name: "Avocado Toast", price: "$12.00", badge: "Popular" },
                 { name: "Seasonal Shakshuka", price: "$14.50", badge: "Sold out" },
                 { name: "Citrus Grain Bowl", price: "$13.50" },
+                { name: "Ham & Gruyère Croissant", price: "$9.50" },
               ],
             },
             {
@@ -494,11 +535,8 @@ async function seedTenant(ownerUserId) {
         config: {
           eyebrow: "Visit",
           title: "Hours",
-          description: "Kitchen closes 30 minutes before the door.",
-          days: [
-            { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
-            { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
-          ],
+          description: "Kitchen closes 30 minutes before the door. Walk-ins welcome.",
+          days: CAFE_HOURS,
         },
       },
       {
@@ -507,8 +545,8 @@ async function seedTenant(ownerUserId) {
         sortOrder: 3,
         config: {
           title: "Find us",
-          description: "A short walk from the harbor tram stop.",
-          address: "14 Harbor Lane, Demo City",
+          description: "A short walk from the harbor tram stop. Street parking on Harbor Lane after 10 AM.",
+          address: CAFE_ADDRESS,
           embedUrl:
             "https://www.openstreetmap.org/export/embed.html?bbox=-0.142%2C51.501%2C-0.124%2C51.510&layer=mapnik&marker=51.5055%2C-0.133",
           directionsUrl: "https://www.openstreetmap.org/?mlat=51.5055&mlon=-0.133#map=16/51.5055/-0.133",
@@ -516,8 +554,35 @@ async function seedTenant(ownerUserId) {
       },
       {
         pageId: homePage.id,
-        blockType: "CTA",
+        blockType: "GALLERY",
         sortOrder: 4,
+        config: {
+          title: "Inside the café",
+          description: "Counter, window seats, and the pastry case.",
+          columns: 3,
+          images: [
+            {
+              src: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+              alt: "Espresso being poured",
+              caption: "Bar",
+            },
+            {
+              src: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=80",
+              alt: "Café interior with tables",
+              caption: "Floor",
+            },
+            {
+              src: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80",
+              alt: "Coffee shop storefront",
+              caption: "Harbor Lane",
+            },
+          ],
+        },
+      },
+      {
+        pageId: homePage.id,
+        blockType: "CTA",
+        sortOrder: 5,
         config: {
           eyebrow: "After your visit",
           title: "Tell us how we did — or get online",
@@ -555,12 +620,9 @@ async function seedTenant(ownerUserId) {
         title: "Opening hours",
         isActive: true,
         content: {
-          keywords: ["hours", "open", "close", "opening", "when", "schedule"],
-          days: [
-            { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
-            { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
-          ],
-          text: "Demo Café is open Monday–Friday 7:00 AM–6:00 PM and Saturday–Sunday 8:00 AM–5:00 PM. The kitchen closes 30 minutes before the door.",
+          keywords: ["hours", "open", "close", "opening", "when", "schedule", "kitchen"],
+          days: CAFE_HOURS,
+          text: CAFE_HOURS_TEXT,
         },
       },
       {
@@ -569,14 +631,29 @@ async function seedTenant(ownerUserId) {
         title: "Menu highlights",
         isActive: true,
         content: {
-          keywords: ["menu", "latte", "toast", "eat", "drink", "coffee", "dessert", "shakshuka", "affogato"],
+          keywords: [
+            "menu",
+            "latte",
+            "toast",
+            "eat",
+            "drink",
+            "coffee",
+            "dessert",
+            "shakshuka",
+            "affogato",
+            "oat",
+            "croissant",
+            "filter",
+          ],
           items: [
             { name: "House Latte", price: "$4.50", description: "Popular" },
+            { name: "House Filter", price: "$3.75" },
             { name: "Avocado Toast", price: "$12.00" },
             { name: "Seasonal Shakshuka", price: "$14.50", description: "Sold out today" },
+            { name: "Ham & Gruyère Croissant", price: "$9.50" },
             { name: "Olive Oil Cake", price: "$6.50" },
           ],
-          text: "Drinks include House Latte, Flat White, Iced Oat Cortado, and Citrus Iced Tea. Plates: Avocado Toast, Seasonal Shakshuka (sold out today), and Citrus Grain Bowl. Sweets: Olive Oil Cake, Dark Chocolate Cookie, and Affogato. See the full menu at /menu/demo.",
+          text: "Drinks: House Latte, Flat White, Iced Oat Cortado, Citrus Iced Tea, and House Filter. Oat milk is available on espresso drinks. Plates: Avocado Toast, Seasonal Shakshuka (sold out today), Citrus Grain Bowl, and Ham & Gruyère Croissant. Sweets: Olive Oil Cake, Dark Chocolate Cookie, and Affogato. Full menu at /menu/demo.",
         },
       },
       {
@@ -586,7 +663,7 @@ async function seedTenant(ownerUserId) {
         isActive: true,
         content: {
           keywords: ["wifi", "wi-fi", "password", "ssid", "network", "internet"],
-          text: "This is a demo guest network. SSID is demo-guest and the password is omnitaps-demo. You can also open /r/demo/wifi to copy the password or scan the QR code.",
+          text: `This is ${TENANT_NAME} guest Wi‑Fi. SSID is ${wifiSsid} and the password is ${WIFI_PASSWORD}. Open /r/${TENANT_SLUG}/wifi to copy the password or scan the QR code.`,
         },
       },
       {
@@ -597,7 +674,18 @@ async function seedTenant(ownerUserId) {
         content: {
           keywords: ["review", "google", "feedback", "rating", "stars"],
           questions: ["how do i leave a review", "leave a review", "google review"],
-          text: "Leave a review at /r/demo/review. Ratings of 4 or 5 stars continue to Google. Ratings of 1 to 3 stars open a private form for the café team.",
+          text: `Leave a review at /r/${TENANT_SLUG}/review. Ratings of 4 or 5 stars continue to Google. Ratings of 1 to 3 stars open a private form for the café team.`,
+        },
+      },
+      {
+        botId: bot.id,
+        sourceType: "FAQ",
+        title: "Location and visiting",
+        isActive: true,
+        content: {
+          keywords: ["address", "where", "parking", "reservation", "book", "location", "harbor"],
+          questions: ["where are you", "do you take reservations", "is there parking"],
+          text: `${TENANT_NAME} is at ${CAFE_ADDRESS}, a short walk from the harbor tram. Street parking on Harbor Lane after 10 AM. We are walk-in only — no table reservations.`,
         },
       },
     ],
@@ -607,8 +695,11 @@ async function seedTenant(ownerUserId) {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL?.trim()) {
-    throw new Error("DATABASE_URL is required. Copy .env.example → .env and fill it in.");
+  const databaseUrl = process.env.POSTGRES_PRISMA_URL?.trim() || process.env.DATABASE_URL?.trim() || "";
+  if (!isUsableDatabaseUrl(databaseUrl)) {
+    throw new Error(
+      "DATABASE_URL still has a placeholder password ([YOUR-PASSWORD]) or is empty. Paste the real Postgres URI from Supabase, or run: npm run db:seed-http",
+    );
   }
 
   const admin = await ensureAdminUser();

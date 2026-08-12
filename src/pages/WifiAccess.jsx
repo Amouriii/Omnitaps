@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import DemoChrome from "../components/demo/DemoChrome";
 import { QrCodeSvg } from "../lib/qr";
 import { ApiError, apiRequest } from "../lib/apiClient";
 
@@ -70,13 +69,14 @@ export default function WifiAccess() {
 
   return (
     <main className="min-h-screen bg-porcelain text-ink font-body">
-      <DemoChrome slug={tenantId} />
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-5 py-10 sm:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Guest Wi‑Fi</p>
-          <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
-            Omnitaps
-          </Link>
+          {tenantId === "demo" ? null : (
+            <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
+              Omnitaps
+            </Link>
+          )}
         </div>
 
         {loading ? (

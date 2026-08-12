@@ -1,0 +1,117 @@
+/* Demo Café guest brand — scoped. Does not change Omnitaps marketing/operator tokens. */
+.demo-cafe-theme {
+  --color-porcelain: #f3eadc;
+  --color-surface: #faf4ea;
+  --color-ink: #2c1b12;
+  --color-ink-muted: #6d5344;
+  --color-ink-faint: #9a8170;
+
+  --color-tap: #c45c26;
+  --color-tap-dark: #9a3f16;
+  --color-tap-soft: #f3ddd0;
+
+  --color-brass: #c4a35a;
+  --color-brass-dark: #8c6f2e;
+  --color-brass-soft: #f1e6c8;
+
+  --color-hairline: #e4d4c0;
+  --color-hairline-strong: #d2bea4;
+
+  --font-display: "Fraunces", "Instrument Sans", ui-serif, Georgia, serif;
+  --font-body: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  background-color: var(--color-porcelain);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  min-height: 100%;
+}
+
+.demo-cafe-theme ::selection {
+  background: var(--color-tap);
+  color: #fff7ee;
+}
+
+.demo-cafe-theme :focus-visible {
+  outline-color: var(--color-tap);
+}
+
+.demo-cafe-theme .cafe-glow {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-tap) 18%, transparent), transparent 42%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-brass) 16%, transparent), transparent 40%);
+}
+
+.demo-cafe-chat {
+  --color-porcelain: #f3eadc;
+  --color-surface: #faf4ea;
+  --color-ink: #2c1b12;
+  --color-ink-muted: #6d5344;
+  --color-ink-faint: #9a8170;
+  --color-tap: #c45c26;
+  --color-tap-dark: #9a3f16;
+  --color-tap-soft: #f3ddd0;
+  --color-brass: #c4a35a;
+  --color-hairline: #e4d4c0;
+  --color-hairline-strong: #d2bea4;
+  font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.demo-chrome-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 100vh;
+  background: #f3eadc;
+  pointer-events: none;
+}
+
+.cafe-hero-panel {
+  background: #2c1b12;
+  color: #faf4ea;
+}
+
+.cafe-hero-art {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(196, 92, 38, 0.35), transparent 42%),
+    radial-gradient(circle at 80% 80%, rgba(196, 163, 90, 0.28), transparent 45%),
+    linear-gradient(160deg, #3a2418 0%, #1a100c 100%);
+}
+
+.cafe-hero-art__cup {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 7.5rem;
+  height: 5.5rem;
+  border: 3px solid rgba(250, 244, 234, 0.88);
+  border-radius: 0 0 2.4rem 2.4rem;
+  transform: translate(-50%, -40%);
+  box-shadow: inset 0 -18px 0 rgba(196, 92, 38, 0.35);
+}
+
+.cafe-hero-art__cup::after {
+  content: "";
+  position: absolute;
+  right: -1.6rem;
+  top: 0.7rem;
+  width: 1.8rem;
+  height: 2.4rem;
+  border: 3px solid rgba(250, 244, 234, 0.88);
+  border-left: 0;
+  border-radius: 0 1.2rem 1.2rem 0;
+}
+
+.cafe-hero-art__steam {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: 2px;
+  height: 2.8rem;
+  background: rgba(250, 244, 234, 0.45);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  box-shadow: -12px 8px 0 0 rgba(250, 244, 234, 0.28), 12px 12px 0 0 rgba(250, 244, 234, 0.22);
+}

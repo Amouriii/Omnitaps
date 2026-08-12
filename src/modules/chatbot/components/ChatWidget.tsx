@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { createPortal } from "react-dom";
 import { MessageCircle, Send, X } from "lucide-react";
 import { ApiError } from "../../../lib/apiClient";
 import { sendChatMessage } from "../lib/sendChatMessage";
@@ -7,6 +8,7 @@ import type { ChatTurn, ChatWidgetProps } from "../types";
 
 export default function ChatWidget({ tenantId, botName, className = "" }: ChatWidgetProps) {
   const displayName = botName || (tenantId === "demo" ? "Demo Café" : "Ask Omnitaps");
+  const cafeTokens = tenantId === "demo" ? "demo-cafe-chat" : "";
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -69,10 +71,12 @@ export default function ChatWidget({ tenantId, botName, className = "" }: ChatWi
     }
   }
 
-  return (
-    <div className={`fixed bottom-5 right-5 z-50 ${className}`}>
+  const panel = (
+    <div
+      className={`fixed right-5 bottom-5 z-[80] ${cafeTokens} ${className}`}
+    >
       {open ? (
-        <div className="flex h-[28rem] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-hairline bg-surface shadow-[0_28px_60px_-30px_rgba(18,21,26,0.45)]">
+        <div className="flex h-[min(28rem,calc(100vh-6rem))] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-hairline bg-surface shadow-[0_28px_60px_-30px_rgba(18,21,26,0.45)]">
           <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-tap">Support</p>
@@ -138,7 +142,7 @@ export default function ChatWidget({ tenantId, botName, className = "" }: ChatWi
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[14px] font-semibold text-porcelain shadow-[0_18px_40px_-22px_rgba(18,21,26,0.55)]"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#2c1b12] px-4 py-3 text-[14px] font-semibold text-[#faf4ea] shadow-[0_18px_40px_-22px_rgba(18,21,26,0.55)]"
         >
           <MessageCircle className="h-4 w-4" />
           Chat
@@ -146,4 +150,10 @@ export default function ChatWidget({ tenantId, botName, className = "" }: ChatWi
       )}
     </div>
   );
+
+  if (typeof document === "undefined") {
+    return panel;
+  }
+
+  return createPortal(panel, document.body);
 }

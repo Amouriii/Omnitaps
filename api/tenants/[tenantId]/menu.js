@@ -4,6 +4,7 @@ import {
   methodNotAllowed,
   sendJson,
 } from "../../_lib/security.js";
+import { getDemoCafeMenuPayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
 
 function formatPrice(priceCents, currency = "USD") {
@@ -36,6 +37,10 @@ export default async function handler(req, res) {
   }
 
   if (!isDatabaseConfigured()) {
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeMenuPayload());
+      return;
+    }
     databaseUnavailable(res);
     return;
   }
@@ -45,6 +50,10 @@ export default async function handler(req, res) {
   try {
     const tenant = await resolveTenantByParam(tenantId);
     if (!tenant || tenant.status === "SUSPENDED") {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeMenuPayload());
+        return;
+      }
       sendJson(res, 404, { error: "Tenant not found.", code: "TENANT_NOT_FOUND" });
       return;
     }
@@ -92,6 +101,10 @@ export default async function handler(req, res) {
     });
 
     if (!menu || !menu.isPublished) {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeMenuPayload());
+        return;
+      }
       sendJson(res, 404, { error: "Published menu not found.", code: "MENU_NOT_FOUND" });
       return;
     }
@@ -133,6 +146,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("[tenant-menu]", error);
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeMenuPayload());
+      return;
+    }
     sendJson(res, 500, { error: "Unable to load menu." });
   }
 }

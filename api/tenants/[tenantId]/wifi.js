@@ -4,6 +4,7 @@ import {
   methodNotAllowed,
   sendJson,
 } from "../../_lib/security.js";
+import { getDemoCafeWifiPayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
 import { buildWifiPayload } from "../../_lib/wifiPayload.js";
 
@@ -28,6 +29,10 @@ export default async function handler(req, res) {
   }
 
   if (!isDatabaseConfigured()) {
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeWifiPayload());
+      return;
+    }
     databaseUnavailable(res);
     return;
   }
@@ -37,6 +42,10 @@ export default async function handler(req, res) {
   try {
     const tenant = await resolveTenantByParam(tenantId);
     if (!tenant || tenant.status === "SUSPENDED") {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeWifiPayload());
+        return;
+      }
       sendJson(res, 404, { error: "Tenant not found.", code: "TENANT_NOT_FOUND" });
       return;
     }
@@ -73,6 +82,10 @@ export default async function handler(req, res) {
     });
 
     if (!network) {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeWifiPayload());
+        return;
+      }
       sendJson(res, 404, { error: "Active WiFi network not found.", code: "WIFI_NOT_FOUND" });
       return;
     }
@@ -108,6 +121,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("[tenant-wifi]", error);
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeWifiPayload());
+      return;
+    }
     sendJson(res, 500, { error: "Unable to load WiFi access details." });
   }
 }

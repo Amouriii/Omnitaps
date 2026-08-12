@@ -10,6 +10,7 @@ import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../_lib/t
 import { z } from "zod";
 import { parseWithSchema } from "../_lib/validation.js";
 import { FALLBACK_REPLY, loadActiveKnowledgeSources, matchChatbotReply } from "../_lib/chatbot/index.js";
+import { getDemoCafeKnowledgeSources, isDemoTenantParam } from "../_lib/demoCafe.js";
 
 const chatbotMessageSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),
@@ -50,6 +51,14 @@ export default async function handler(req, res) {
   }
 
   if (!isDatabaseConfigured()) {
+    if (isDemoTenantParam(parsed.data.tenantId)) {
+      sendJson(res, 200, {
+        conversationId: parsed.data.conversationId || "demo-local",
+        reply: matchChatbotReply(message, getDemoCafeKnowledgeSources(), FALLBACK_REPLY),
+        botName: "Demo Café",
+      });
+      return;
+    }
     databaseUnavailable(res);
     return;
   }
@@ -59,6 +68,14 @@ export default async function handler(req, res) {
   try {
     const tenant = await resolveTenantByParam(parsed.data.tenantId);
     if (!tenant || tenant.status === "SUSPENDED") {
+      if (isDemoTenantParam(parsed.data.tenantId)) {
+        sendJson(res, 200, {
+          conversationId: parsed.data.conversationId || "demo-local",
+          reply: matchChatbotReply(message, getDemoCafeKnowledgeSources(), FALLBACK_REPLY),
+          botName: "Demo Café",
+        });
+        return;
+      }
       sendJson(res, 404, { error: "Tenant not found.", code: "TENANT_NOT_FOUND" });
       return;
     }
@@ -73,6 +90,14 @@ export default async function handler(req, res) {
     });
 
     if (!bot || !bot.isActive) {
+      if (isDemoTenantParam(parsed.data.tenantId)) {
+        sendJson(res, 200, {
+          conversationId: parsed.data.conversationId || "demo-local",
+          reply: matchChatbotReply(message, getDemoCafeKnowledgeSources(), FALLBACK_REPLY),
+          botName: "Demo Café",
+        });
+        return;
+      }
       sendJson(res, 404, {
         error: "Chatbot is not configured for this tenant.",
         code: "CHATBOT_NOT_FOUND",
@@ -130,6 +155,14 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("[chatbot-message]", error);
+    if (isDemoTenantParam(parsed.data.tenantId)) {
+      sendJson(res, 200, {
+        conversationId: parsed.data.conversationId || "demo-local",
+        reply: matchChatbotReply(message, getDemoCafeKnowledgeSources(), FALLBACK_REPLY),
+        botName: "Demo Café",
+      });
+      return;
+    }
     sendJson(res, 500, { error: "Unable to process chat message." });
   }
 }

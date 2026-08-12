@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Clock, ExternalLink, Image as ImageIcon, MapPin, UtensilsCrossed } from "lucide-react";
+import { Clock, ExternalLink, MapPin, UtensilsCrossed } from "lucide-react";
 
 type CtaConfig = {
     label: string;
@@ -119,15 +119,25 @@ function SectionShell({
     description,
     children,
     className,
+    inverted = false,
 }: {
     eyebrow?: string;
     title?: string;
     description?: string;
     children: ReactNode;
     className?: string;
+    inverted?: boolean;
 }) {
     return (
-        <section className={cx("rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] md:p-8", className)}>
+        <section
+            className={cx(
+                "rounded-3xl border p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] md:p-8",
+                inverted
+                    ? "cafe-hero-panel overflow-hidden border-transparent"
+                    : "border-hairline bg-surface",
+                className,
+            )}
+        >
             {(eyebrow || title || description) && (
                 <div className="mb-6 max-w-3xl">
                     {eyebrow ? <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-tap">{eyebrow}</p> : null}
@@ -142,18 +152,18 @@ function SectionShell({
 
 function HeroBlockView({ block }: { block: HeroBlock }) {
     return (
-        <SectionShell className="overflow-hidden bg-ink text-porcelain">
-            <div className="grid gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-center">
-                <div>
+        <SectionShell inverted>
+            <div className="grid min-w-0 gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-center">
+                <div className="min-w-0">
                     {block.eyebrow ? <p className="font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-brass">{block.eyebrow}</p> : null}
-                    <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-porcelain md:text-5xl">{block.title}</h1>
-                    {block.description ? <p className="mt-4 max-w-2xl text-base leading-7 text-porcelain/70 md:text-lg">{block.description}</p> : null}
+                    <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-[#faf4ea] md:text-5xl">{block.title}</h1>
+                    {block.description ? <p className="mt-4 max-w-2xl text-base leading-7 text-[#faf4ea]/80 md:text-lg">{block.description}</p> : null}
 
                     <div className="mt-6 flex flex-wrap gap-3">
                         {block.primaryCta ? (
                             <a
                                 href={block.primaryCta.href}
-                                className="inline-flex items-center justify-center rounded-xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-porcelain"
+                                className="inline-flex items-center justify-center rounded-xl bg-[#faf4ea] px-5 py-3 text-sm font-semibold text-[#2c1b12] transition hover:bg-white"
                             >
                                 {block.primaryCta.label}
                             </a>
@@ -161,7 +171,7 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
                         {block.secondaryCta ? (
                             <a
                                 href={block.secondaryCta.href}
-                                className="inline-flex items-center justify-center rounded-xl border border-porcelain/20 px-5 py-3 text-sm font-semibold text-porcelain transition hover:bg-porcelain/10"
+                                className="inline-flex items-center justify-center rounded-xl border border-[#faf4ea]/35 px-5 py-3 text-sm font-semibold text-[#faf4ea] transition hover:bg-[#faf4ea]/10"
                             >
                                 {block.secondaryCta.label}
                             </a>
@@ -169,9 +179,9 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
                     </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-3xl border border-porcelain/10 bg-porcelain/5 p-4">
+                <div className="relative min-w-0 overflow-hidden rounded-3xl border border-[#faf4ea]/10 bg-[#faf4ea]/5 p-4">
                     {block.badge ? (
-                        <div className="absolute left-4 top-4 rounded-full bg-tap px-3 py-1 text-xs font-medium text-porcelain">
+                        <div className="absolute left-4 top-4 rounded-full bg-[#c45c26] px-3 py-1 text-xs font-medium text-[#faf4ea]">
                             {block.badge}
                         </div>
                     ) : null}
@@ -182,11 +192,9 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
                             className="h-72 w-full rounded-2xl object-cover"
                         />
                     ) : (
-                        <div className="flex h-72 items-center justify-center rounded-2xl border border-dashed border-porcelain/15 bg-ink/40 text-porcelain/70">
-                            <div className="text-center">
-                                <ImageIcon className="mx-auto h-9 w-9" />
-                                <p className="mt-3 text-sm">Café interior</p>
-                            </div>
+                        <div className="cafe-hero-art relative h-72 overflow-hidden rounded-2xl" aria-hidden="true">
+                            <span className="cafe-hero-art__cup" />
+                            <span className="cafe-hero-art__steam" />
                         </div>
                     )}
                 </div>

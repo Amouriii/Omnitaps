@@ -48,7 +48,7 @@ export default function PrismaPublicMenu({ data, loading, error }) {
       {showChips ? (
         <nav
           aria-label="Menu categories"
-          className="sticky top-[3.25rem] z-20 -mx-5 flex gap-2 overflow-x-auto border-b border-hairline bg-porcelain/95 px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8"
+          className="flex gap-2 overflow-x-auto px-0 py-1"
         >
           {categories.map((category) => (
             <a
@@ -66,7 +66,7 @@ export default function PrismaPublicMenu({ data, loading, error }) {
         <section
           key={category.id}
           id={`menu-cat-${category.id}`}
-          className="scroll-mt-28 rounded-3xl border border-hairline bg-surface p-6 sm:p-8"
+          className="scroll-mt-[calc(var(--demo-chrome-h,3.5rem)+4.5rem)] rounded-3xl border border-hairline bg-surface p-6 sm:p-8"
         >
           <h2 className="font-display text-[22px] font-semibold">{category.title}</h2>
           {category.description ? (

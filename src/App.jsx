@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
+import CafeThemeGate from "./components/demo/CafeThemeGate";
 import { AuthProvider } from "./lib/auth";
 import "./App.css";
 
@@ -39,6 +40,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<RouteFallback />}>
+          <CafeThemeGate>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/items/:id" element={<ItemDetail />} />
@@ -93,6 +95,7 @@ export default function App() {
             <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </CafeThemeGate>
         </Suspense>
       </BrowserRouter>
     </AuthProvider>

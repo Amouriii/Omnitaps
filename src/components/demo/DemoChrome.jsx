@@ -13,15 +13,15 @@ export function isDemoSlug(value) {
   return String(value || "").trim().toLowerCase() === DEMO_SLUG;
 }
 
-export default function DemoChrome({ slug }) {
+export default function DemoChrome() {
   const location = useLocation();
-  if (!isDemoSlug(slug)) return null;
 
   return (
-    <div className="sticky top-0 z-30 border-b border-hairline bg-porcelain/95 backdrop-blur">
+    <header className="demo-chrome-bar sticky top-0 z-[70] border-b border-hairline bg-[#f3eadc] pt-[env(safe-area-inset-top,0px)]">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <p className="text-[13px] text-ink-muted">
-          You’re viewing <span className="font-semibold text-ink">Demo Café</span>
+          You’re at <span className="font-display font-semibold text-ink">Demo Café</span>
+          <span className="text-ink-faint"> · Harbor Lane</span>
         </p>
         <nav aria-label="Demo Café experiences" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
           {DEMO_LINKS.map((link) => {
@@ -48,6 +48,6 @@ export default function DemoChrome({ slug }) {
           </Link>
         </nav>
       </div>
-    </div>
+    </header>
   );
 }

@@ -5,7 +5,7 @@
  * Prerequisite: run supabase-init.sql in the Supabase SQL Editor first.
  */
 import { createClient } from "@supabase/supabase-js";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -58,6 +58,13 @@ const tenantSlug = process.env.SEED_TENANT_SLUG || "demo";
 const tenantName = process.env.SEED_TENANT_NAME || "Demo Café";
 const adminEmail = (process.env.SEED_ADMIN_EMAIL || "").trim().toLowerCase();
 const adminPassword = process.env.SEED_ADMIN_PASSWORD || "";
+const WIFI_PASSWORD = "omnitaps-demo";
+const CAFE_ADDRESS = "14 Harbor Lane, Demo City";
+const CAFE_HOURS = [
+  { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
+  { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
+];
+const CAFE_HOURS_TEXT = `${tenantName} is open Monday–Friday 7:00 AM–6:00 PM and Saturday–Sunday 8:00 AM–5:00 PM. The kitchen closes 30 minutes before the door. Walk-ins welcome; we do not take table reservations.`;
 
 if (!url || !serviceKey) {
   console.error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
@@ -227,7 +234,6 @@ async function upsertTenant(ownerUserId) {
 }
 
 async function seedModules(tenant) {
-  // Menu
   let menus = await rest("GET", "Menu", { query: `?tenantId=eq.${tenant.id}&select=*` });
   let menu = menus?.[0];
   if (!menu) {
@@ -239,80 +245,209 @@ async function seedModules(tenant) {
           name: `${tenantName} Menu`,
           slug: "main",
           isPublished: true,
-          primaryColor: "#155eef",
-          secondaryColor: "#b8873b",
+          primaryColor: "#c45c26",
+          secondaryColor: "#c4a35a",
         }),
       })
     )[0];
   } else {
     await rest("PATCH", "Menu", {
       query: `?id=eq.${menu.id}`,
-      body: { isPublished: true, name: `${tenantName} Menu`, updatedAt: nowIso() },
+      body: {
+        isPublished: true,
+        name: `${tenantName} Menu`,
+        primaryColor: "#c45c26",
+        secondaryColor: "#c4a35a",
+        updatedAt: nowIso(),
+      },
     });
   }
 
-  // Reset simple categories/items for demo
   const categories = await rest("GET", "MenuCategory", {
     query: `?menuId=eq.${menu.id}&select=id`,
   });
   for (const category of categories || []) {
+    const items = await rest("GET", "MenuItem", {
+      query: `?categoryId=eq.${category.id}&select=id`,
+    });
+    for (const item of items || []) {
+      await rest("DELETE", "MenuItemAllergen", { query: `?menuItemId=eq.${item.id}` });
+    }
     await rest("DELETE", "MenuItem", { query: `?categoryId=eq.${category.id}` });
   }
   await rest("DELETE", "MenuCategory", { query: `?menuId=eq.${menu.id}` });
+  await rest("DELETE", "MenuAllergen", { query: `?menuId=eq.${menu.id}` });
 
-  const drinks = (
-    await rest("POST", "MenuCategory", {
-      body: withTimestamps({
-        id: cuidLike(),
-        menuId: menu.id,
-        slug: "drinks",
-        name: "Drinks",
-        description: "Coffee and cold drinks",
-        sortOrder: 0,
-        isVisible: true,
-      }),
-    })
-  )[0];
-
-  await rest("POST", "MenuItem", {
+  const allergenRows = await rest("POST", "MenuAllergen", {
     body: [
-      withTimestamps({
-        id: cuidLike(),
-        categoryId: drinks.id,
-        slug: "house-latte",
-        name: "House Latte",
-        description: "Espresso, steamed milk",
-        priceCents: 450,
-        currency: "USD",
-        isAvailable: true,
-        sortOrder: 0,
-      }),
-      withTimestamps({
-        id: cuidLike(),
-        categoryId: drinks.id,
-        slug: "iced-tea",
-        name: "Iced Tea",
-        description: "Freshly brewed",
-        priceCents: 350,
-        currency: "USD",
-        isAvailable: true,
-        sortOrder: 1,
-      }),
+      withTimestamps({ id: cuidLike(), menuId: menu.id, slug: "dairy", name: "Dairy" }),
+      withTimestamps({ id: cuidLike(), menuId: menu.id, slug: "gluten", name: "Gluten" }),
+      withTimestamps({ id: cuidLike(), menuId: menu.id, slug: "nuts", name: "Tree nuts" }),
+      withTimestamps({ id: cuidLike(), menuId: menu.id, slug: "egg", name: "Egg" }),
     ],
   });
+  const allergenBySlug = Object.fromEntries((allergenRows || []).map((row) => [row.slug, row.id]));
 
-  // Review profile
+  async function createCategory(data, items) {
+    const category = (
+      await rest("POST", "MenuCategory", {
+        body: withTimestamps({
+          id: cuidLike(),
+          menuId: menu.id,
+          isVisible: true,
+          ...data,
+        }),
+      })
+    )[0];
+    const createdItems = await rest("POST", "MenuItem", {
+      body: items.map((item, index) =>
+        withTimestamps({
+          id: cuidLike(),
+          categoryId: category.id,
+          currency: "USD",
+          isAvailable: item.isAvailable !== false,
+          sortOrder: index,
+          slug: item.slug,
+          name: item.name,
+          description: item.description,
+          priceCents: item.priceCents,
+          outOfStockNote: item.outOfStockNote ?? null,
+        }),
+      ),
+    });
+    const links = [];
+    const ts = nowIso();
+    for (const [index, item] of items.entries()) {
+      for (const slug of item.allergens || []) {
+        links.push({
+          menuItemId: createdItems[index].id,
+          menuAllergenId: allergenBySlug[slug],
+          createdAt: ts,
+          updatedAt: ts,
+        });
+      }
+    }
+    if (links.length) {
+      await rest("POST", "MenuItemAllergen", { body: links });
+    }
+  }
+
+  await createCategory(
+    { slug: "drinks", name: "Drinks", description: "Espresso, tea, and cold pours", sortOrder: 0 },
+    [
+      {
+        slug: "house-latte",
+        name: "House Latte",
+        description: "Double espresso with steamed milk and a thin layer of foam.",
+        priceCents: 450,
+        outOfStockNote: "Popular",
+        allergens: ["dairy"],
+      },
+      {
+        slug: "flat-white",
+        name: "Flat White",
+        description: "Ristretto shots stretched with velvety microfoam.",
+        priceCents: 475,
+        allergens: ["dairy"],
+      },
+      {
+        slug: "iced-oat-cortado",
+        name: "Iced Oat Cortado",
+        description: "Equal parts espresso and oat milk over ice.",
+        priceCents: 525,
+      },
+      {
+        slug: "iced-tea",
+        name: "Citrus Iced Tea",
+        description: "House-brewed black tea with lemon peel and mint.",
+        priceCents: 350,
+      },
+      {
+        slug: "house-filter",
+        name: "House Filter",
+        description: "Rotating single origin, batch-brewed. Ask the bar for today's origin.",
+        priceCents: 375,
+      },
+    ],
+  );
+
+  await createCategory(
+    { slug: "plates", name: "Plates", description: "All-day café plates", sortOrder: 1 },
+    [
+      {
+        slug: "avocado-toast",
+        name: "Avocado Toast",
+        description: "Sourdough, smashed avocado, chili flake, lemon, and olive oil.",
+        priceCents: 1200,
+        outOfStockNote: "Popular",
+        allergens: ["gluten"],
+      },
+      {
+        slug: "seasonal-shakshuka",
+        name: "Seasonal Shakshuka",
+        description: "Tomato-pepper stew, baked eggs, and grilled focaccia.",
+        priceCents: 1450,
+        isAvailable: false,
+        outOfStockNote: "Sold out",
+        allergens: ["egg", "gluten"],
+      },
+      {
+        slug: "grain-bowl",
+        name: "Citrus Grain Bowl",
+        description: "Farro, roasted squash, herbs, and tahini lemon dressing.",
+        priceCents: 1350,
+        allergens: ["gluten"],
+      },
+      {
+        slug: "ham-gruyere-croissant",
+        name: "Ham & Gruyère Croissant",
+        description: "Buttery croissant, smoked ham, melted Gruyère, Dijon.",
+        priceCents: 950,
+        allergens: ["gluten", "dairy"],
+      },
+    ],
+  );
+
+  await createCategory(
+    { slug: "sweets", name: "Sweets", description: "Bakes from the pastry counter", sortOrder: 2 },
+    [
+      {
+        slug: "olive-oil-cake",
+        name: "Olive Oil Cake",
+        description: "Citrus loaf with a crackly sugar top.",
+        priceCents: 650,
+        allergens: ["gluten", "egg"],
+      },
+      {
+        slug: "dark-chocolate-cookie",
+        name: "Dark Chocolate Cookie",
+        description: "Sea salt, 70% chocolate, toasted hazelnut.",
+        priceCents: 425,
+        allergens: ["gluten", "nuts", "egg"],
+      },
+      {
+        slug: "affogato",
+        name: "Affogato",
+        description: "Vanilla gelato drowned in a hot espresso shot.",
+        priceCents: 600,
+        allergens: ["dairy"],
+      },
+    ],
+  );
+
   const profiles = await rest("GET", "ReviewProfile", {
     query: `?tenantId=eq.${tenant.id}&select=*`,
   });
+  const googleReviewUrl =
+    "https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4";
   if (!profiles?.length) {
     await rest("POST", "ReviewProfile", {
       body: withTimestamps({
         id: cuidLike(),
         tenantId: tenant.id,
         publicSlug: tenantSlug,
-        googlePlaceId: `demo-${tenantSlug}-${createHash("sha1").update(tenant.id).digest("hex").slice(0, 12)}`,
-        googleReviewUrl: `https://www.google.com/search?q=${encodeURIComponent(`${tenantName} reviews`)}`,
+        googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+        googleReviewUrl,
         thresholdRating: 4,
         isActive: true,
       }),
@@ -320,49 +455,82 @@ async function seedModules(tenant) {
   } else {
     await rest("PATCH", "ReviewProfile", {
       query: `?id=eq.${profiles[0].id}`,
-      body: { isActive: true, publicSlug: tenantSlug, updatedAt: nowIso() },
-    });
-  }
-
-  // Wifi
-  const wifiRows = await rest("GET", "WifiNetwork", {
-    query: `?tenantId=eq.${tenant.id}&qrSlug=eq.main&select=*`,
-  });
-  const payload = wifiPayload({
-    ssid: `${tenantSlug}-guest`,
-    authType: "WPA2",
-    password: "omnitaps-demo",
-  });
-  if (!wifiRows?.length) {
-    await rest("POST", "WifiNetwork", {
-      body: withTimestamps({
-        id: cuidLike(),
-        tenantId: tenant.id,
-        name: "Guest Wi‑Fi",
-        ssid: `${tenantSlug}-guest`,
-        password: "omnitaps-demo",
-        authType: "WPA2",
-        hidden: false,
-        qrSlug: "main",
-        qrPayload: payload,
-        isActive: true,
-        leadCaptureEnabled: false,
-      }),
-    });
-  } else {
-    await rest("PATCH", "WifiNetwork", {
-      query: `?id=eq.${wifiRows[0].id}`,
       body: {
-        ssid: `${tenantSlug}-guest`,
-        password: "omnitaps-demo",
-        qrPayload: payload,
         isActive: true,
+        publicSlug: tenantSlug,
+        googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+        googleReviewUrl,
         updatedAt: nowIso(),
       },
     });
   }
 
-  // Website + page + blocks
+  const wifiSsid = `${tenantSlug}-guest`;
+  const payload = wifiPayload({
+    ssid: wifiSsid,
+    authType: "WPA2",
+    password: WIFI_PASSWORD,
+  });
+  const wifiRows = await rest("GET", "WifiNetwork", {
+    query: `?tenantId=eq.${tenant.id}&qrSlug=eq.main&select=*`,
+  });
+  let wifi = wifiRows?.[0];
+  if (!wifi) {
+    wifi = (
+      await rest("POST", "WifiNetwork", {
+        body: withTimestamps({
+          id: cuidLike(),
+          tenantId: tenant.id,
+          name: "Guest Wi‑Fi",
+          ssid: wifiSsid,
+          password: WIFI_PASSWORD,
+          authType: "WPA2",
+          hidden: false,
+          qrSlug: "main",
+          qrPayload: payload,
+          isActive: true,
+          leadCaptureEnabled: false,
+        }),
+      })
+    )[0];
+  } else {
+    wifi = (
+      await rest("PATCH", "WifiNetwork", {
+        query: `?id=eq.${wifi.id}`,
+        body: {
+          ssid: wifiSsid,
+          password: WIFI_PASSWORD,
+          qrPayload: payload,
+          isActive: true,
+          updatedAt: nowIso(),
+        },
+      })
+    )[0];
+  }
+
+  const splashHeadline = `${tenantName} guest Wi‑Fi`;
+  const splashBody = `This is ${tenantName} guest Wi‑Fi for visitors on the floor. Scan the QR with your phone camera to join, or copy the password if you are on a laptop. Network name is ${wifiSsid}.`;
+  const splashes = await rest("GET", "WifiSplashPage", {
+    query: `?networkId=eq.${wifi.id}&select=id`,
+  });
+  if (!splashes?.length) {
+    await rest("POST", "WifiSplashPage", {
+      body: withTimestamps({
+        id: cuidLike(),
+        networkId: wifi.id,
+        headline: splashHeadline,
+        body: splashBody,
+        requiresConsent: false,
+        revealCredentialsAfterSubmit: true,
+      }),
+    });
+  } else {
+    await rest("PATCH", "WifiSplashPage", {
+      query: `?id=eq.${splashes[0].id}`,
+      body: { headline: splashHeadline, body: splashBody, updatedAt: nowIso() },
+    });
+  }
+
   let websites = await rest("GET", "Website", { query: `?tenantId=eq.${tenant.id}&select=*` });
   let website = websites?.[0];
   if (!website) {
@@ -389,6 +557,13 @@ async function seedModules(tenant) {
     query: `?websiteId=eq.${website.id}&path=eq./&select=*`,
   });
   let page = pages?.[0];
+  const pageMeta = {
+    title: tenantName,
+    metaTitle: `${tenantName} · Harbor Lane`,
+    metaDescription: `${tenantName} at ${CAFE_ADDRESS}. Coffee, all-day plates, and a quiet corner to sit.`,
+    isHome: true,
+    isPublished: true,
+  };
   if (!page) {
     page = (
       await rest("POST", "WebsitePage", {
@@ -397,15 +572,16 @@ async function seedModules(tenant) {
           websiteId: website.id,
           slug: "home",
           path: "/",
-          title: tenantName,
-          metaTitle: `${tenantName} | OmniTaps`,
-          metaDescription: "Digital hospitality powered by OmniTaps.",
-          isHome: true,
-          isPublished: true,
           sortOrder: 0,
+          ...pageMeta,
         }),
       })
     )[0];
+  } else {
+    await rest("PATCH", "WebsitePage", {
+      query: `?id=eq.${page.id}`,
+      body: { ...pageMeta, updatedAt: nowIso() },
+    });
   }
 
   await rest("DELETE", "WebsiteBlock", { query: `?pageId=eq.${page.id}` });
@@ -417,9 +593,11 @@ async function seedModules(tenant) {
         blockType: "HERO",
         sortOrder: 0,
         config: {
-          eyebrow: "Welcome",
+          eyebrow: "Harbor Lane",
           title: tenantName,
-          description: "Menus, reviews, Wi‑Fi, and support — one tap away.",
+          description:
+            "Espresso, all-day plates, and a quiet corner facing the harbor. Scan a table QR for the menu, guest Wi‑Fi, or a review — or ask the café assistant on this page.",
+          badge: "Open today",
           primaryCta: { label: "View menu", href: `/menu/${tenantSlug}` },
           secondaryCta: { label: "Leave a review", href: `/r/${tenantSlug}/review` },
         },
@@ -430,56 +608,239 @@ async function seedModules(tenant) {
         blockType: "MENU_EMBED",
         sortOrder: 1,
         config: {
-          title: "Guest favorites",
+          title: "On the counter today",
+          description: "A snapshot of the guest menu. The full list lives on the table QR.",
           categories: [
             {
               title: "Drinks",
               items: [
-                { name: "House Latte", price: "$4.50" },
-                { name: "Iced Tea", price: "$3.50" },
+                { name: "House Latte", price: "$4.50", description: "Double espresso, steamed milk", badge: "Popular" },
+                { name: "Flat White", price: "$4.75", description: "Ristretto and microfoam" },
+                { name: "Iced Oat Cortado", price: "$5.25", description: "Espresso and oat milk over ice" },
+                { name: "Citrus Iced Tea", price: "$3.50" },
+                { name: "House Filter", price: "$3.75", description: "Rotating single origin" },
+              ],
+            },
+            {
+              title: "Plates",
+              items: [
+                { name: "Avocado Toast", price: "$12.00", badge: "Popular" },
+                { name: "Seasonal Shakshuka", price: "$14.50", badge: "Sold out" },
+                { name: "Citrus Grain Bowl", price: "$13.50" },
+                { name: "Ham & Gruyère Croissant", price: "$9.50" },
+              ],
+            },
+            {
+              title: "Sweets",
+              items: [
+                { name: "Olive Oil Cake", price: "$6.50" },
+                { name: "Dark Chocolate Cookie", price: "$4.25" },
+                { name: "Affogato", price: "$6.00" },
               ],
             },
           ],
         },
       }),
+      withTimestamps({
+        id: cuidLike(),
+        pageId: page.id,
+        blockType: "HOURS",
+        sortOrder: 2,
+        config: {
+          eyebrow: "Visit",
+          title: "Hours",
+          description: "Kitchen closes 30 minutes before the door. Walk-ins welcome.",
+          days: CAFE_HOURS,
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        pageId: page.id,
+        blockType: "MAP",
+        sortOrder: 3,
+        config: {
+          title: "Find us",
+          description: "A short walk from the harbor tram stop. Street parking on Harbor Lane after 10 AM.",
+          address: CAFE_ADDRESS,
+          embedUrl:
+            "https://www.openstreetmap.org/export/embed.html?bbox=-0.142%2C51.501%2C-0.124%2C51.510&layer=mapnik&marker=51.5055%2C-0.133",
+          directionsUrl: "https://www.openstreetmap.org/?mlat=51.5055&mlon=-0.133#map=16/51.5055/-0.133",
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        pageId: page.id,
+        blockType: "GALLERY",
+        sortOrder: 4,
+        config: {
+          title: "Inside the café",
+          description: "Counter, window seats, and the pastry case.",
+          columns: 3,
+          images: [
+            {
+              src: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+              alt: "Espresso being poured",
+              caption: "Bar",
+            },
+            {
+              src: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=80",
+              alt: "Café interior with tables",
+              caption: "Floor",
+            },
+            {
+              src: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80",
+              alt: "Coffee shop storefront",
+              caption: "Harbor Lane",
+            },
+          ],
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        pageId: page.id,
+        blockType: "CTA",
+        sortOrder: 5,
+        config: {
+          eyebrow: "After your visit",
+          title: "Tell us how we did — or get online",
+          description: "Happy guests go to Google. Anything we should fix stays private. Guest Wi‑Fi is one tap away.",
+          primaryCta: { label: "Leave a review", href: `/r/${tenantSlug}/review` },
+          secondaryCta: { label: "Join Wi‑Fi", href: `/r/${tenantSlug}/wifi` },
+        },
+      }),
     ],
   });
 
-  // Chatbot
   const bots = await rest("GET", "ChatbotBot", { query: `?tenantId=eq.${tenant.id}&select=*` });
-  if (!bots?.length) {
-    await rest("POST", "ChatbotBot", {
-      body: withTimestamps({
-        id: cuidLike(),
-        tenantId: tenant.id,
-        name: `${tenantName} Assistant`,
-        slug: "main",
-        publicPath: `/s/${tenantSlug}`,
-        isActive: true,
-        confidenceThreshold: 0.65,
-        handoverThreshold: 0.4,
-      }),
-    });
+  let bot = bots?.[0];
+  if (!bot) {
+    bot = (
+      await rest("POST", "ChatbotBot", {
+        body: withTimestamps({
+          id: cuidLike(),
+          tenantId: tenant.id,
+          name: tenantName,
+          slug: "main",
+          publicPath: `/s/${tenantSlug}`,
+          isActive: true,
+          confidenceThreshold: 0.65,
+          handoverThreshold: 0.4,
+        }),
+      })
+    )[0];
   } else {
-    await rest("PATCH", "ChatbotBot", {
-      query: `?id=eq.${bots[0].id}`,
-      body: { isActive: true, updatedAt: nowIso() },
-    });
+    bot = (
+      await rest("PATCH", "ChatbotBot", {
+        query: `?id=eq.${bot.id}`,
+        body: { isActive: true, name: tenantName, updatedAt: nowIso() },
+      })
+    )[0];
   }
+
+  await rest("DELETE", "ChatbotKnowledgeSource", { query: `?botId=eq.${bot.id}` });
+  await rest("POST", "ChatbotKnowledgeSource", {
+    body: [
+      withTimestamps({
+        id: cuidLike(),
+        botId: bot.id,
+        sourceType: "HOURS",
+        title: "Opening hours",
+        isActive: true,
+        content: {
+          keywords: ["hours", "open", "close", "opening", "when", "schedule", "kitchen"],
+          days: CAFE_HOURS,
+          text: CAFE_HOURS_TEXT,
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        botId: bot.id,
+        sourceType: "MENU",
+        title: "Menu highlights",
+        isActive: true,
+        content: {
+          keywords: [
+            "menu",
+            "latte",
+            "toast",
+            "eat",
+            "drink",
+            "coffee",
+            "dessert",
+            "shakshuka",
+            "affogato",
+            "oat",
+            "croissant",
+            "filter",
+          ],
+          items: [
+            { name: "House Latte", price: "$4.50", description: "Popular" },
+            { name: "House Filter", price: "$3.75" },
+            { name: "Avocado Toast", price: "$12.00" },
+            { name: "Seasonal Shakshuka", price: "$14.50", description: "Sold out today" },
+            { name: "Ham & Gruyère Croissant", price: "$9.50" },
+            { name: "Olive Oil Cake", price: "$6.50" },
+          ],
+          text: "Drinks: House Latte, Flat White, Iced Oat Cortado, Citrus Iced Tea, and House Filter. Oat milk is available on espresso drinks. Plates: Avocado Toast, Seasonal Shakshuka (sold out today), Citrus Grain Bowl, and Ham & Gruyère Croissant. Sweets: Olive Oil Cake, Dark Chocolate Cookie, and Affogato. Full menu at /menu/demo.",
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        botId: bot.id,
+        sourceType: "WIFI",
+        title: "Guest Wi‑Fi",
+        isActive: true,
+        content: {
+          keywords: ["wifi", "wi-fi", "password", "ssid", "network", "internet"],
+          text: `This is ${tenantName} guest Wi‑Fi. SSID is ${wifiSsid} and the password is ${WIFI_PASSWORD}. Open /r/${tenantSlug}/wifi to copy the password or scan the QR code.`,
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        botId: bot.id,
+        sourceType: "FAQ",
+        title: "How to leave a review",
+        isActive: true,
+        content: {
+          keywords: ["review", "google", "feedback", "rating", "stars"],
+          questions: ["how do i leave a review", "leave a review", "google review"],
+          text: `Leave a review at /r/${tenantSlug}/review. Ratings of 4 or 5 stars continue to Google. Ratings of 1 to 3 stars open a private form for the café team.`,
+        },
+      }),
+      withTimestamps({
+        id: cuidLike(),
+        botId: bot.id,
+        sourceType: "FAQ",
+        title: "Location and visiting",
+        isActive: true,
+        content: {
+          keywords: ["address", "where", "parking", "reservation", "book", "location", "harbor"],
+          questions: ["where are you", "do you take reservations", "is there parking"],
+          text: `${tenantName} is at ${CAFE_ADDRESS}, a short walk from the harbor tram. Street parking on Harbor Lane after 10 AM. We are walk-in only — no table reservations.`,
+        },
+      }),
+    ],
+  });
 }
 
-const admin = await (async () => {
-  await assertSchemaReady();
-  return ensureAdmin();
-})();
+try {
+  const admin = await (async () => {
+    await assertSchemaReady();
+    return ensureAdmin();
+  })();
 
-const tenant = await upsertTenant(admin?.id);
-await seedModules(tenant);
+  const tenant = await upsertTenant(admin?.id);
+  await seedModules(tenant);
 
-console.log("\n✓ HTTPS seed complete");
-console.log(`  /menu/${tenantSlug}`);
-console.log(`  /r/${tenantSlug}/review`);
-console.log(`  /r/${tenantSlug}/wifi`);
-console.log(`  /s/${tenantSlug}`);
-if (admin) console.log(`  /login  (${adminEmail})`);
-console.log("\nNote: local Prisma TCP may still be blocked; Vercel deploy often works from the cloud.");
+  console.log("\n✓ HTTPS seed complete");
+  console.log(`  Demo hub:    /demo`);
+  console.log(`  /menu/${tenantSlug}`);
+  console.log(`  /r/${tenantSlug}/review`);
+  console.log(`  /r/${tenantSlug}/wifi`);
+  console.log(`  /s/${tenantSlug}`);
+  if (admin) console.log(`  /login  (${adminEmail})`);
+  console.log("\nNote: local Prisma TCP may still be blocked until DATABASE_URL has the real password.");
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}

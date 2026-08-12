@@ -50,9 +50,16 @@ if (!existsSync(resolve(root, ".env"))) {
 
 hydrateEnv();
 
-const dbUrl = process.env.DATABASE_URL?.trim() || "";
-if (!dbUrl || dbUrl.includes("USER:PASSWORD") || dbUrl.includes("YOUR_")) {
-  console.error("\nEdit .env and set a real DATABASE_URL, then run: npm run setup");
+const dbUrl = process.env.POSTGRES_PRISMA_URL?.trim() || process.env.DATABASE_URL?.trim() || "";
+if (
+  !dbUrl ||
+  dbUrl.includes("USER:PASSWORD") ||
+  /YOUR[-_]PASSWORD/i.test(dbUrl) ||
+  dbUrl.includes("[SENSITIVE]")
+) {
+  console.error("\nEdit .env and replace [YOUR-PASSWORD] in DATABASE_URL with the real database password.");
+  console.error("Supabase → Project Settings → Database → Connection string (URI).");
+  console.error("Or seed without Prisma TCP: npm run db:seed-http");
   process.exit(1);
 }
 

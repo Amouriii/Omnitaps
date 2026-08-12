@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, ExternalLink, MessageSquareText, ShieldAlert, Star } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import DemoChrome, { DEMO_LINKS, isDemoSlug } from "../components/demo/DemoChrome";
+import { DEMO_LINKS, isDemoSlug } from "../components/demo/DemoChrome";
 import { ApiError, recordReviewVisit, submitReviewFeedback } from "../lib/apiClient";
 import { parseWithSchema, reviewFeedbackSchema } from "../lib/validation/reviewFeedback";
 
@@ -67,10 +67,16 @@ export default function ReviewGate() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [gateVisitId, setGateVisitId] = useState(null);
+  const [profileReviewUrl, setProfileReviewUrl] = useState("");
+  const [profileBusinessName, setProfileBusinessName] = useState("");
   const feedbackHeadingRef = useRef(null);
   const pageVisitRecorded = useRef(false);
 
-  const reviewTarget = useMemo(() => buildGoogleReviewUrl(searchParams, tenantId), [searchParams, tenantId]);
+  const queryReviewTarget = useMemo(() => buildGoogleReviewUrl(searchParams, tenantId), [searchParams, tenantId]);
+  const reviewTarget = {
+    url: profileReviewUrl || queryReviewTarget.url,
+    label: profileBusinessName || queryReviewTarget.label,
+  };
   const showFeedbackForm = selectedRating !== null && selectedRating <= LOW_RATING_LIMIT;
   const ratingLabel = selectedRating ? `${selectedRating}-star review` : "review";
   const businessLabel = reviewTarget.label;
@@ -91,6 +97,12 @@ export default function ReviewGate() {
       .then((result) => {
         if (!cancelled && result?.id) {
           setGateVisitId(result.id);
+        }
+        if (!cancelled && result?.googleReviewUrl) {
+          setProfileReviewUrl(result.googleReviewUrl);
+        }
+        if (!cancelled && result?.tenantName) {
+          setProfileBusinessName(result.tenantName);
         }
       })
       .catch(() => {
@@ -169,9 +181,14 @@ export default function ReviewGate() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-porcelain text-ink font-body">
-      <DemoChrome slug={tenantId} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(21,94,239,0.16),transparent_40%),radial-gradient(circle_at_top_right,rgba(184,135,59,0.14),transparent_38%)]" />
+    <main className="relative min-h-screen bg-porcelain text-ink font-body">
+      <div
+        className={`pointer-events-none absolute inset-x-0 top-0 h-[28rem] ${
+          isDemoSlug(tenantId)
+            ? "cafe-glow"
+            : "bg-[radial-gradient(circle_at_top_left,rgba(21,94,239,0.16),transparent_40%),radial-gradient(circle_at_top_right,rgba(184,135,59,0.14),transparent_38%)]"
+        }`}
+      />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:py-10">
         <header className="mb-10 flex items-center justify-between gap-4 border-b border-hairline pb-6">

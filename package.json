@@ -12,13 +12,13 @@
     "postinstall": "prisma generate",
     "setup": "node scripts/setup.mjs",
     "db:push": "prisma db push",
-    "db:seed": "node --env-file=.env prisma/seed.js",
+    "db:seed": "node --env-file=.env scripts/run-seed.mjs",
     "db:seed-http": "node scripts/seed-http.mjs",
     "db:reset": "prisma db push --force-reset && npm run db:seed",
     "launch": "node scripts/launch.mjs"
   },
   "prisma": {
-    "seed": "node --env-file=.env prisma/seed.js"
+    "seed": "node --env-file=.env scripts/run-seed.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

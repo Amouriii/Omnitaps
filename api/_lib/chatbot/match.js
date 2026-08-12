@@ -75,7 +75,7 @@ function typeBoost(sourceType, query) {
   if (type === "WIFI" && /(wifi|wi-?fi|password|ssid|network)/.test(query)) return 4;
   if (type === "HOURS" && /(hour|open|close|opening|when)/.test(query)) return 4;
   if (type === "MENU" && /(menu|eat|drink|latte|toast|dessert|sweet|plate|food|coffee)/.test(query)) return 3;
-  if (type === "FAQ" && /(review|google|feedback|leave a review|how do i)/.test(query)) return 3;
+  if (type === "FAQ" && /(review|google|feedback|leave a review|how do i|address|parking|reservation|where)/.test(query)) return 3;
   return 0;
 }
 

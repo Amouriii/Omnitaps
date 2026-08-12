@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { getDatabaseUrl, isUsableDatabaseUrl } from "./databaseUrl.js";
 
 /**
  * Server-only Prisma singleton. Never import this from React/Vite client code.
@@ -6,21 +7,15 @@ import { PrismaClient } from "@prisma/client";
  */
 const globalForPrisma = globalThis;
 
-export function getDatabaseUrl() {
-  return (
-    process.env.POSTGRES_PRISMA_URL?.trim() ||
-    process.env.DATABASE_URL?.trim() ||
-    ""
-  );
-}
+export { getDatabaseUrl, isUsableDatabaseUrl };
 
 export function isDatabaseConfigured() {
-  return Boolean(getDatabaseUrl());
+  return isUsableDatabaseUrl(getDatabaseUrl());
 }
 
 export function getPrisma() {
   const url = getDatabaseUrl();
-  if (!url) {
+  if (!isUsableDatabaseUrl(url)) {
     return null;
   }
 

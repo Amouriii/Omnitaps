@@ -4,6 +4,7 @@ import {
   methodNotAllowed,
   sendJson,
 } from "../../_lib/security.js";
+import { getDemoCafeWebsitePayload, isDemoTenantParam } from "../../_lib/demoCafe.js";
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../../_lib/tenants.js";
 
 const BLOCK_TYPE_MAP = {
@@ -49,6 +50,10 @@ export default async function handler(req, res) {
   }
 
   if (!isDatabaseConfigured()) {
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeWebsitePayload());
+      return;
+    }
     databaseUnavailable(res);
     return;
   }
@@ -58,6 +63,10 @@ export default async function handler(req, res) {
   try {
     const tenant = await resolveTenantByParam(tenantId);
     if (!tenant || tenant.status === "SUSPENDED") {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeWebsitePayload());
+        return;
+      }
       sendJson(res, 404, { error: "Tenant not found.", code: "TENANT_NOT_FOUND" });
       return;
     }
@@ -97,6 +106,10 @@ export default async function handler(req, res) {
     });
 
     if (!website || !website.isPublished) {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeWebsitePayload());
+        return;
+      }
       sendJson(res, 404, { error: "Published website not found.", code: "WEBSITE_NOT_FOUND" });
       return;
     }
@@ -107,6 +120,10 @@ export default async function handler(req, res) {
       null;
 
     if (!page) {
+      if (isDemoTenantParam(tenantId)) {
+        sendJson(res, 200, getDemoCafeWebsitePayload());
+        return;
+      }
       sendJson(res, 404, { error: "No published pages found.", code: "PAGE_NOT_FOUND" });
       return;
     }
@@ -137,6 +154,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("[tenant-website]", error);
+    if (isDemoTenantParam(tenantId)) {
+      sendJson(res, 200, getDemoCafeWebsitePayload());
+      return;
+    }
     sendJson(res, 500, { error: "Unable to load website." });
   }
 }

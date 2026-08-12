@@ -6,6 +6,7 @@ DECLARE
   v_admin_email   TEXT := 'onouh7@gmail.com'; -- <-- match your Supabase Auth user
   v_user_id       UUID;
   v_enterprise_id UUID;
+  v_cafe_id       UUID;
 BEGIN
   SELECT id INTO v_user_id
   FROM auth.users
@@ -130,5 +131,64 @@ BEGIN
     WHERE sp.enterprise_id = v_enterprise_id AND sp.name = p.name
   );
 
-  RAISE NOTICE 'Seeded enterprise % for user % (%)', v_enterprise_id, v_admin_email, v_user_id;
+  -- Guest QR café so /menu/demo resolves on Supabase (console stays demo-enterprise)
+  INSERT INTO public.enterprises (name, slug, domain, branding, is_active)
+  VALUES (
+    'Demo Café',
+    'demo',
+    'cafe.omnitaps.local',
+    '{"primaryColor":"#c45c26","logoUrl":null}'::jsonb,
+    TRUE
+  )
+  ON CONFLICT (slug) DO UPDATE
+    SET name = EXCLUDED.name,
+        domain = EXCLUDED.domain,
+        branding = EXCLUDED.branding,
+        is_active = TRUE,
+        updated_at = NOW()
+  RETURNING id INTO v_cafe_id;
+
+  IF v_cafe_id IS NULL THEN
+    SELECT id INTO v_cafe_id FROM public.enterprises WHERE slug = 'demo';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qr_menu_items'
+  ) THEN
+    DELETE FROM public.qr_menu_items
+    WHERE restaurant_id IN (v_enterprise_id, v_cafe_id);
+
+    INSERT INTO public.qr_menu_items (
+      restaurant_id, name, description, price, calories, nutritional_info, is_available
+    )
+    SELECT
+      e.rid,
+      i.name,
+      i.description,
+      i.price,
+      i.calories,
+      i.nutritional_info::jsonb,
+      i.is_available
+    FROM (VALUES (v_enterprise_id), (v_cafe_id)) AS e(rid)
+    CROSS JOIN (
+      VALUES
+        ('House Latte', 'Double espresso with steamed milk and a thin layer of foam.', 4.50, 180, '{"protein":"9 g","carbs":"14 g","fat":"7 g","allergens":"Dairy","category":"Drinks"}', TRUE),
+        ('Flat White', 'Ristretto shots stretched with velvety microfoam.', 4.75, 160, '{"protein":"8 g","carbs":"12 g","fat":"6 g","allergens":"Dairy","category":"Drinks"}', TRUE),
+        ('Iced Oat Cortado', 'Equal parts espresso and oat milk over ice.', 5.25, 90, '{"protein":"2 g","carbs":"10 g","fat":"3 g","allergens":"None listed","category":"Drinks"}', TRUE),
+        ('Citrus Iced Tea', 'House-brewed black tea with lemon peel and mint.', 3.50, 35, '{"protein":"0 g","carbs":"8 g","fat":"0 g","category":"Drinks"}', TRUE),
+        ('House Filter', 'Rotating single origin, batch-brewed.', 3.75, 5, '{"protein":"0 g","carbs":"0 g","fat":"0 g","category":"Drinks"}', TRUE),
+        ('Avocado Toast', 'Sourdough, smashed avocado, chili flake, lemon, and olive oil.', 12.00, 420, '{"protein":"10 g","carbs":"38 g","fat":"22 g","allergens":"Gluten","category":"Plates"}', TRUE),
+        ('Seasonal Shakshuka', 'Tomato-pepper stew, baked eggs, and grilled focaccia.', 14.50, 510, '{"protein":"22 g","carbs":"36 g","fat":"28 g","allergens":"Egg, Gluten","category":"Plates"}', FALSE),
+        ('Citrus Grain Bowl', 'Farro, roasted squash, herbs, and tahini lemon dressing.', 13.50, 480, '{"protein":"14 g","carbs":"58 g","fat":"18 g","allergens":"Gluten","category":"Plates"}', TRUE),
+        ('Ham & Gruyère Croissant', 'Buttery croissant, smoked ham, melted Gruyère, Dijon.', 9.50, 390, '{"protein":"18 g","carbs":"28 g","fat":"22 g","allergens":"Gluten, Dairy","category":"Plates"}', TRUE),
+        ('Olive Oil Cake', 'Citrus loaf with a crackly sugar top.', 6.50, 320, '{"protein":"5 g","carbs":"38 g","fat":"16 g","allergens":"Gluten, Egg","category":"Sweets"}', TRUE),
+        ('Dark Chocolate Cookie', 'Sea salt, 70% chocolate, toasted hazelnut.', 4.25, 280, '{"protein":"4 g","carbs":"32 g","fat":"14 g","allergens":"Gluten, Tree nuts, Egg","category":"Sweets"}', TRUE),
+        ('Affogato', 'Vanilla gelato drowned in a hot espresso shot.', 6.00, 210, '{"protein":"4 g","carbs":"22 g","fat":"10 g","allergens":"Dairy","category":"Sweets"}', TRUE)
+    ) AS i(name, description, price, calories, nutritional_info, is_available)
+    WHERE e.rid IS NOT NULL;
+  END IF;
+
+  RAISE NOTICE 'Seeded enterprise % and café % for user % (%)', v_enterprise_id, v_cafe_id, v_admin_email, v_user_id;
 END $$;
