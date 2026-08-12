@@ -1,17 +1,9 @@
 import { FormEvent, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
-import { ApiError, apiRequest } from "../../../lib/apiClient";
-
-type ChatWidgetProps = {
-  tenantId: string;
-  botName?: string;
-  className?: string;
-};
-
-type ChatTurn = {
-  role: "user" | "assistant";
-  content: string;
-};
+import { ApiError } from "../../../lib/apiClient";
+import { sendChatMessage } from "../lib/sendChatMessage";
+import { DEFAULT_GREETING } from "../prompts/guestSupport";
+import type { ChatTurn, ChatWidgetProps } from "../types";
 
 export default function ChatWidget({ tenantId, botName, className = "" }: ChatWidgetProps) {
   const displayName = botName || (tenantId === "demo" ? "Demo Café" : "Ask Omnitaps");
@@ -22,7 +14,7 @@ export default function ChatWidget({ tenantId, botName, className = "" }: ChatWi
   const [turns, setTurns] = useState<ChatTurn[]>([
     {
       role: "assistant",
-      content: "Hi — ask about hours, the menu, or Wi‑Fi and we will help.",
+      content: DEFAULT_GREETING,
     },
   ]);
   const [error, setError] = useState("");
@@ -38,13 +30,10 @@ export default function ChatWidget({ tenantId, botName, className = "" }: ChatWi
     setTurns((current) => [...current, { role: "user", content: message }]);
 
     try {
-      const result = await apiRequest("/api/chatbot/message", {
-        method: "POST",
-        body: {
-          tenantId,
-          message,
-          conversationId,
-        },
+      const result = await sendChatMessage({
+        tenantId,
+        message,
+        conversationId,
       });
 
       if (result?.conversationId) {

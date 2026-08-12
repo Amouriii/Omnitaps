@@ -9,7 +9,7 @@ import {
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../_lib/tenants.js";
 import { z } from "zod";
 import { parseWithSchema } from "../_lib/validation.js";
-import { FALLBACK_REPLY, matchChatbotReply } from "../_lib/chatbotMatch.js";
+import { FALLBACK_REPLY, loadActiveKnowledgeSources, matchChatbotReply } from "../_lib/chatbot/index.js";
 
 const chatbotMessageSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),
@@ -111,15 +111,7 @@ export default async function handler(req, res) {
       },
     });
 
-    const sources = await prisma.chatbotKnowledgeSource.findMany({
-      where: { botId: bot.id, isActive: true },
-      select: {
-        title: true,
-        sourceType: true,
-        content: true,
-        isActive: true,
-      },
-    });
+    const sources = await loadActiveKnowledgeSources(prisma, bot.id);
 
     const reply = matchChatbotReply(message, sources, FALLBACK_REPLY);
 

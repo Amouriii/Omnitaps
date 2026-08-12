@@ -108,7 +108,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 - **Wi‑Fi (tenant / QR)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
 - **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
-- **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback
+- **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback. File map below.
 - **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
 
 ---
@@ -134,7 +134,8 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx` |
 | Operator chrome | `src/components/console/ConsoleChrome.jsx` — `/admin`, `/demo/dashboard`, `/login` |
 | Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
-| Chatbot matcher | `api/_lib/chatbotMatch.js`, `api/chatbot/message.js` |
+| Chatbot (SPA) | `src/modules/chatbot/` — widget, client helper, prompts, types |
+| Chatbot (API) | `api/chatbot/message.js`, `api/_lib/chatbot/` (match, knowledge, prompts, future AI SDK) |
 | Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
 | Auth (enterprise / profiles) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
 | Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx` |
@@ -149,6 +150,28 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Schema (do not apply raw) | `db/schema/wifi.ts` (types/Zod only for agents; DB = migration 005) |
 | Prisma schema | `prisma/schema.prisma` |
 | Deploy | `vercel.json` (CSP allows Stripe), `scripts/launch.mjs` |
+
+---
+
+## Chatbot module (file map)
+
+Guest chat is a Vite widget + Vercel Node handler. Do **not** add Next.js `app/api/chat` routes. Prisma models stay in `prisma/schema.prisma` (`ChatbotBot`, `ChatbotKnowledgeSource`, `ChatbotConversation`, `ChatbotMessage`, `ChatbotHandover`).
+
+| Path | Role |
+|------|------|
+| `src/modules/chatbot/components/ChatWidget.tsx` | Guest widget on `/s/:tenantId` (`WebsitePreview`) |
+| `src/modules/chatbot/lib/sendChatMessage.ts` | Client POST helper for `/api/chatbot/message` |
+| `src/modules/chatbot/prompts/` | SPA system-prompt / greeting templates |
+| `src/modules/chatbot/types.ts` | Shared client types (not a copy of Prisma schema) |
+| `src/modules/chatbot/index.ts` | Barrel exports |
+| `api/chatbot/message.js` | Live JSON handler (rate limit, persist turns, keyword reply) |
+| `api/_lib/chatbot/match.js` | Keyword matcher (current production reply path) |
+| `api/_lib/chatbot/knowledge.js` | Load active knowledge sources |
+| `api/_lib/chatbot/prompts.js` | Server prompt assembly |
+| `api/_lib/chatbot/ai.js` | Stub for later `ai` SDK (`generateText` / `streamText` via AI Gateway) |
+| `api/_lib/chatbotMatch.js` | Compatibility re-export of the matcher |
+
+Runtime today: keyword match only. A later pass may install `ai` and add a stream handler under `api/chatbot/` without converting the SPA to Next.js.
 
 ---
 
@@ -169,6 +192,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 
 ### 2026-08-12
 
+- Chatbot folder map: SPA under `src/modules/chatbot/` (widget, lib, prompts, types); API libs under `api/_lib/chatbot/`. Keyword matcher and `ChatWidget` remain the live path; AI SDK not installed yet.
 - Operator UX: `/admin`, `/demo/dashboard`, and `/login` share `ConsoleChrome` (Omnitaps wordmark, Site / Demo Café / Website / Dashboard / Admin nav, product empty/loading/error states). QR food-menu admin at `/admin/menu` is unchanged as a separate surface.
 - Guest demo UX: `/demo` hub, Home “Try demos” nav, DemoChrome on café guest pages.
 - `/s/demo` now loads the Prisma Demo Café website (not marketing Home). `/menu/demo` falls back to the Prisma public menu when no Supabase enterprise slug `demo` exists.
