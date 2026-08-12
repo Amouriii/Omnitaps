@@ -4,6 +4,7 @@ import { ApiError, apiRequest } from "../../../lib/apiClient";
 
 type ChatWidgetProps = {
   tenantId: string;
+  botName?: string;
   className?: string;
 };
 
@@ -12,7 +13,8 @@ type ChatTurn = {
   content: string;
 };
 
-export default function ChatWidget({ tenantId, className = "" }: ChatWidgetProps) {
+export default function ChatWidget({ tenantId, botName, className = "" }: ChatWidgetProps) {
+  const displayName = botName || (tenantId === "demo" ? "Demo Café" : "Ask Omnitaps");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -85,7 +87,7 @@ export default function ChatWidget({ tenantId, className = "" }: ChatWidgetProps
           <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-tap">Support</p>
-              <p className="text-[14px] font-semibold text-ink">Ask OmniTaps</p>
+              <p className="text-[14px] font-semibold text-ink">{displayName}</p>
             </div>
             <button
               type="button"
@@ -103,7 +105,7 @@ export default function ChatWidget({ tenantId, className = "" }: ChatWidgetProps
                 key={`${turn.role}-${index}`}
                 className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-[1.6] ${
                   turn.role === "user"
-                    ? "ml-auto bg-ink text-white"
+                    ? "ml-auto bg-ink text-porcelain"
                     : "bg-porcelain text-ink"
                 }`}
               >
@@ -136,7 +138,7 @@ export default function ChatWidget({ tenantId, className = "" }: ChatWidgetProps
                 type="submit"
                 disabled={sending || !input.trim()}
                 aria-label="Send message"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-tap text-white disabled:opacity-50"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-tap text-porcelain disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -147,7 +149,7 @@ export default function ChatWidget({ tenantId, className = "" }: ChatWidgetProps
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-3 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(18,21,26,0.55)]"
+          className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[14px] font-semibold text-porcelain shadow-[0_18px_40px_-22px_rgba(18,21,26,0.55)]"
         >
           <MessageCircle className="h-4 w-4" />
           Chat

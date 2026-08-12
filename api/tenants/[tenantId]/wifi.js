@@ -101,7 +101,8 @@ export default async function handler(req, res) {
         qrSlug: network.qrSlug,
         leadCaptureEnabled: network.leadCaptureEnabled,
         splashPage: network.splashPage,
-        // Guest QR intentionally embeds join credentials in the WIFI: payload.
+        // Guest QR embeds join credentials; password is also returned for laptop copy-to-clipboard.
+        password: network.password || null,
         wifiPayload,
       },
     });

@@ -9,6 +9,7 @@ import {
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../_lib/tenants.js";
 import { z } from "zod";
 import { parseWithSchema } from "../_lib/validation.js";
+import { FALLBACK_REPLY, matchChatbotReply } from "../_lib/chatbotMatch.js";
 
 const chatbotMessageSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),
@@ -110,8 +111,17 @@ export default async function handler(req, res) {
       },
     });
 
-    const reply =
-      "Thanks for your message. A team member will follow up shortly. For hours, menus, and Wi‑Fi, check the links on this page.";
+    const sources = await prisma.chatbotKnowledgeSource.findMany({
+      where: { botId: bot.id, isActive: true },
+      select: {
+        title: true,
+        sourceType: true,
+        content: true,
+        isActive: true,
+      },
+    });
+
+    const reply = matchChatbotReply(message, sources, FALLBACK_REPLY);
 
     await prisma.chatbotMessage.create({
       data: {

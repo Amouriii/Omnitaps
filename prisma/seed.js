@@ -136,17 +136,28 @@ async function seedTenant(ownerUserId) {
     },
   });
 
+  await prisma.menuItemAllergen.deleteMany({
+    where: { menuItem: { category: { menuId: menu.id } } },
+  });
   await prisma.menuItem.deleteMany({
     where: { category: { menuId: menu.id } },
   });
+  await prisma.menuAllergen.deleteMany({ where: { menuId: menu.id } });
   await prisma.menuCategory.deleteMany({ where: { menuId: menu.id } });
+
+  const [dairy, gluten, nuts, egg] = await Promise.all([
+    prisma.menuAllergen.create({ data: { menuId: menu.id, slug: "dairy", name: "Dairy" } }),
+    prisma.menuAllergen.create({ data: { menuId: menu.id, slug: "gluten", name: "Gluten" } }),
+    prisma.menuAllergen.create({ data: { menuId: menu.id, slug: "nuts", name: "Tree nuts" } }),
+    prisma.menuAllergen.create({ data: { menuId: menu.id, slug: "egg", name: "Egg" } }),
+  ]);
 
   const drinks = await prisma.menuCategory.create({
     data: {
       menuId: menu.id,
       slug: "drinks",
       name: "Drinks",
-      description: "Coffee and cold drinks",
+      description: "Espresso, tea, and cold pours",
       sortOrder: 0,
       isVisible: true,
       items: {
@@ -154,32 +165,53 @@ async function seedTenant(ownerUserId) {
           {
             slug: "house-latte",
             name: "House Latte",
-            description: "Espresso, steamed milk",
+            description: "Double espresso with steamed milk and a thin layer of foam.",
             priceCents: 450,
             currency: "USD",
             isAvailable: true,
+            outOfStockNote: "Popular",
             sortOrder: 0,
+            allergenLinks: { create: [{ menuAllergenId: dairy.id }] },
           },
           {
-            slug: "iced-tea",
-            name: "Iced Tea",
-            description: "Freshly brewed",
-            priceCents: 350,
+            slug: "flat-white",
+            name: "Flat White",
+            description: "Ristretto shots stretched with velvety microfoam.",
+            priceCents: 475,
             currency: "USD",
             isAvailable: true,
             sortOrder: 1,
+            allergenLinks: { create: [{ menuAllergenId: dairy.id }] },
+          },
+          {
+            slug: "iced-oat-cortado",
+            name: "Iced Oat Cortado",
+            description: "Equal parts espresso and oat milk over ice.",
+            priceCents: 525,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 2,
+          },
+          {
+            slug: "iced-tea",
+            name: "Citrus Iced Tea",
+            description: "House-brewed black tea with lemon peel and mint.",
+            priceCents: 350,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 3,
           },
         ],
       },
     },
   });
 
-  const food = await prisma.menuCategory.create({
+  const plates = await prisma.menuCategory.create({
     data: {
       menuId: menu.id,
       slug: "plates",
       name: "Plates",
-      description: "All-day favorites",
+      description: "All-day café plates",
       sortOrder: 1,
       isVisible: true,
       items: {
@@ -187,11 +219,89 @@ async function seedTenant(ownerUserId) {
           {
             slug: "avocado-toast",
             name: "Avocado Toast",
-            description: "Sourdough, chili flake, lemon",
+            description: "Sourdough, smashed avocado, chili flake, lemon, and olive oil.",
             priceCents: 1200,
             currency: "USD",
             isAvailable: true,
+            outOfStockNote: "Popular",
             sortOrder: 0,
+            allergenLinks: { create: [{ menuAllergenId: gluten.id }] },
+          },
+          {
+            slug: "seasonal-shakshuka",
+            name: "Seasonal Shakshuka",
+            description: "Tomato-pepper stew, baked eggs, and grilled focaccia.",
+            priceCents: 1450,
+            currency: "USD",
+            isAvailable: false,
+            outOfStockNote: "Sold out",
+            sortOrder: 1,
+            allergenLinks: {
+              create: [{ menuAllergenId: egg.id }, { menuAllergenId: gluten.id }],
+            },
+          },
+          {
+            slug: "grain-bowl",
+            name: "Citrus Grain Bowl",
+            description: "Farro, roasted squash, herbs, and tahini lemon dressing.",
+            priceCents: 1350,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 2,
+            allergenLinks: { create: [{ menuAllergenId: gluten.id }] },
+          },
+        ],
+      },
+    },
+  });
+
+  const sweets = await prisma.menuCategory.create({
+    data: {
+      menuId: menu.id,
+      slug: "sweets",
+      name: "Sweets",
+      description: "Bakes from the pastry counter",
+      sortOrder: 2,
+      isVisible: true,
+      items: {
+        create: [
+          {
+            slug: "olive-oil-cake",
+            name: "Olive Oil Cake",
+            description: "Citrus loaf with a crackly sugar top.",
+            priceCents: 650,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 0,
+            allergenLinks: {
+              create: [{ menuAllergenId: gluten.id }, { menuAllergenId: egg.id }],
+            },
+          },
+          {
+            slug: "dark-chocolate-cookie",
+            name: "Dark Chocolate Cookie",
+            description: "Sea salt, 70% chocolate, toasted hazelnut.",
+            priceCents: 425,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 1,
+            allergenLinks: {
+              create: [
+                { menuAllergenId: gluten.id },
+                { menuAllergenId: nuts.id },
+                { menuAllergenId: egg.id },
+              ],
+            },
+          },
+          {
+            slug: "affogato",
+            name: "Affogato",
+            description: "Vanilla gelato drowned in a hot espresso shot.",
+            priceCents: 600,
+            currency: "USD",
+            isAvailable: true,
+            sortOrder: 2,
+            allergenLinks: { create: [{ menuAllergenId: dairy.id }] },
           },
         ],
       },
@@ -199,7 +309,8 @@ async function seedTenant(ownerUserId) {
   });
 
   void drinks;
-  void food;
+  void plates;
+  void sweets;
 
   await prisma.reviewProfile.upsert({
     where: { tenantId: tenant.id },
@@ -233,36 +344,51 @@ async function seedTenant(ownerUserId) {
     where: { tenantId: tenant.id, qrSlug: "main" },
   });
 
-  if (existingWifi) {
-    await prisma.wifiNetwork.update({
-      where: { id: existingWifi.id },
-      data: {
-        name: "Guest Wi‑Fi",
-        ssid: `${TENANT_SLUG}-guest`,
-        password: "omnitaps-demo",
-        authType: "WPA2",
-        hidden: false,
-        qrPayload: wifiPayload,
-        isActive: true,
-        leadCaptureEnabled: false,
-      },
-    });
-  } else {
-    await prisma.wifiNetwork.create({
-      data: {
-        tenantId: tenant.id,
-        name: "Guest Wi‑Fi",
-        ssid: `${TENANT_SLUG}-guest`,
-        password: "omnitaps-demo",
-        authType: "WPA2",
-        hidden: false,
-        qrSlug: "main",
-        qrPayload: wifiPayload,
-        isActive: true,
-        leadCaptureEnabled: false,
-      },
-    });
-  }
+  const wifiNetwork = existingWifi
+    ? await prisma.wifiNetwork.update({
+        where: { id: existingWifi.id },
+        data: {
+          name: "Guest Wi‑Fi",
+          ssid: `${TENANT_SLUG}-guest`,
+          password: "omnitaps-demo",
+          authType: "WPA2",
+          hidden: false,
+          qrPayload: wifiPayload,
+          isActive: true,
+          leadCaptureEnabled: false,
+        },
+      })
+    : await prisma.wifiNetwork.create({
+        data: {
+          tenantId: tenant.id,
+          name: "Guest Wi‑Fi",
+          ssid: `${TENANT_SLUG}-guest`,
+          password: "omnitaps-demo",
+          authType: "WPA2",
+          hidden: false,
+          qrSlug: "main",
+          qrPayload: wifiPayload,
+          isActive: true,
+          leadCaptureEnabled: false,
+        },
+      });
+
+  await prisma.wifiSplashPage.upsert({
+    where: { networkId: wifiNetwork.id },
+    update: {
+      headline: `Join ${TENANT_NAME} Wi‑Fi`,
+      body: "This is a demo guest network. Scan the QR on your phone, or copy the password below if you are testing on a laptop. SSID and password are shown on this page.",
+      requiresConsent: false,
+      revealCredentialsAfterSubmit: true,
+    },
+    create: {
+      networkId: wifiNetwork.id,
+      headline: `Join ${TENANT_NAME} Wi‑Fi`,
+      body: "This is a demo guest network. Scan the QR on your phone, or copy the password below if you are testing on a laptop. SSID and password are shown on this page.",
+      requiresConsent: false,
+      revealCredentialsAfterSubmit: true,
+    },
+  });
 
   const website = await prisma.website.upsert({
     where: { tenantId: tenant.id },
@@ -316,9 +442,11 @@ async function seedTenant(ownerUserId) {
         blockType: "HERO",
         sortOrder: 0,
         config: {
-          eyebrow: "Welcome",
+          eyebrow: "Neighborhood café",
           title: TENANT_NAME,
-          description: "Menus, reviews, Wi‑Fi, and support — one tap away.",
+          description:
+            "Coffee, all-day plates, and a quiet corner to sit. Scan a table QR for the menu, guest Wi‑Fi, or a review — or ask the café assistant on this page.",
+          badge: "Open today",
           primaryCta: { label: "View menu", href: `/menu/${TENANT_SLUG}` },
           secondaryCta: { label: "Leave a review", href: `/r/${TENANT_SLUG}/review` },
         },
@@ -328,37 +456,151 @@ async function seedTenant(ownerUserId) {
         blockType: "MENU_EMBED",
         sortOrder: 1,
         config: {
-          title: "Guest favorites",
-          description: "A sample of what is on today.",
+          title: "On the counter today",
+          description: "A snapshot of the guest menu. Full list lives at the QR menu.",
           categories: [
             {
               title: "Drinks",
               items: [
-                { name: "House Latte", price: "$4.50", description: "Espresso, steamed milk" },
-                { name: "Iced Tea", price: "$3.50" },
+                { name: "House Latte", price: "$4.50", description: "Espresso, steamed milk", badge: "Popular" },
+                { name: "Flat White", price: "$4.75", description: "Ristretto and microfoam" },
+                { name: "Iced Oat Cortado", price: "$5.25" },
+                { name: "Citrus Iced Tea", price: "$3.50" },
+              ],
+            },
+            {
+              title: "Plates",
+              items: [
+                { name: "Avocado Toast", price: "$12.00", badge: "Popular" },
+                { name: "Seasonal Shakshuka", price: "$14.50", badge: "Sold out" },
+                { name: "Citrus Grain Bowl", price: "$13.50" },
+              ],
+            },
+            {
+              title: "Sweets",
+              items: [
+                { name: "Olive Oil Cake", price: "$6.50" },
+                { name: "Dark Chocolate Cookie", price: "$4.25" },
+                { name: "Affogato", price: "$6.00" },
               ],
             },
           ],
         },
       },
+      {
+        pageId: homePage.id,
+        blockType: "HOURS",
+        sortOrder: 2,
+        config: {
+          eyebrow: "Visit",
+          title: "Hours",
+          description: "Kitchen closes 30 minutes before the door.",
+          days: [
+            { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
+            { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
+          ],
+        },
+      },
+      {
+        pageId: homePage.id,
+        blockType: "MAP",
+        sortOrder: 3,
+        config: {
+          title: "Find us",
+          description: "A short walk from the harbor tram stop.",
+          address: "14 Harbor Lane, Demo City",
+          embedUrl:
+            "https://www.openstreetmap.org/export/embed.html?bbox=-0.142%2C51.501%2C-0.124%2C51.510&layer=mapnik&marker=51.5055%2C-0.133",
+          directionsUrl: "https://www.openstreetmap.org/?mlat=51.5055&mlon=-0.133#map=16/51.5055/-0.133",
+        },
+      },
+      {
+        pageId: homePage.id,
+        blockType: "CTA",
+        sortOrder: 4,
+        config: {
+          eyebrow: "After your visit",
+          title: "Tell us how we did — or get online",
+          description: "Happy guests go to Google. Anything we should fix stays private. Guest Wi‑Fi is one tap away.",
+          primaryCta: { label: "Leave a review", href: `/r/${TENANT_SLUG}/review` },
+          secondaryCta: { label: "Join Wi‑Fi", href: `/r/${TENANT_SLUG}/wifi` },
+        },
+      },
     ],
   });
 
-  await prisma.chatbotBot.upsert({
+  const bot = await prisma.chatbotBot.upsert({
     where: { tenantId: tenant.id },
     update: {
-      name: `${TENANT_NAME} Assistant`,
+      name: TENANT_NAME,
       slug: "main",
       publicPath: `/s/${TENANT_SLUG}`,
       isActive: true,
     },
     create: {
       tenantId: tenant.id,
-      name: `${TENANT_NAME} Assistant`,
+      name: TENANT_NAME,
       slug: "main",
       publicPath: `/s/${TENANT_SLUG}`,
       isActive: true,
     },
+  });
+
+  await prisma.chatbotKnowledgeSource.deleteMany({ where: { botId: bot.id } });
+  await prisma.chatbotKnowledgeSource.createMany({
+    data: [
+      {
+        botId: bot.id,
+        sourceType: "HOURS",
+        title: "Opening hours",
+        isActive: true,
+        content: {
+          keywords: ["hours", "open", "close", "opening", "when", "schedule"],
+          days: [
+            { label: "Monday – Friday", hours: "7:00 AM – 6:00 PM" },
+            { label: "Saturday – Sunday", hours: "8:00 AM – 5:00 PM" },
+          ],
+          text: "Demo Café is open Monday–Friday 7:00 AM–6:00 PM and Saturday–Sunday 8:00 AM–5:00 PM. The kitchen closes 30 minutes before the door.",
+        },
+      },
+      {
+        botId: bot.id,
+        sourceType: "MENU",
+        title: "Menu highlights",
+        isActive: true,
+        content: {
+          keywords: ["menu", "latte", "toast", "eat", "drink", "coffee", "dessert", "shakshuka", "affogato"],
+          items: [
+            { name: "House Latte", price: "$4.50", description: "Popular" },
+            { name: "Avocado Toast", price: "$12.00" },
+            { name: "Seasonal Shakshuka", price: "$14.50", description: "Sold out today" },
+            { name: "Olive Oil Cake", price: "$6.50" },
+          ],
+          text: "Drinks include House Latte, Flat White, Iced Oat Cortado, and Citrus Iced Tea. Plates: Avocado Toast, Seasonal Shakshuka (sold out today), and Citrus Grain Bowl. Sweets: Olive Oil Cake, Dark Chocolate Cookie, and Affogato. See the full menu at /menu/demo.",
+        },
+      },
+      {
+        botId: bot.id,
+        sourceType: "WIFI",
+        title: "Guest Wi‑Fi",
+        isActive: true,
+        content: {
+          keywords: ["wifi", "wi-fi", "password", "ssid", "network", "internet"],
+          text: "This is a demo guest network. SSID is demo-guest and the password is omnitaps-demo. You can also open /r/demo/wifi to copy the password or scan the QR code.",
+        },
+      },
+      {
+        botId: bot.id,
+        sourceType: "FAQ",
+        title: "How to leave a review",
+        isActive: true,
+        content: {
+          keywords: ["review", "google", "feedback", "rating", "stars"],
+          questions: ["how do i leave a review", "leave a review", "google review"],
+          text: "Leave a review at /r/demo/review. Ratings of 4 or 5 stars continue to Google. Ratings of 1 to 3 stars open a private form for the café team.",
+        },
+      },
+    ],
   });
 
   return tenant;
@@ -373,6 +615,7 @@ async function main() {
   const tenant = await seedTenant(admin?.id);
 
   console.log("\nSeed complete.");
+  console.log(`  Demo hub:    /demo`);
   console.log(`  Tenant slug: ${tenant.slug}`);
   console.log(`  Menu:        /menu/${tenant.slug}`);
   console.log(`  Reviews:     /r/${tenant.slug}/review`);

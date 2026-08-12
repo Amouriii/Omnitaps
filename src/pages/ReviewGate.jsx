@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, ExternalLink, MessageSquareText, ShieldAlert, Star } from "lucide-react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import DemoChrome, { DEMO_LINKS, isDemoSlug } from "../components/demo/DemoChrome";
 import { ApiError, recordReviewVisit, submitReviewFeedback } from "../lib/apiClient";
 import { parseWithSchema, reviewFeedbackSchema } from "../lib/validation/reviewFeedback";
 
@@ -168,7 +169,8 @@ export default function ReviewGate() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#faf9f7_0%,#f4f7fb_58%,#eef2f8_100%)] text-ink">
+    <main className="min-h-screen overflow-hidden bg-porcelain text-ink font-body">
+      <DemoChrome slug={tenantId} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(21,94,239,0.16),transparent_40%),radial-gradient(circle_at_top_right,rgba(184,135,59,0.14),transparent_38%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:py-10">
@@ -178,9 +180,6 @@ export default function ReviewGate() {
             <h1 className="mt-2 font-display text-[28px] font-semibold tracking-[-0.02em] sm:text-[34px]">
               Tell us how {businessLabel} did.
             </h1>
-          </div>
-          <div className="hidden rounded-full border border-hairline bg-surface px-3 py-2 text-[12px] text-ink-muted shadow-[0_12px_30px_-22px_rgba(18,21,26,0.35)] sm:block">
-            Tenant: <span className="font-mono text-ink">{tenantId}</span>
           </div>
         </header>
 
@@ -214,7 +213,7 @@ export default function ReviewGate() {
                       className={`group flex min-h-24 flex-col items-center justify-center rounded-2xl border px-4 py-4 text-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-tap focus:ring-offset-2 focus:ring-offset-surface ${
                         isSelected
                           ? "border-tap bg-tap-soft shadow-[0_20px_45px_-34px_rgba(21,94,239,0.55)]"
-                          : "border-hairline bg-porcelain hover:-translate-y-0.5 hover:border-hairline-strong hover:bg-white"
+                          : "border-hairline bg-porcelain hover:-translate-y-0.5 hover:border-hairline-strong hover:bg-surface"
                       }`}
                     >
                       <Star className={`h-7 w-7 ${isSelected ? "fill-brass text-brass" : "text-brass-dark/70"}`} />
@@ -287,6 +286,18 @@ export default function ReviewGate() {
                       <p className="mt-2 text-[14px] leading-[1.7] text-emerald-900/90">
                         Your message has been recorded for the internal team. Someone will follow up if contact details were provided.
                       </p>
+                      {isDemoSlug(tenantId) ? (
+                        <div className="mt-4 flex flex-wrap gap-3 text-[13px]">
+                          <Link to="/demo" className="font-semibold text-emerald-950 underline-offset-2 hover:underline">
+                            Back to Demo Café
+                          </Link>
+                          {DEMO_LINKS.filter((link) => link.to !== "/r/demo/review").map((link) => (
+                            <Link key={link.to} to={link.to} className="text-emerald-900/80 underline-offset-2 hover:underline">
+                              {link.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <form className="mt-6 space-y-4" onSubmit={handleSubmit}>

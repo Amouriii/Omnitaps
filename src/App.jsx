@@ -24,6 +24,7 @@ const EnterpriseWifiDashboard = lazy(() => import("./pages/EnterpriseWifiDashboa
 const EnterpriseWifiSettings = lazy(() => import("./pages/EnterpriseWifiSettings"));
 const EnterpriseWifiPlans = lazy(() => import("./pages/EnterpriseWifiPlans"));
 const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
+const DemoHub = lazy(() => import("./pages/DemoHub"));
 
 function RouteFallback() {
   return (
@@ -46,8 +47,7 @@ export default function App() {
             <Route path="/r/:tenantId/wifi" element={<WifiAccess />} />
             <Route path="/menu/:restaurantId" element={<CustomerMenuPage />} />
             <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
-            {/* Website module demo: Omnitaps marketing site */}
-            <Route path="/s/demo" element={<Home />} />
+            <Route path="/demo" element={<DemoHub />} />
             <Route path="/s/:tenantId" element={<WebsitePreview />} />
             <Route path="/login" element={<Login />} />
             {/* Captive portal (public guest) */}

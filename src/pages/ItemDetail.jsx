@@ -5,7 +5,7 @@ const MODULE_DEMOS = {
   website: {
     href: "/s/demo",
     label: "Open website demo",
-    blurb: "See the Omnitaps marketing site running as a tenant website preview.",
+    blurb: "See the Demo Café tenant website, including hours, menu, and the guest chatbot.",
   },
   "qr-menus": {
     href: "/menu/demo",

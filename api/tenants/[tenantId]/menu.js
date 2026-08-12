@@ -124,7 +124,9 @@ export default async function handler(req, res) {
             isAvailable: item.isAvailable,
             outOfStockNote: item.outOfStockNote,
             allergens: item.allergenLinks.map((link) => link.menuAllergen.name),
-            badge: item.isAvailable ? undefined : item.outOfStockNote || "Unavailable",
+            badge: item.isAvailable
+              ? item.outOfStockNote || undefined
+              : item.outOfStockNote || "Sold out",
           })),
         })),
       },

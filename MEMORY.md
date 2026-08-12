@@ -68,13 +68,14 @@ Required env families:
 | Path | Purpose |
 |------|---------|
 | `/` | Marketing home |
+| `/demo` | Demo Café guest hub (menu, reviews, Wi‑Fi, website) |
 | `/items/:id` | Product/module detail |
 | `/changelog` | Changelog |
-| `/menu/:tenantId` | Public QR menu |
+| `/menu/:tenantId` | Public QR menu (Supabase enterprise; Prisma café fallback if resolve fails — `/menu/demo` is Demo Café) |
+| `/menu-prisma/:tenantId` | Prisma public menu (direct) |
 | `/r/:tenantId/review` | Review gate |
 | `/r/:tenantId/wifi` | Legacy/simple Wi‑Fi access (Prisma QR) |
-| `/s/demo` | Website demo (renders Home) |
-| `/s/:tenantId` | Tenant website preview |
+| `/s/:tenantId` | Tenant website preview (`/s/demo` = Demo Café site + chatbot) |
 | `/login` | Supabase login |
 | `/admin` | Admin dashboard (Prisma-provisioned user) |
 | `/demo/dashboard` | Enterprise console demo (Supabase `profiles`) |
@@ -107,7 +108,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 - **Wi‑Fi (tenant / QR)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
 - **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
-- **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`)
+- **Chatbot** — bots, knowledge, conversations (Prisma + `api/chatbot`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback
 - **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
 
 ---
@@ -130,6 +131,9 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Area | Paths |
 |------|--------|
 | Routes | `src/App.jsx` |
+| Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx` |
+| Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
+| Chatbot matcher | `api/_lib/chatbotMatch.js`, `api/chatbot/message.js` |
 | Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
 | Auth (enterprise / profiles) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
 | Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx` |
@@ -156,6 +160,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 - `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
 - Captive ops checklist: apply migration `005`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
 - Demo `gateway_hmac_secret` from seed must be rotated outside local/demo use.
+- Richer Demo Café content (menu, website blocks, Wi‑Fi splash, chatbot knowledge) requires a local re-seed: `npm run db:seed`.
 
 ---
 
@@ -163,8 +168,12 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 
 ### 2026-08-12
 
+- Guest demo UX: `/demo` hub, Home “Try demos” nav, DemoChrome on café guest pages.
+- `/s/demo` now loads the Prisma Demo Café website (not marketing Home). `/menu/demo` falls back to the Prisma public menu when no Supabase enterprise slug `demo` exists.
+- Seed expanded: ~10 menu items (Drinks/Plates/Sweets), hours/map/CTA website blocks, Wi‑Fi splash, chatbot knowledge. Re-run `npm run db:seed` locally.
+- Chatbot API matches seeded knowledge (hours, menu, Wi‑Fi, reviews) instead of a stub-only reply.
 - Added enterprise multi-tenant Supabase layer (migrations 001–004), AuthContext, realtime menu, ModuleGuard, seed.
-- Added enterprise console demo at `/demo/dashboard`; `/enterprise` redirects there; marketing website demo at `/s/demo`.
+- Added enterprise console demo at `/demo/dashboard`; `/enterprise` redirects there.
 - Restyled enterprise console to Omnitaps design tokens.
 - Added Wi‑Fi captive portal module (migration 005, guest + admin pages, Stripe-related env, `api/v1/*`).
 - **Path A wiring complete:** `webHandlerAdapter`, Vite `ssrLoadModule` routes, React Router mounts, profiles auth, non-blocking CoA, seed enables `wifi` + demo HMAC/plans; commit `9518211` on `main`.

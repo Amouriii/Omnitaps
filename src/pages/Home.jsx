@@ -150,6 +150,9 @@ export default function Home() {
                                 {l.label}
                             </a>
                         ))}
+                        <Link to="/demo" className="nav-link text-[15px]">
+                            Try demos
+                        </Link>
                     </nav>
 
                     <div className="hidden md:flex items-center gap-4">
@@ -194,6 +197,13 @@ export default function Home() {
                                     {l.label}
                                 </a>
                             ))}
+                            <Link
+                                to="/demo"
+                                onClick={() => setMobileOpen(false)}
+                                className="py-2.5 text-[15px] text-ink-muted"
+                            >
+                                Try demos
+                            </Link>
                         </nav>
                             <Link
                                 to="/login"
@@ -374,6 +384,7 @@ export default function Home() {
                             <Link to="/menu/demo" className="hover:text-white transition-colors">Guest menu</Link>
                             <Link to="/r/demo/wifi" className="hover:text-white transition-colors">Wi‑Fi QR</Link>
                             <Link to="/s/demo" className="hover:text-white transition-colors">Website demo</Link>
+                            <Link to="/demo" className="hover:text-white transition-colors">Demo Café hub</Link>
                             <Link to="/demo/dashboard" className="hover:text-white transition-colors">Dashboard demo</Link>
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import DemoChrome from "../components/demo/DemoChrome";
 import { QrCodeSvg } from "../lib/qr";
 import { ApiError, apiRequest } from "../lib/apiClient";
 
@@ -53,14 +54,28 @@ export default function WifiAccess() {
     "Scan the QR code with your camera to join the network. No front-desk password lookup required.";
 
   const qrValue = useMemo(() => data?.network?.wifiPayload || "", [data]);
+  const password = data?.network?.password || "";
+  const [copied, setCopied] = useState(false);
+
+  async function copyPassword() {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#faf9f7_0%,#eef2f8_100%)] text-ink">
+    <main className="min-h-screen bg-porcelain text-ink font-body">
+      <DemoChrome slug={tenantId} />
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-5 py-10 sm:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Guest Wi‑Fi</p>
           <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
-            OmniTaps
+            Omnitaps
           </Link>
         </div>
 
@@ -90,8 +105,22 @@ export default function WifiAccess() {
                 <p>
                   Security: <span className="font-semibold text-ink">{data.network.authType}</span>
                 </p>
+                {password ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p>
+                      Password: <span className="font-mono font-semibold text-ink">{password}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={copyPassword}
+                      className="rounded-full border border-hairline bg-porcelain px-3 py-1 text-[12px] font-medium text-ink hover:border-hairline-strong"
+                    >
+                      {copied ? "Copied" : "Copy password"}
+                    </button>
+                  </div>
+                ) : null}
                 <p className="max-w-sm leading-[1.7]">
-                  Open your camera app, scan the code, and confirm the Wi‑Fi join prompt on your device.
+                  Open your camera app, scan the code, and confirm the Wi‑Fi join prompt on your device. On a laptop, copy the password and join {data.network.ssid} from system settings.
                 </p>
               </div>
             </div>
