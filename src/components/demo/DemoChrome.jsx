@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 export const DEMO_SLUG = "demo";
@@ -15,9 +16,32 @@ export function isDemoSlug(value) {
 
 export default function DemoChrome() {
   const location = useLocation();
+  const headerRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const node = headerRef.current;
+    if (!node) return undefined;
+
+    const sync = () => {
+      document.documentElement.style.setProperty(
+        "--demo-chrome-h",
+        `${Math.ceil(node.getBoundingClientRect().height)}px`,
+      );
+    };
+
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(node);
+    window.addEventListener("resize", sync);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", sync);
+      document.documentElement.style.removeProperty("--demo-chrome-h");
+    };
+  }, []);
 
   return (
-    <header className="demo-chrome-bar sticky top-0 z-[70] border-b border-hairline bg-[#f3eadc] pt-[env(safe-area-inset-top,0px)]">
+    <header ref={headerRef} className="demo-chrome-bar demo-cafe-chat">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <p className="text-[13px] text-ink-muted">
           You’re at <span className="font-display font-semibold text-ink">Demo Café</span>

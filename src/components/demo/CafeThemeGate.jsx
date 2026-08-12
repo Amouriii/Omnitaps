@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import DemoChrome from "./DemoChrome";
 
@@ -12,14 +14,22 @@ export function isDemoCafePath(pathname) {
 
 export default function CafeThemeGate({ children }) {
   const { pathname } = useLocation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!isDemoCafePath(pathname)) {
     return children;
   }
 
   return (
-    <div className="demo-cafe-theme min-h-screen">
-      <DemoChrome />
-      {children}
-    </div>
+    <>
+      {mounted ? createPortal(<DemoChrome />, document.body) : null}
+      <div className="demo-cafe-theme min-h-screen pt-[var(--demo-chrome-h,3.5rem)]">
+        {children}
+      </div>
+    </>
   );
 }
