@@ -25,7 +25,7 @@ npm run launch
 Builds, syncs env to Vercel, deploys production.
 
 Then open your Vercel URL:
-- `/menu/demo` · `/r/demo/review` · `/r/demo/wifi` · `/s/demo` · `/login`
+- `/menu/demo` · `/r/demo/review` · `/r/demo/wifi` · `/s/demo` · `/demo/dashboard` · `/login`
 
 ---
 

@@ -15,5 +15,12 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "app",
+    "components",
+    "lib",
+    "api/**/*.ts",
+    "db"
+  ]
 }

@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
@@ -14,6 +14,14 @@ const WifiAccess = lazy(() => import("./pages/WifiAccess"));
 const WebsitePreview = lazy(() => import("./pages/WebsitePreview"));
 const Login = lazy(() => import("./pages/Login"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const EnterpriseConsole = lazy(() => import("./pages/EnterpriseConsole"));
+const WifiGuestLanding = lazy(() => import("./pages/WifiGuestLanding"));
+const WifiGuestSession = lazy(() => import("./pages/WifiGuestSession"));
+const WifiGuestCheckout = lazy(() => import("./pages/WifiGuestCheckout"));
+const EnterpriseWifiDashboard = lazy(() => import("./pages/EnterpriseWifiDashboard"));
+const EnterpriseWifiSettings = lazy(() => import("./pages/EnterpriseWifiSettings"));
+const EnterpriseWifiPlans = lazy(() => import("./pages/EnterpriseWifiPlans"));
+const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
 
 function RouteFallback() {
   return (
@@ -35,8 +43,41 @@ export default function App() {
             <Route path="/r/:tenantId/review" element={<ReviewGate />} />
             <Route path="/r/:tenantId/wifi" element={<WifiAccess />} />
             <Route path="/menu/:tenantId" element={<MenuPublic />} />
+            {/* Website module demo: Omnitaps marketing site */}
+            <Route path="/s/demo" element={<Home />} />
             <Route path="/s/:tenantId" element={<WebsitePreview />} />
             <Route path="/login" element={<Login />} />
+            {/* Captive portal (public guest) */}
+            <Route path="/wifi-guest" element={<WifiGuestLanding />} />
+            <Route path="/wifi-guest/session" element={<WifiGuestSession />} />
+            <Route path="/wifi-guest/checkout" element={<WifiGuestCheckout />} />
+            {/* Enterprise dashboard demo */}
+            <Route path="/demo/dashboard" element={<EnterpriseConsole />} />
+            <Route path="/enterprise" element={<Navigate to="/demo/dashboard" replace />} />
+            <Route
+              path="/enterprise/wifi"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiDashboard />
+                </WifiModuleGate>
+              }
+            />
+            <Route
+              path="/enterprise/wifi/settings"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiSettings />
+                </WifiModuleGate>
+              }
+            />
+            <Route
+              path="/enterprise/wifi/plans"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiPlans />
+                </WifiModuleGate>
+              }
+            />
             <Route
               path="/admin"
               element={

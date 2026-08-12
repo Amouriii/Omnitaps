@@ -3,12 +3,12 @@
  */
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useAuth } from "../../context/AuthContext";
 import { getSupabaseClient } from "../../services/supabaseClient";
 import type { EnterpriseModule } from "../../types";
 
 export interface ModuleGuardProps {
   moduleKey: string;
+  enterpriseId: string;
   children: ReactNode;
   fallback?: ReactNode;
 }
@@ -36,8 +36,12 @@ function assertEnterpriseModule(row: unknown): EnterpriseModule {
   };
 }
 
-export function ModuleGuard({ moduleKey, children, fallback }: ModuleGuardProps) {
-  const { profile, loading: authLoading } = useAuth();
+export function ModuleGuard({
+  moduleKey,
+  enterpriseId,
+  children,
+  fallback,
+}: ModuleGuardProps) {
   const [state, setState] = useState<ModuleGuardState>({
     loading: true,
     enabled: false,
@@ -46,11 +50,6 @@ export function ModuleGuard({ moduleKey, children, fallback }: ModuleGuardProps)
   });
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    const enterpriseId = profile?.enterprise_id;
     if (!enterpriseId) {
       setState({
         loading: false,
@@ -113,14 +112,18 @@ export function ModuleGuard({ moduleKey, children, fallback }: ModuleGuardProps)
     return () => {
       cancelled = true;
     };
-  }, [authLoading, profile?.enterprise_id, moduleKey]);
+  }, [enterpriseId, moduleKey]);
 
-  if (authLoading || state.loading) {
-    return <div aria-busy="true">Checking module access…</div>;
+  if (state.loading) {
+    return <div className="text-[14px] text-ink-muted" aria-busy="true">Checking module access…</div>;
   }
 
   if (state.error) {
-    return <div role="alert">Module check failed: {state.error}</div>;
+    return (
+      <div className="rounded-2xl border border-hairline bg-porcelain px-4 py-3 text-[14px] text-ink" role="alert">
+        Module check failed: {state.error}
+      </div>
+    );
   }
 
   if (!state.enabled) {
@@ -129,9 +132,12 @@ export function ModuleGuard({ moduleKey, children, fallback }: ModuleGuardProps)
     }
 
     return (
-      <div role="status" aria-live="polite">
-        <h2>Module Disabled</h2>
-        <p>
+      <div role="status" aria-live="polite" className="rounded-2xl border border-brass/20 bg-brass-soft/60 p-5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-brass-dark">
+          Module disabled
+        </p>
+        <h2 className="mt-2 font-display text-[18px] font-semibold">Module Disabled</h2>
+        <p className="mt-2 text-[14px] leading-[1.7] text-ink">
           The <strong>{moduleKey}</strong> module is not enabled for this enterprise.
         </p>
       </div>

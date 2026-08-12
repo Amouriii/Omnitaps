@@ -128,30 +128,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const supabase = getSupabaseClient();
     let cancelled = false;
+    const safetyTimer = window.setTimeout(() => {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }, 4000);
 
-    supabase.auth
-      .getSession()
-      .then(async ({ data }) => {
+    const boot = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
         if (cancelled) return;
         await hydrate(data.session ?? null);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setSession(null);
           setProfile(null);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoading(false);
         }
-      });
+        window.clearTimeout(safetyTimer);
+      }
+    };
+
+    void boot();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        void hydrate(nextSession).finally(() => {
+      (event, nextSession) => {
+        if (event === "INITIAL_SESSION") {
+          return;
+        }
+        void hydrate(nextSession).catch(() => {
           if (!cancelled) {
-            setLoading(false);
+            setSession(null);
+            setProfile(null);
           }
         });
       },
@@ -159,6 +170,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(safetyTimer);
       subscription.subscription.unsubscribe();
     };
   }, [configured, hydrate]);

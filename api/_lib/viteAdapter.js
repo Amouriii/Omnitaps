@@ -1,6 +1,16 @@
 /**
  * Adapts Vercel-style (req, res) handlers for Vite's Connect middleware in local dev.
  */
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
 export function createViteApiMiddleware(routes) {
   return async function omnitapsApiMiddleware(req, res, next) {
     const url = new URL(req.url || "/", "http://localhost");
@@ -23,12 +33,19 @@ export function createViteApiMiddleware(routes) {
       return;
     }
 
+    const method = (req.method || "GET").toUpperCase();
+    let rawBody;
+    if (method !== "GET" && method !== "HEAD") {
+      rawBody = await readRawBody(req);
+    }
+
     const vercelLikeReq = Object.create(req);
     vercelLikeReq.method = req.method;
     vercelLikeReq.headers = req.headers;
     vercelLikeReq.url = `${pathname}${url.search}`;
     vercelLikeReq.query = { ...Object.fromEntries(url.searchParams.entries()), ...params };
     vercelLikeReq.body = undefined;
+    vercelLikeReq.rawBody = rawBody;
     vercelLikeReq.socket = req.socket;
 
     const vercelLikeRes = {
@@ -86,7 +103,7 @@ function matchRoute(pattern, pathname) {
   for (let i = 0; i < patternParts.length; i += 1) {
     const part = patternParts[i];
     const value = pathParts[i];
-    if (part.startsWith(":") ) {
+    if (part.startsWith(":")) {
       params[part.slice(1)] = decodeURIComponent(value);
       continue;
     }

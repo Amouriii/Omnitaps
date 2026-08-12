@@ -373,7 +373,8 @@ export default function Home() {
                             <Link to="/r/demo/review" className="hover:text-white transition-colors">Review funnel</Link>
                             <Link to="/menu/demo" className="hover:text-white transition-colors">Guest menu</Link>
                             <Link to="/r/demo/wifi" className="hover:text-white transition-colors">Wi‑Fi QR</Link>
-                            <Link to="/s/demo" className="hover:text-white transition-colors">Tenant site</Link>
+                            <Link to="/s/demo" className="hover:text-white transition-colors">Website demo</Link>
+                            <Link to="/demo/dashboard" className="hover:text-white transition-colors">Dashboard demo</Link>
                         </div>
                     </div>
                 </div>

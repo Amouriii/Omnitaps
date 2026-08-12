@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createViteApiMiddleware } from "./api/_lib/viteAdapter.js";
+import { wrapWebHandlers } from "./api/_lib/webHandlerAdapter.js";
 
 async function loadApiRoutes() {
   const [
@@ -40,11 +41,67 @@ async function loadApiRoutes() {
   ];
 }
 
+function createSsrWebRoute(server, moduleId, methods) {
+  return async function ssrWebHandler(req, res) {
+    const mod = await server.ssrLoadModule(moduleId);
+    const handlers = {};
+    for (const method of methods) {
+      if (typeof mod[method] !== "function") {
+        throw new Error(`Missing ${method} export in ${moduleId}`);
+      }
+      handlers[method] = mod[method];
+    }
+    return wrapWebHandlers(handlers)(req, res);
+  };
+}
+
 function omnitapsLocalApiPlugin() {
   return {
     name: "omnitaps-local-api",
     async configureServer(server) {
       const routes = await loadApiRoutes();
+      routes.push(
+        {
+          pattern: "/api/v1/captive/authenticate",
+          handler: createSsrWebRoute(
+            server,
+            "/app/api/v1/captive/authenticate/route.ts",
+            ["GET", "POST"],
+          ),
+        },
+        {
+          pattern: "/api/v1/captive/session-status",
+          handler: createSsrWebRoute(
+            server,
+            "/app/api/v1/captive/session-status/route.ts",
+            ["GET", "POST", "PATCH"],
+          ),
+        },
+        {
+          pattern: "/api/v1/captive/checkout",
+          handler: createSsrWebRoute(
+            server,
+            "/app/api/v1/captive/checkout/route.ts",
+            ["GET", "POST"],
+          ),
+        },
+        {
+          pattern: "/api/v1/admin/wifi/telemetry",
+          handler: createSsrWebRoute(
+            server,
+            "/app/api/v1/admin/wifi/telemetry/route.ts",
+            ["GET"],
+          ),
+        },
+        {
+          pattern: "/api/v1/admin/wifi/settings",
+          handler: createSsrWebRoute(
+            server,
+            "/app/api/v1/admin/wifi/settings/route.ts",
+            ["GET", "PATCH", "POST", "DELETE"],
+          ),
+        },
+      );
       server.middlewares.use(createViteApiMiddleware(routes));
     },
   };

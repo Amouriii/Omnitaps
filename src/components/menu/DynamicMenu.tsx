@@ -2,14 +2,13 @@
  * TASK-4.1: Hierarchical navigation renderer driven by realtime menu state.
  */
 
-import type { LucideIcon } from "lucide-react";
-import * as LucideIcons from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { Boxes, Globe, LayoutDashboard, Menu, type LucideIcon } from "lucide-react";
 import { useRealtimeMenu } from "../../hooks/useRealtimeMenu";
 import type { MenuItem, UserRole } from "../../types";
 
 export interface DynamicMenuProps {
   enterpriseId: string;
+  role: UserRole;
   className?: string;
 }
 
@@ -17,14 +16,18 @@ interface MenuTreeNode extends MenuItem {
   children: MenuTreeNode[];
 }
 
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Menu,
+  Boxes,
+  Globe,
+};
+
 function resolveIcon(iconName: string | null): LucideIcon | null {
   if (!iconName) {
     return null;
   }
-
-  const icons = LucideIcons as unknown as Record<string, LucideIcon>;
-  const candidate = icons[iconName];
-  return typeof candidate === "function" ? candidate : null;
+  return ICON_MAP[iconName] ?? null;
 }
 
 function roleAllowed(item: MenuItem, role: UserRole | null): boolean {
@@ -73,25 +76,23 @@ function MenuBranch({ nodes }: { nodes: MenuTreeNode[] }) {
   }
 
   return (
-    <ul style={{ listStyle: "none", margin: 0, paddingLeft: "1rem" }}>
+    <ul className="m-0 list-none space-y-1 p-0">
       {nodes.map((node) => {
         const Icon = resolveIcon(node.icon_name);
         return (
-          <li key={node.id} style={{ marginBottom: "0.35rem" }}>
+          <li key={node.id}>
             <a
               href={node.url_path}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                textDecoration: "none",
-                color: "inherit",
-              }}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[14px] font-medium text-ink-muted transition-colors hover:bg-porcelain hover:text-ink"
             >
-              {Icon ? <Icon size={16} aria-hidden="true" /> : null}
+              {Icon ? <Icon size={16} className="text-tap" aria-hidden="true" /> : null}
               <span>{node.label}</span>
             </a>
-            <MenuBranch nodes={node.children} />
+            {node.children.length > 0 ? (
+              <div className="ml-3 border-l border-hairline pl-2">
+                <MenuBranch nodes={node.children} />
+              </div>
+            ) : null}
           </li>
         );
       })}
@@ -99,25 +100,32 @@ function MenuBranch({ nodes }: { nodes: MenuTreeNode[] }) {
   );
 }
 
-export function DynamicMenu({ enterpriseId, className }: DynamicMenuProps) {
-  const { profile } = useAuth();
+export function DynamicMenu({ enterpriseId, role, className }: DynamicMenuProps) {
   const { menuItems, loading, error } = useRealtimeMenu(enterpriseId);
-  const tree = buildMenuTree(menuItems, profile?.role ?? null);
+  const tree = buildMenuTree(menuItems, role);
 
   if (loading) {
-    return <nav className={className} aria-busy="true">Loading menu…</nav>;
+    return (
+      <nav className={className} aria-busy="true">
+        <p className="text-[13px] text-ink-muted">Loading menu…</p>
+      </nav>
+    );
   }
 
   if (error) {
     return (
       <nav className={className} role="alert">
-        Unable to load menu: {error}
+        <p className="text-[13px] text-ink-muted">Unable to load menu: {error}</p>
       </nav>
     );
   }
 
   if (tree.length === 0) {
-    return <nav className={className}>No menu items available.</nav>;
+    return (
+      <nav className={className}>
+        <p className="text-[13px] text-ink-muted">No menu items available.</p>
+      </nav>
+    );
   }
 
   return (

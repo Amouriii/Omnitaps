@@ -4,7 +4,6 @@
 
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Save } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
 import { useRealtimeMenu } from "../../hooks/useRealtimeMenu";
 import {
   createMenuItem,
@@ -16,6 +15,7 @@ import type { MenuItem, UserRole } from "../../types";
 
 export interface MenuEditorProps {
   enterpriseId: string;
+  role: UserRole;
   className?: string;
 }
 
@@ -48,8 +48,13 @@ function emptyCreateForm(): CreateFormState {
   };
 }
 
-export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
-  const { profile } = useAuth();
+const fieldClass =
+  "w-full rounded-xl border border-hairline bg-porcelain px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-faint focus:border-tap focus:outline-none";
+
+const ghostBtnClass =
+  "inline-flex items-center gap-1.5 rounded-xl border border-hairline bg-porcelain px-3 py-2 text-[12px] font-medium text-ink hover:border-hairline-strong disabled:cursor-not-allowed disabled:opacity-50";
+
+export function MenuEditor({ enterpriseId, role, className }: MenuEditorProps) {
   const { menuItems, loading, error, refresh } = useRealtimeMenu(enterpriseId);
   const [drafts, setDrafts] = useState<Record<string, DraftFields>>({});
   const [createForm, setCreateForm] = useState<CreateFormState>(emptyCreateForm);
@@ -61,10 +66,12 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
     [menuItems],
   );
 
-  if (profile?.role !== "enterprise_admin") {
+  if (role !== "enterprise_admin") {
     return (
       <div className={className} role="status">
-        Menu editing is restricted to enterprise administrators.
+        <p className="text-[14px] text-ink-muted">
+          Menu editing is restricted to enterprise administrators.
+        </p>
       </div>
     );
   }
@@ -173,18 +180,25 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
   };
 
   if (loading) {
-    return <div className={className}>Loading menu editor…</div>;
+    return (
+      <div className={className}>
+        <p className="text-[14px] text-ink-muted">Loading menu editor…</p>
+      </div>
+    );
   }
 
   return (
     <section className={className} aria-label="Menu editor">
       {(error || actionError) && (
-        <p role="alert" style={{ color: "#b42318" }}>
+        <p
+          role="alert"
+          className="mb-4 rounded-2xl border border-hairline bg-porcelain px-4 py-3 text-[14px] text-ink"
+        >
           {actionError ?? error}
         </p>
       )}
 
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+      <ul className="m-0 list-none space-y-4 p-0">
         {sortedItems.map((item, index) => {
           const draft = getDraft(item);
           const disabled = busyId === item.id;
@@ -192,19 +206,14 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
           return (
             <li
               key={item.id}
-              style={{
-                display: "grid",
-                gap: "0.5rem",
-                marginBottom: "0.75rem",
-                paddingBottom: "0.75rem",
-                borderBottom: "1px solid #e5e7eb",
-              }}
+              className="rounded-2xl border border-hairline bg-porcelain/70 p-4"
             >
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   aria-label={`Label for ${item.label}`}
                   value={draft.label}
                   disabled={disabled}
+                  className={fieldClass}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     setDraftField(item.id, "label", event.target.value, item)
                   }
@@ -213,18 +222,20 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
                   aria-label={`URL path for ${item.label}`}
                   value={draft.url_path}
                   disabled={disabled}
+                  className={fieldClass}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     setDraftField(item.id, "url_path", event.target.value, item)
                   }
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={disabled}
                   onClick={() => handleSaveItem(item)}
                   aria-label={`Save ${item.label}`}
+                  className="btn-primary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold disabled:opacity-50"
                 >
                   <Save size={14} /> Save
                 </button>
@@ -233,15 +244,17 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
                   disabled={disabled}
                   onClick={() => handleToggleVisibility(item)}
                   aria-label={`Toggle visibility for ${item.label}`}
+                  className={ghostBtnClass}
                 >
                   {item.is_visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                  {item.is_visible ? " Visible" : " Hidden"}
+                  {item.is_visible ? "Visible" : "Hidden"}
                 </button>
                 <button
                   type="button"
                   disabled={disabled || index === 0}
                   onClick={() => handleReorder(item, "up")}
                   aria-label={`Move ${item.label} up`}
+                  className={ghostBtnClass}
                 >
                   <ArrowUp size={14} />
                 </button>
@@ -250,6 +263,7 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
                   disabled={disabled || index === sortedItems.length - 1}
                   onClick={() => handleReorder(item, "down")}
                   aria-label={`Move ${item.label} down`}
+                  className={ghostBtnClass}
                 >
                   <ArrowDown size={14} />
                 </button>
@@ -259,12 +273,16 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
         })}
       </ul>
 
-      <form onSubmit={handleCreate} style={{ display: "grid", gap: "0.5rem" }}>
-        <h3 style={{ margin: 0 }}>Add menu item</h3>
+      <form
+        onSubmit={handleCreate}
+        className="mt-6 grid gap-3 rounded-2xl border border-hairline bg-porcelain/70 p-4"
+      >
+        <h3 className="m-0 font-display text-[16px] font-semibold">Add menu item</h3>
         <input
           required
           placeholder="Label"
           value={createForm.label}
+          className={fieldClass}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             setCreateForm((prev) => ({ ...prev, label: event.target.value }))
           }
@@ -273,6 +291,7 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
           required
           placeholder="URL path"
           value={createForm.url_path}
+          className={fieldClass}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             setCreateForm((prev) => ({ ...prev, url_path: event.target.value }))
           }
@@ -280,6 +299,7 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
         <input
           placeholder="Icon name (lucide)"
           value={createForm.icon_name}
+          className={fieldClass}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             setCreateForm((prev) => ({ ...prev, icon_name: event.target.value }))
           }
@@ -287,11 +307,16 @@ export function MenuEditor({ enterpriseId, className }: MenuEditorProps) {
         <input
           placeholder="Parent id (optional)"
           value={createForm.parent_id}
+          className={fieldClass}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             setCreateForm((prev) => ({ ...prev, parent_id: event.target.value }))
           }
         />
-        <button type="submit" disabled={busyId === "create"}>
+        <button
+          type="submit"
+          disabled={busyId === "create"}
+          className="btn-primary inline-flex w-fit items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold disabled:opacity-50"
+        >
           <Plus size={14} /> Create item
         </button>
       </form>

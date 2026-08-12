@@ -14,10 +14,16 @@ export interface UseRealtimeMenuResult {
   refresh: () => Promise<void>;
 }
 
+let realtimeMenuSubscriberId = 0;
+
 export function useRealtimeMenu(enterpriseId: string): UseRealtimeMenuResult {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [subscriberId] = useState(() => {
+    realtimeMenuSubscriberId += 1;
+    return realtimeMenuSubscriberId;
+  });
 
   const refresh = useCallback(async () => {
     if (!enterpriseId) {
@@ -51,8 +57,9 @@ export function useRealtimeMenu(enterpriseId: string): UseRealtimeMenuResult {
     }
 
     const supabase = getSupabaseClient();
+    const channelName = `menu_items:enterprise:${enterpriseId}:${subscriberId}`;
     const channel = supabase
-      .channel(`menu_items:enterprise:${enterpriseId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -70,7 +77,7 @@ export function useRealtimeMenu(enterpriseId: string): UseRealtimeMenuResult {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [enterpriseId, refresh]);
+  }, [enterpriseId, refresh, subscriberId]);
 
   return {
     menuItems,

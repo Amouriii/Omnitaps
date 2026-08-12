@@ -18,11 +18,15 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8000);
+
     try {
       const payload = await apiRequest("/api/admin/session", {
         headers: {
           Authorization: `Bearer ${activeSession.access_token}`,
         },
+        signal: controller.signal,
       });
       setProfile(payload);
       setProfileError("");
@@ -31,6 +35,8 @@ export function AuthProvider({ children }) {
       setProfile(null);
       setProfileError(error.message || "Unable to load account profile.");
       return null;
+    } finally {
+      window.clearTimeout(timer);
     }
   }, []);
 
@@ -43,17 +49,37 @@ export function AuthProvider({ children }) {
     const supabase = getSupabaseBrowserClient();
     let cancelled = false;
 
+    const persistAccessToken = (activeSession) => {
+      try {
+        if (activeSession?.access_token) {
+          window.localStorage.setItem("omnitaps_access_token", activeSession.access_token);
+        } else {
+          window.localStorage.removeItem("omnitaps_access_token");
+          window.sessionStorage.removeItem("omnitaps_access_token");
+        }
+      } catch {
+        // Ignore storage quota / private-mode failures.
+      }
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       setSession(data.session ?? null);
-      return refreshProfile(data.session).finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      persistAccessToken(data.session);
+      setLoading(false);
+      void refreshProfile(data.session);
+    }).catch(() => {
+      if (!cancelled) {
+        setSession(null);
+        persistAccessToken(null);
+        setLoading(false);
+      }
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      refreshProfile(nextSession);
+      persistAccessToken(nextSession);
+      void refreshProfile(nextSession);
     });
 
     return () => {
@@ -82,6 +108,12 @@ export function AuthProvider({ children }) {
     const supabase = getSupabaseBrowserClient();
     if (supabase) {
       await supabase.auth.signOut();
+    }
+    try {
+      window.localStorage.removeItem("omnitaps_access_token");
+      window.sessionStorage.removeItem("omnitaps_access_token");
+    } catch {
+      // ignore
     }
     setSession(null);
     setProfile(null);
