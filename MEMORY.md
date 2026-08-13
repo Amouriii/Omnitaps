@@ -1,7 +1,7 @@
 # Omnitaps — Project Memory
 
 > Living knowledge base for agents and humans. **Update this file** whenever you add, remove, or materially change features, routes, schema, env vars, or known issues.
-> Last updated: 2026-08-12
+> Last updated: 2026-08-13
 
 ---
 
@@ -13,7 +13,7 @@
 | Repo | `https://github.com/onouh/Omnitaps.git` |
 | Default branch | `main` |
 | Live | `https://omnitaps.vercel.app` |
-| App style | React 19 + Vite 8 SPA; Vercel Serverless `/api`; Tailwind 4 |
+| App style | React 19 + Vite 8 SPA; one Vercel Serverless Function `api/[[...path]].js`; Tailwind 4 |
 | Primary auth | Supabase Auth (email) |
 | Data (core product) | Postgres via **Prisma** (`prisma/schema.prisma`) — tenants, menu, reviews, wifi, website, chatbot |
 | Data (enterprise nav / captive) | **Supabase** SQL migrations under `supabase/migrations/` — enterprises, profiles, menu_items, enterprise_modules, Wi‑Fi captive tables |
@@ -29,6 +29,7 @@
 npm run setup     # install, prisma push, seed demo + admin
 npm run dev       # Vite (APIs mounted locally)
 npm run build     # prisma generate && vite build
+npm start         # production HTTP: dist/ + API dispatch (scripts/docker-server.mjs via tsx)
 npm run db:seed   # re-seed Demo Café (Prisma TCP, or HTTPS if DATABASE_URL is a placeholder)
 npm run db:seed-http  # same café seed via Supabase REST (no Postgres TCP)
 npm run launch    # build + sync env to Vercel + production deploy
@@ -43,6 +44,8 @@ Required env families:
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `SEED_ADMIN_*`, `SEED_TENANT_*`
 - Captive Wi‑Fi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (+ per-enterprise `gateway_hmac_secret` in Supabase `enterprises`)
+- Docker **build-time** (baked into the SPA): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`--build-arg`; rebuild to change)
+- Docker **runtime** (container env, never bake `.env` into the image): `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT` (default `3000`)
 
 ---
 
@@ -64,7 +67,7 @@ Required env families:
    - RADIUS UDP CoA on Vercel is unreliable; checkout webhook fires CoA **non-blocking** and should not delay Stripe ACK. Prefer a worker later for durable CoA.
 5. **Design tokens**
    - **Omnitaps product** (marketing Home, `/login`, `ConsoleChrome`, `/admin`, `/demo/dashboard`): porcelain `#faf9f7` / surface `#ffffff` / ink `#12151a` / tap `#155eef` / brass `#b8873b` / hairline `#e7e4dd`, Instrument Sans, IBM Plex Mono. Defined in `src/index.css` `@theme`.
-   - **Demo Café guest brand** (scoped `.demo-cafe-theme`, not a global rewrite): cream paper porcelain `#f3eadc`, surface `#faf4ea`, espresso ink `#2c1b12`, terracotta accent (reuses `--color-tap`) `#c45c26`, brass-gold `#c4a35a`, hairline `#e4d4c0`. Display **Fraunces**, body Instrument Sans. CSS: `src/styles/demoCafe.css`. Applied by `CafeThemeGate` on `/demo`, `/menu/demo`, `/menu-prisma/demo`, `/s/demo`, `/r/demo/*` only — **not** `/demo/dashboard`.
+   - **Demo Café guest brand** (scoped `.demo-cafe-theme`, not a global rewrite): cream paper porcelain `#f3eadc`, surface `#faf4ea`, espresso ink `#2c1b12`, terracotta accent (reuses `--color-tap`) `#c45c26`, brass-gold `#c4a35a`, hairline `#e4d4c0`. Display **Fraunces**, body Instrument Sans. CSS: `src/styles/demoCafe.css`. `CafeThemeGate` wraps those guest paths only (`/demo`, `/menu/demo`, `/menu-prisma/demo`, `/s/demo`, `/r/demo/*` — **not** `/demo/dashboard`): it portals `DemoChrome` to `document.body` and pads the page with `--demo-chrome-h`. The bar (`.demo-chrome-bar`) is `position: fixed` so it stays above café pages and the chat launcher.
    - Wordmark is **Omnitaps** on product surfaces; guest chrome says **Demo Café · Harbor Lane**.
 
 ---
@@ -146,7 +149,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Area | Paths |
 |------|--------|
 | Routes | `src/App.jsx` |
-| Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx`, `src/components/demo/CafeThemeGate.jsx`, `src/styles/demoCafe.css` |
+| Demo hub / chrome | `src/pages/DemoHub.jsx`, `src/components/demo/DemoChrome.jsx`, `src/components/demo/CafeThemeGate.jsx` (portals fixed chrome), `src/styles/demoCafe.css` |
 | Demo Café API fallback | `api/_lib/demoCafe.js` — website/menu/wifi/chat when Prisma is down |
 | Operator chrome | `src/components/console/ConsoleChrome.jsx` — `/admin`, `/demo/dashboard`, `/login` |
 | Prisma public menu UI | `src/pages/MenuPublic.jsx`, `src/components/menu/PrismaPublicMenu.jsx` |
@@ -169,6 +172,8 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Schema (do not apply raw) | `db/schema/wifi.ts` (types/Zod only for agents; DB = migration 005) |
 | Prisma schema | `prisma/schema.prisma` |
 | Deploy | `vercel.json` (CSP allows Stripe), `scripts/launch.mjs` |
+| Docker HTTP server | `scripts/docker-server.mjs` — Node `http`, `createViteApiMiddleware` + `createProductionRouteTable()`, `dist/` + SPA fallback, same security headers as `vercel.json` |
+| Docker image | `ghcr.io/onouh/omnitaps:latest` (GHCR multi-arch `linux/amd64` + `linux/arm64`); `Dockerfile` (multi-stage `node:22-bookworm-slim`, OCI `org.opencontainers.image.source`), `.dockerignore`, `.github/workflows/docker-publish.yml` |
 
 ---
 
@@ -178,7 +183,7 @@ Guest chat is a Vite widget + Vercel Node handler. Do **not** add Next.js `app/a
 
 | Path | Role |
 |------|------|
-| `src/modules/chatbot/components/ChatWidget.tsx` | Guest widget on `/s/:tenantId` (`WebsitePreview`) |
+| `src/modules/chatbot/components/ChatWidget.tsx` | Guest widget on `/s/:tenantId` (`WebsitePreview`); open panel is portaled to `document.body` |
 | `src/modules/chatbot/lib/sendChatMessage.ts` | Client POST helper for `/api/chatbot/message` |
 | `src/modules/chatbot/prompts/` | SPA system-prompt / greeting templates |
 | `src/modules/chatbot/types.ts` | Shared client types (not a copy of Prisma schema) |
@@ -198,7 +203,8 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 
 - Local Prisma/admin APIs fail if `DATABASE_URL` still has a placeholder password (`[YOUR-PASSWORD]`). Unencoded brackets also break URL parsing. Supabase JS + service role can still work for Auth/REST. `npm run db:seed` now detects that and falls back to `db:seed-http` (PostgREST). Paste the real URI from Supabase → Database settings to use Prisma TCP.
 - Guest Demo Café routes (`/s/demo`, `/menu/demo`, `/r/demo/wifi`, chatbot on the café site) serve Harbor Lane content from `api/_lib/demoCafe.js` when Prisma is unconfigured or the demo tenant/rows are missing. `/admin` still needs a real `DATABASE_URL`.
-- After changing any `VITE_*` value, redeploy (or `npm run launch`) so the client bundle picks them up.
+- After changing any `VITE_*` value, redeploy (or `npm run launch`) so the client bundle picks them up. Docker images need a rebuild with `--build-arg VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
+- Optional Docker image on GHCR: `docker pull ghcr.io/onouh/omnitaps:latest` then `docker run --rm -p 3000:3000 --env-file .env ghcr.io/onouh/omnitaps:latest`. Postgres/Supabase stay outside the image. CI (`.github/workflows/docker-publish.yml`) rebuilds on push to `main` using Actions secrets/vars `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (anon only). First GHCR package is private until made public. Vercel production is unchanged.
 - Realtime: avoid duplicate channel names when `DynamicMenu` and `MenuEditor` both subscribe — use unique channel IDs.
 - Dual trees (`app/` handler/UI sources vs `src/` Vite mounts): edit the `app/` / `components/wifi/` sources; keep re-exports in `src/pages/*` thin.
 - `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
@@ -211,6 +217,12 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 ---
 
 ## Changelog (memory log)
+
+### 2026-08-13
+
+- Published Docker image to GHCR: `ghcr.io/onouh/omnitaps:latest` (multi-arch `linux/amd64` + `linux/arm64`). Dockerfile OCI label `org.opencontainers.image.source=https://github.com/onouh/Omnitaps`. CI workflow `.github/workflows/docker-publish.yml` on push to `main` + `workflow_dispatch`; build-args from GitHub secrets/vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (anon only). Pull/run: `docker pull ghcr.io/onouh/omnitaps:latest` then `docker run --rm -p 3000:3000 --env-file .env ghcr.io/onouh/omnitaps:latest`.
+- Docker production image (optional, does not change Vercel): multi-stage `Dockerfile` on `node:22-bookworm-slim` (`linux/amd64` + `linux/arm64` via Buildx). Runtime HTTP is `npm start` → `node --import tsx scripts/docker-server.mjs` (API dispatch + `dist/` SPA). Build-time env names: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Runtime env names: `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT`. Postgres is not bundled.
+- Product snapshot: React 19 + Vite 8 SPA on Vercel; production APIs remain **one** Serverless Function `api/[[...path]].js` (Hobby 12-function cap) with handlers in `api/_lib/handlers/`, dispatch via `routeTable.js` + `dispatch.js`, unmatched `/api/*` → 404 JSON, `bodyParser: false` and `maxDuration: 30` for Stripe. Guest Demo Café uses `api/_lib/demoCafe.js` when Prisma is down; café theme/chrome via `CafeThemeGate` (portaled, fixed). Chatbot lives in `src/modules/chatbot` + `api/_lib/handlers/chatbotMessage.js` + `api/_lib/chatbot/`. Dual Prisma/Supabase domains unchanged. Seed: `npm run db:seed` / `db:seed-http`; `/admin` still needs a real `DATABASE_URL`. Live: `https://omnitaps.vercel.app`.
 
 ### 2026-08-12
 
