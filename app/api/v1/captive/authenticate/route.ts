@@ -11,8 +11,9 @@
  *    `next/server`, so this Vite-based OmniTaps repo does not require the `next` package.
  * 5. Free-tier quotas come from enterprises.free_quota_mb / free_session_minutes;
  *    speeds from default_download_kbps / default_upload_kbps.
- * 6. Existing ACTIVE sessions are reused when still within quota/time; otherwise a new
- *    free session is seeded. Blocked devices receive HTTP 403.
+ * 6. Verified devices with an in-quota ACTIVE session are reused; otherwise the guest
+ *    must complete OTP identity verification before a free session is provisioned.
+ *    Blocked devices receive HTTP 403.
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -23,6 +24,7 @@ import {
   type WifiDevice,
   type WifiSession,
 } from "../../../../../db/schema/wifi.js";
+import { NetworkStatus } from "../../../../../lib/network/types.js";
 import {
   parseGatewayQuery,
   verifyGatewayHmac,
@@ -39,8 +41,28 @@ export const dynamic = "force-dynamic";
 
 type JsonRecord = Record<string, unknown>;
 
+interface AuthenticatePendingBody {
+  ok: true;
+  needsVerification: true;
+  networkStatus: typeof NetworkStatus.PENDING_VERIFICATION;
+  isNewDevice: boolean;
+  enterprise: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+  device: {
+    id: string;
+    macAddress: string;
+    status: string;
+    deviceFingerprint: string | null;
+  };
+}
+
 interface AuthenticateSuccessBody {
   ok: true;
+  needsVerification?: false;
+  networkStatus?: typeof NetworkStatus.CONNECTED;
   isNewDevice: boolean;
   isNewSession: boolean;
   enterprise: {
@@ -98,7 +120,7 @@ interface AuthenticateErrorBody {
 
 function jsonResponse(
   status: number,
-  body: AuthenticateSuccessBody | AuthenticateErrorBody,
+  body: AuthenticateSuccessBody | AuthenticatePendingBody | AuthenticateErrorBody,
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -156,6 +178,10 @@ function mapDevice(row: JsonRecord): WifiDevice {
       row.device_fingerprint == null ? null : String(row.device_fingerprint),
     displayName: row.display_name == null ? null : String(row.display_name),
     status: String(row.status) as WifiDevice["status"],
+    email: row.email == null ? null : String(row.email),
+    phoneNumber: row.phone_number == null ? null : String(row.phone_number),
+    identityVerifiedAt:
+      row.identity_verified_at == null ? null : String(row.identity_verified_at),
     firstSeenAt: String(row.first_seen_at ?? new Date().toISOString()),
     lastSeenAt: String(row.last_seen_at ?? new Date().toISOString()),
     createdAt: String(row.created_at ?? new Date().toISOString()),
@@ -361,9 +387,13 @@ async function upsertDevice(input: {
 
   if (existing.data) {
     const device = mapDevice(existing.data as JsonRecord);
+    const patch: Record<string, unknown> = { last_seen_at: now };
+    if (!device.identityVerifiedAt) {
+      patch.status = WifiDeviceStatus.PENDING;
+    }
     const { data: updated, error: updateError } = await supabase
       .from("wifi_devices")
-      .update({ last_seen_at: now })
+      .update(patch)
       .eq("id", device.id)
       .select("*")
       .single();
@@ -381,7 +411,7 @@ async function upsertDevice(input: {
       enterprise_id: enterprise.id,
       mac_address: macCanonical,
       device_fingerprint: fingerprint,
-      status: WifiDeviceStatus.ACTIVE,
+      status: WifiDeviceStatus.PENDING,
       first_seen_at: now,
       last_seen_at: now,
     })
@@ -441,6 +471,31 @@ async function createFreeSession(input: {
   return { session: mapSession(data as JsonRecord) };
 }
 
+function buildPending(input: {
+  enterprise: Enterprise;
+  device: WifiDevice;
+  isNewDevice: boolean;
+}): AuthenticatePendingBody {
+  const { enterprise, device, isNewDevice } = input;
+  return {
+    ok: true,
+    needsVerification: true,
+    networkStatus: NetworkStatus.PENDING_VERIFICATION,
+    isNewDevice,
+    enterprise: {
+      id: enterprise.id,
+      slug: enterprise.slug,
+      name: enterprise.name,
+    },
+    device: {
+      id: device.id,
+      macAddress: device.macAddress,
+      status: device.status,
+      deviceFingerprint: device.deviceFingerprint,
+    },
+  };
+}
+
 function buildSuccess(input: {
   enterprise: Enterprise;
   device: WifiDevice;
@@ -459,6 +514,8 @@ function buildSuccess(input: {
 
   return {
     ok: true,
+    needsVerification: false,
+    networkStatus: NetworkStatus.CONNECTED,
     isNewDevice,
     isNewSession,
     enterprise: {
@@ -628,28 +685,32 @@ async function handleAuthenticate(request: Request): Promise<Response> {
     });
   }
 
+  if (!device.identityVerifiedAt) {
+    return jsonResponse(
+      200,
+      buildPending({
+        enterprise,
+        device,
+        isNewDevice: deviceResult.isNewDevice,
+      }),
+    );
+  }
+
   let session = await findActiveSession(supabase, device.id);
   let isNewSession = false;
 
   if (!session) {
-    const created = await createFreeSession({
-      supabase,
-      enterprise,
-      device,
-      apId,
-      acctSessionId,
-    });
-    if (!created.session) {
-      return jsonResponse(500, {
-        ok: false,
-        error: "Failed to create free-tier session.",
-        code: "db_error",
-        details: created.error,
-      });
-    }
-    session = created.session;
-    isNewSession = true;
-  } else if (acctSessionId && !session.acctSessionId) {
+    return jsonResponse(
+      200,
+      buildPending({
+        enterprise,
+        device,
+        isNewDevice: deviceResult.isNewDevice,
+      }),
+    );
+  }
+
+  if (acctSessionId && !session.acctSessionId) {
     const { data: patched } = await supabase
       .from("wifi_sessions")
       .update({ acct_session_id: acctSessionId, ap_id: apId ?? session.apId })

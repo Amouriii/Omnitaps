@@ -94,6 +94,13 @@ export interface EnterpriseMember {
   updatedAt: string;
 }
 
+export const WifiIdentityKind = {
+  EMAIL: "email",
+  PHONE: "phone",
+} as const;
+export type WifiIdentityKind =
+  (typeof WifiIdentityKind)[keyof typeof WifiIdentityKind];
+
 export interface WifiDevice {
   id: string;
   enterpriseId: string;
@@ -103,10 +110,28 @@ export interface WifiDevice {
   deviceFingerprint: string | null;
   displayName: string | null;
   status: WifiDeviceStatus;
+  email: string | null;
+  phoneNumber: string | null;
+  identityVerifiedAt: string | null;
   firstSeenAt: string;
   lastSeenAt: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** OTP rows live in wifi_otp_challenges until verify creates/activates a session. */
+export interface WifiOtpChallenge {
+  id: string;
+  enterpriseId: string;
+  deviceId: string;
+  identityKind: WifiIdentityKind;
+  identityValue: string;
+  /** SHA-256 hex; plaintext codes are never stored. */
+  codeHash: string;
+  expiresAt: string;
+  attemptCount: number;
+  consumedAt: string | null;
+  createdAt: string;
 }
 
 export interface WifiSession {
@@ -194,6 +219,11 @@ export const wifiRelations = {
   wifi_devices: {
     enterprise: { table: "enterprises", type: "many-to-one" as const },
     sessions: { table: "wifi_sessions", type: "one-to-many" as const },
+    otpChallenges: { table: "wifi_otp_challenges", type: "one-to-many" as const },
+  },
+  wifi_otp_challenges: {
+    enterprise: { table: "enterprises", type: "many-to-one" as const },
+    device: { table: "wifi_devices", type: "many-to-one" as const },
   },
   wifi_sessions: {
     enterprise: { table: "enterprises", type: "many-to-one" as const },
@@ -240,13 +270,27 @@ export const wifiDeviceInsertSchema = z.object({
     .regex(/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i, "MAC must be aa:bb:cc:dd:ee:ff"),
   deviceFingerprint: z.string().trim().max(128).nullable().optional(),
   displayName: z.string().trim().max(120).nullable().optional(),
+  email: z.string().trim().email().max(320).nullable().optional(),
+  phoneNumber: z.string().trim().max(32).nullable().optional(),
+  identityVerifiedAt: z.string().datetime().nullable().optional(),
   status: z
     .enum([
       WifiDeviceStatus.ACTIVE,
       WifiDeviceStatus.BLOCKED,
       WifiDeviceStatus.PENDING,
     ])
-    .default(WifiDeviceStatus.ACTIVE),
+    .default(WifiDeviceStatus.PENDING),
+});
+
+export const wifiOtpChallengeInsertSchema = z.object({
+  id: z.string().min(1).optional(),
+  enterpriseId: z.string().min(1),
+  deviceId: z.string().min(1),
+  identityKind: z.enum([WifiIdentityKind.EMAIL, WifiIdentityKind.PHONE]),
+  identityValue: z.string().trim().min(3).max(320),
+  codeHash: z.string().length(64),
+  expiresAt: z.string().datetime(),
+  attemptCount: z.number().int().min(0).default(0),
 });
 
 export const wifiSessionInsertSchema = z.object({
@@ -301,6 +345,7 @@ export type EnterpriseInsert = z.infer<typeof enterpriseInsertSchema>;
 export type WifiDeviceInsert = z.infer<typeof wifiDeviceInsertSchema>;
 export type WifiSessionInsert = z.infer<typeof wifiSessionInsertSchema>;
 export type SubscriptionPlanInsert = z.infer<typeof subscriptionPlanInsertSchema>;
+export type WifiOtpChallengeInsert = z.infer<typeof wifiOtpChallengeInsertSchema>;
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -639,6 +684,7 @@ export const wifiTables = [
   "wifi_devices",
   "wifi_sessions",
   "subscription_plans",
+  "wifi_otp_challenges",
 ] as const;
 
 export type WifiTableName = (typeof wifiTables)[number];

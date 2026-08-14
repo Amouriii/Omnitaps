@@ -27,6 +27,12 @@ export const V1_SPECS = [
     load: () => import("./handlers/v1CaptiveAuthenticate.ts"),
   },
   {
+    pattern: "/api/v1/captive/otp",
+    methods: ["POST"],
+    ssrModule: "/app/api/v1/captive/otp/route.ts",
+    load: () => import("./handlers/v1CaptiveOtp.ts"),
+  },
+  {
     pattern: "/api/v1/captive/session-status",
     methods: ["GET", "POST", "PATCH"],
     ssrModule: "/app/api/v1/captive/session-status/route.ts",

@@ -17,6 +17,15 @@ import {
   type WifiDevice,
   type WifiSession,
 } from "../../../../../db/schema/wifi.js";
+import {
+  captiveQuotaEvents,
+  ensureDefaultQuotaSubscriber,
+} from "../../../../../lib/network/captiveQuota.js";
+import {
+  toNetworkSession,
+} from "../../../../../lib/network/NetworkSessionController.js";
+import { radiusContextFromEnterprise } from "../../../../../lib/network/adapters/RadiusNetworkAdapter.js";
+import { QUOTA_EVENTS, NetworkStatus } from "../../../../../lib/network/types.js";
 import { normalizeMac } from "../../../../../lib/wifi/mac-utils.js";
 import { calculateSessionQuota } from "../../../../../lib/wifi/quota-calculator.js";
 import { sendDisconnectRequest } from "../../../../../lib/wifi/radius-client.js";
@@ -148,6 +157,10 @@ function mapDevice(row: JsonRecord): WifiDevice {
       row.device_fingerprint == null ? null : String(row.device_fingerprint),
     displayName: row.display_name == null ? null : String(row.display_name),
     status: String(row.status) as WifiDevice["status"],
+    email: row.email == null ? null : String(row.email),
+    phoneNumber: row.phone_number == null ? null : String(row.phone_number),
+    identityVerifiedAt:
+      row.identity_verified_at == null ? null : String(row.identity_verified_at),
     firstSeenAt: String(row.first_seen_at ?? new Date().toISOString()),
     lastSeenAt: String(row.last_seen_at ?? new Date().toISOString()),
     createdAt: String(row.created_at ?? new Date().toISOString()),
@@ -486,6 +499,72 @@ async function closeIfExhausted(
     .maybeSingle();
 
   const closed = data ? mapSession(data as JsonRecord) : { ...session, status: nextStatus };
+
+  ensureDefaultQuotaSubscriber();
+  const storedDevice = mapDevice({
+    id: device.id,
+    enterprise_id: device.enterpriseId,
+    mac_address: device.macAddress,
+    device_fingerprint: device.deviceFingerprint,
+    display_name: device.displayName,
+    status: device.status,
+    email: device.email,
+    phone_number: device.phoneNumber,
+    identity_verified_at: device.identityVerifiedAt,
+    first_seen_at: device.firstSeenAt,
+    last_seen_at: device.lastSeenAt,
+    created_at: device.createdAt,
+    updated_at: device.updatedAt,
+  });
+  const networkSession = toNetworkSession(
+    {
+      id: closed.id,
+      enterpriseId: closed.enterpriseId,
+      deviceId: closed.deviceId,
+      status: closed.status,
+      startedAt: closed.startedAt,
+      endsAt: closed.endsAt,
+      disconnectedAt: closed.disconnectedAt,
+      inputOctets: closed.inputOctets,
+      outputOctets: closed.outputOctets,
+      quotaBytes: closed.quotaBytes,
+      downloadKbps: closed.downloadKbps,
+      uploadKbps: closed.uploadKbps,
+      acctSessionId: closed.acctSessionId,
+      apId: closed.apId,
+      planId: closed.planId,
+      createdAt: closed.createdAt,
+      updatedAt: closed.updatedAt,
+    },
+    {
+      id: storedDevice.id,
+      enterpriseId: storedDevice.enterpriseId,
+      macAddress: storedDevice.macAddress,
+      status: storedDevice.status,
+      email: storedDevice.email,
+      phoneNumber: storedDevice.phoneNumber,
+      identityVerifiedAt: storedDevice.identityVerifiedAt,
+      deviceFingerprint: storedDevice.deviceFingerprint,
+      displayName: storedDevice.displayName,
+      firstSeenAt: storedDevice.firstSeenAt,
+      lastSeenAt: storedDevice.lastSeenAt,
+      createdAt: storedDevice.createdAt,
+      updatedAt: storedDevice.updatedAt,
+    },
+  );
+
+  captiveQuotaEvents.emit(QUOTA_EVENTS.ON_STATUS_CHANGE, {
+    session: networkSession,
+    previous: NetworkStatus.CONNECTED,
+    next: networkSession.status,
+  });
+  captiveQuotaEvents.emit(QUOTA_EVENTS.ON_QUOTA_EXCEEDED, {
+    session: networkSession,
+    usedBytes: quota.usedBytes,
+    remainingBytes: quota.remainingBytes,
+    isTimeExpired: quota.isTimeExpired,
+    radius: radiusContextFromEnterprise(enterprise),
+  });
 
   let disconnect: StatusSuccessBody["disconnect"] = { attempted: false };
 
