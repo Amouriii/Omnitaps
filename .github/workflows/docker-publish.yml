@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE: ghcr.io/onouh/omnitaps
+  IMAGE: ghcr.io/${{ github.repository_owner }}/omnitaps
 
 jobs:
   build-and-push:
