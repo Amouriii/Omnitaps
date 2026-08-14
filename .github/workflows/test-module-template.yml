@@ -21,6 +21,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
-      - run: npx semgrep --config p/javascript
+      - name: Install Semgrep
+        run: |
+          python3 -m venv "$RUNNER_TEMP/semgrep-venv"
+          "$RUNNER_TEMP/semgrep-venv/bin/python" -m pip install --disable-pip-version-check semgrep==1.167.0
+      - name: Scan JavaScript with Semgrep
+        run: |
+          "$RUNNER_TEMP/semgrep-venv/bin/semgrep" scan --config p/javascript --metrics=off .
       - run: npm run build
       - run: npm run lint
