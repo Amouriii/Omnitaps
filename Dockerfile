@@ -2,9 +2,8 @@
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Schema is copied in the build stage; skip Prisma postinstall here.
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
-RUN npm ci
+# Schema is copied in the build stage; skip package.json postinstall (`prisma generate`).
+RUN npm ci --ignore-scripts
 
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
