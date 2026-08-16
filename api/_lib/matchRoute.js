@@ -38,6 +38,8 @@ export function matchRoutes(routes, pathname) {
 }
 
 export function getRequestPathname(req) {
+  const qpath = req.query?.path;
+
   const raw = req.url || "/";
   let pathname = "/";
   try {
@@ -46,13 +48,24 @@ export function getRequestPathname(req) {
     pathname = String(raw).split("?")[0] || "/";
   }
 
+  // Vercel routes `/api/*` to the catch-all function and passes the real path
+  // via the `path` query parameter (array of segments or slash-joined string).
+  if (pathname.endsWith("/[...path]") || pathname.endsWith("/[[...path]]")) {
+    if (Array.isArray(qpath) && qpath.length > 0) {
+      return `/api/${qpath.map((p) => String(p)).join("/")}`;
+    }
+    if (typeof qpath === "string" && qpath) {
+      return `/api/${qpath}`;
+    }
+    return "/api";
+  }
+
   if (pathname.startsWith("/api/") || pathname.startsWith("/r/")) {
     return pathname;
   }
 
-  const qpath = req.query?.path;
   if (Array.isArray(qpath) && qpath.length > 0) {
-    return `/api/${qpath.join("/")}`;
+    return `/api/${qpath.map((p) => String(p)).join("/")}`;
   }
   if (typeof qpath === "string" && qpath) {
     return `/api/${qpath}`;

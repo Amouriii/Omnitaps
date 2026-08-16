@@ -4,7 +4,7 @@ React 19 + Vite 8 SPA. Vercel. Postgres (Prisma) for guest/admin product data; S
 
 Live: [https://omnitaps.vercel.app](https://omnitaps.vercel.app)
 
-Production APIs are **one** Serverless Function — `api/[[...path]].js` — so Hobby stays under the 12-function cap. Handlers live in `api/_lib/handlers/` and are dispatched from `api/_lib/routeTable.js`. Unmatched `/api/*` returns JSON 404 (not the SPA). The catch-all uses `bodyParser: false` and `maxDuration: 30` for Stripe webhooks.
+Production APIs are **one** Serverless Function — `api/[...path].js` — so Hobby stays under the 12-function cap. Handlers live in `api/_lib/handlers/` and are dispatched from `api/_lib/routeTable.js`. Unmatched `/api/*` returns JSON 404 (not the SPA). The catch-all uses `bodyParser: false` and `maxDuration: 30` for Stripe webhooks.
 
 ## Launch in 3 commands
 
@@ -56,6 +56,7 @@ npm run build        # prisma generate && vite build
 npm start            # production HTTP server (dist/ + API dispatch; used in Docker)
 npm run db:seed      # re-seed Demo Café (Prisma TCP, or HTTPS if DATABASE_URL is a placeholder)
 npm run db:seed-http # same café seed via Supabase REST (no Postgres TCP)
+npm run db:seed-enterprise # enterprise nav/captive/QR-menu seed via Supabase REST (mirror of seed_enterprise_nav.sql)
 ```
 
 ## Notes

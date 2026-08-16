@@ -93,7 +93,7 @@ export default async function handler(req, res) {
           plan: true,
           _count: {
             select: {
-              reviewFeedback: true,
+              reviewFeedbacks: true,
               menuScanEvents: true,
               wifiNetworks: true,
             },
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
         status: tenant.status,
         plan: tenant.plan,
         counts: {
-          feedback: tenant._count.reviewFeedback,
+          feedback: tenant._count.reviewFeedbacks,
           menuScans: tenant._count.menuScanEvents,
           wifiNetworks: tenant._count.wifiNetworks,
         },

@@ -24,7 +24,7 @@ function asObject(content) {
   return {};
 }
 
-function collectText(content) {
+export function collectText(content) {
   const obj = asObject(content);
   const parts = [];
   if (typeof obj.text === "string") parts.push(obj.text);

@@ -18,6 +18,7 @@
     "db:push": "prisma db push",
     "db:seed": "node --env-file=.env scripts/run-seed.mjs",
     "db:seed-http": "node scripts/seed-http.mjs",
+    "db:seed-enterprise": "node scripts/seed-enterprise.mjs",
     "db:reset": "prisma db push --force-reset && npm run db:seed",
     "launch": "node scripts/launch.mjs"
   },

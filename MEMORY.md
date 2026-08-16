@@ -1,7 +1,7 @@
 # Omnitaps — Project Memory
 
 > Living knowledge base for agents and humans. **Update this file** whenever you add, remove, or materially change features, routes, schema, env vars, or known issues.
-> Last updated: 2026-08-13
+> Last updated: 2026-08-16
 
 ---
 
@@ -13,7 +13,7 @@
 | Repo | `https://github.com/onouh/Omnitaps.git` |
 | Default branch | `main` |
 | Live | `https://omnitaps.vercel.app` |
-| App style | React 19 + Vite 8 SPA; one Vercel Serverless Function `api/[[...path]].js`; Tailwind 4 |
+| App style | React 19 + Vite 8 SPA; one Vercel Serverless Function `api/[...path].js`; Tailwind 4 |
 | Primary auth | Supabase Auth (email) |
 | Data (core product) | Postgres via **Prisma** (`prisma/schema.prisma`) — tenants, menu, reviews, wifi, website, chatbot |
 | Data (enterprise nav / captive) | **Supabase** SQL migrations under `supabase/migrations/` — enterprises, profiles, menu_items, enterprise_modules, Wi‑Fi captive tables |
@@ -47,6 +47,7 @@ Required env families:
 - `SEED_ADMIN_*`, `SEED_TENANT_*`
 - Captive Wi‑Fi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (+ per-enterprise `gateway_hmac_secret` in Supabase `enterprises`)
 - Captive OTP delivery: `RESEND_API_KEY`, `RESEND_EMAIL_FROM` (email) + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (SMS); dev/demo echo via `CAPTIVE_OTP_ECHO=1`
+- Chatbot LLM: `GROQ_API_KEY` (Groq open-source models) + optional `CHATBOT_MODEL` (default `llama-3.3-70b-versatile`); falls back to the keyword matcher when unset or failing
 - Docker **build-time** (baked into the SPA): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`--build-arg`; rebuild to change)
 - Docker **runtime** (container env, never bake `.env` into the image): `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT` (default `3000`)
 
@@ -58,7 +59,7 @@ Required env families:
    - **Prisma tenants** power public guest routes (`/menu/:tenantId`, `/r/:tenantId/*`, `/s/:tenantId`, `/admin` APIs).
    - **Supabase enterprises** power the enterprise console demo, realtime menu editor, module gating, and captive Wi‑Fi portal tables.
 2. **Frontend** lives in `src/` (Vite). Entry routing: `src/App.jsx`.
-3. **API** is one Vercel Serverless Function: `api/[[...path]].js` (Hobby 12-function cap). It dispatches via `api/_lib/routeTable.js` + `api/_lib/dispatch.js` (`:params` merged into `req.query`). Handlers live under `api/_lib/handlers/` so they are not counted as functions. Vite uses the same table/dispatcher (`api/_lib/viteAdapter.js` buffers `rawBody`). Unmatched `/api/*` returns 404 JSON (not the SPA). Catch-all has `bodyParser: false` and `maxDuration: 30` so Stripe webhooks still see raw bytes.
+3. **API** is one Vercel Serverless Function: `api/[...path].js` (Hobby 12-function cap). It dispatches via `api/_lib/routeTable.js` + `api/_lib/dispatch.js` (`:params` merged into `req.query`). Handlers live under `api/_lib/handlers/` so they are not counted as functions. Vite uses the same table/dispatcher (`api/_lib/viteAdapter.js` buffers `rawBody`). Unmatched `/api/*` returns 404 JSON (not the SPA). Catch-all has `bodyParser: false` and `maxDuration: 30` so Stripe webhooks still see raw bytes.
 4. **Captive Wi‑Fi = Path A (wired, no Next runtime)**
    - Handlers authored as Web `Request`/`Response` under `app/api/v1/**/route.ts`.
    - Production: thin `api/_lib/handlers/v1*.ts` wrappers use `wrapWebHandlers` (`api/_lib/webHandlerAdapter.js`).
@@ -107,6 +108,7 @@ Required env families:
 | `/api/v1/captive/session-status` | GET, POST, PATCH | Poll / SSE-style status |
 | `/api/v1/captive/checkout` | GET, POST | Plans list; Stripe session + webhook (`bodyParser: false`) |
 | `/api/v1/admin/wifi/telemetry` | GET | Bearer + `profiles` |
+| `/api/v1/admin/insights` | GET | Bearer + `profiles`; owner monitor — Wi‑Fi connections (Supabase), live Stripe payments, orders (plan subscriptions + Prisma menu scans) |
 | `/api/v1/admin/wifi/settings` | GET, PATCH, POST, DELETE | Bearer + admin `profiles` role |
 
 Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src/lib/auth.jsx` on session change).
@@ -120,7 +122,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 - **Wi‑Fi (tenant / QR)** — networks, splash, sessions (Prisma) via `/r/:tenantId/wifi`
 - **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
-- **Chatbot** — bots, knowledge, conversations (Prisma + `api/_lib/handlers/chatbotMessage.js`); guest widget matches seeded HOURS/MENU/WIFI/FAQ knowledge, with a generic handover fallback. File map below.
+- **Chatbot** — bots, knowledge, conversations (Prisma + `api/_lib/handlers/chatbotMessage.js`); guest widget is grounded in seeded HOURS/MENU/WIFI/FAQ knowledge via an open-source LLM (Groq `llama-3.3-70b-versatile`) with a keyword-matcher fallback and a generic handover. File map below.
 - **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
 
 ---
@@ -135,7 +137,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 6. `006_qr_menu_items.sql` — QR menu items additions
 7. `007_wifi_network_otp.sql` — `wifi_devices` email / phone_number / identity_verified_at + `wifi_otp_challenges` (hashed 6‑digit codes; guest identity before free session)
 
-Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The SQL now upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
+Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable) or `npm run db:seed-enterprise` (`scripts/seed-enterprise.mjs`, PostgREST/Auth-Admin mirror of the same seed — no psql needed). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The seed upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
 
 ### Demo Café seed contents (Prisma `npm run db:seed`)
 
@@ -167,7 +169,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Menu realtime | `src/hooks/useRealtimeMenu.ts`, `src/components/menu/*` |
 | Captive route logic | `app/api/v1/captive/*`, `app/api/v1/admin/wifi/*` |
 | Captive Vercel wrappers | `api/_lib/handlers/v1*.ts` (loaded by the catch-all) |
-| Catch-all function | `api/[[...path]].js` — only Serverless Function under `api/` |
+| Catch-all function | `api/[...path].js` — only Serverless Function under `api/` |
 | Route table / dispatch | `api/_lib/routeTable.js`, `api/_lib/dispatch.js`, `api/_lib/matchRoute.js` |
 | Guest/admin Node handlers | `api/_lib/handlers/*.js` |
 | Web↔Node adapter | `api/_lib/webHandlerAdapter.js`, `api/_lib/lazyWebHandler.js` |
@@ -197,10 +199,10 @@ Guest chat is a Vite widget + Vercel Node handler. Do **not** add Next.js `app/a
 | `api/_lib/chatbot/match.js` | Keyword matcher (current production reply path) |
 | `api/_lib/chatbot/knowledge.js` | Load active knowledge sources |
 | `api/_lib/chatbot/prompts.js` | Server prompt assembly |
-| `api/_lib/chatbot/ai.js` | Stub for later `ai` SDK (`generateText` / `streamText` via AI Gateway) |
+| `api/_lib/chatbot/ai.js` | LLM via Groq (`/openai/v1/chat/completions`, plain fetch); `isLlmEnabled` + `generateChatReply` |
 | `api/_lib/chatbotMatch.js` | Compatibility re-export of the matcher |
 
-Runtime today: keyword match only. A later pass may install `ai` and add a stream handler under `api/_lib/handlers/` (wired in the catch-all table) without converting the SPA to Next.js.
+Runtime today: LLM via Groq (open-source `llama-3.3-70b-versatile`, grounded in seeded knowledge + conversation history) with the keyword matcher as fallback when `GROQ_API_KEY` is unset or the call fails. Streaming is a later pass — keep `ChatWidget` on JSON POST `/api/chatbot/message` until then.
 
 ---
 
@@ -213,8 +215,9 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 - Realtime: avoid duplicate channel names when `DynamicMenu` and `MenuEditor` both subscribe — use unique channel IDs.
 - Dual trees (`app/` handler/UI sources vs `src/` Vite mounts): edit the `app/` / `components/wifi/` sources; keep re-exports in `src/pages/*` thin.
 - `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
-- Captive ops checklist: apply migrations `005` + `007`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
-- Demo `gateway_hmac_secret` from seed must be rotated outside local/demo use.
+- Captive ops checklist: apply migrations `005` + `007`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`. (`007` is now applied to the live project as of 2026-08-16; the OTP start→verify→session path is verified.)
+- The `demo-enterprise` `gateway_hmac_secret` has been rotated to a random 64-char hex secret (2026-08-16); the café `demo` slug intentionally keeps `gateway_hmac_secret = NULL` (no captive auth). `seed-enterprise.mjs` now only sets the demo default when the column is NULL, so re-seeding never overwrites a rotated secret (matches the SQL seed's `COALESCE`).
+- Chatbot LLM runs on Groq (open-source `llama-3.3-70b-versatile` via `GROQ_API_KEY`) — no billing gate; the handler falls back to the keyword matcher if `GROQ_API_KEY` is unset or Groq errors.
 - Richer Demo Café content (menu, website blocks including gallery, Wi‑Fi splash, chatbot knowledge) requires `npm run db:seed`.
 - `/menu/demo` shows Prisma café dishes after that seed. After `006` + `supabase/seed_enterprise_nav.sql`, the same URL can resolve the Supabase enterprise slug `demo` and `qr_menu_items` instead.
 - Demo Café visual theme is CSS-variable scoped; do not restyle Home / ConsoleChrome / login to terracotta.
@@ -225,6 +228,9 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 
 ### 2026-08-16
 
+- Fixed the production API routing: `api/[[...path]].js` (the double-bracket optional catch-all) is Next.js-only and was never matched by Vercel's Vite builder, so every `/api/*` route 404'd in production. Renamed it to `api/[...path].js` and added an explicit `vercel.json` rewrite `{ "source": "/api/:path*", "destination": "/api/[...path]" }` (Vercel auto-appends the captured path as `?path=`), plus fixed `getRequestPathname` in `api/_lib/matchRoute.js` to reconstruct the real pathname from `req.query.path` when the URL is the literal `/api/[...path]`. Verified live: `/api/tenants/demo/menu|website`, `/api/chatbot/message` (POST), and `/api/admin/session` all respond correctly. Also updated `.env` `DATABASE_URL` to the real Supabase pooler URI and ran `npm run launch`.
+- Fixed two more production bugs surfaced by the smoke test: (1) the v1 captive routes were 500ing because `routeTable.js` dynamic-imported the `.ts` wrappers (`import("./handlers/v1CaptiveAuthenticate.ts")`) while Vercel transpiles them to `.js` on disk — changed all six v1 `load` imports to `.js` (the `ssrModule` path stays `.ts` for Vite). (2) `adminOverview.js` queried `_count.select.reviewFeedback` / `tenant._count.reviewFeedback` but the Prisma relation is plural (`reviewFeedbacks`) — fixed both. Verified live: `/api/admin/overview` 200, captive `authenticate` 200 (`needsVerification` onboarding), captive `checkout` plans 200, and a bad HMAC correctly 401s.
+- Added `scripts/seed-enterprise.mjs` (`npm run db:seed-enterprise`) — a PostgREST/Auth-Admin mirror of `supabase/seed_enterprise_nav.sql` for when psql/SQL Editor aren't available. Populates `enterprises` (`demo-enterprise` + `demo`), `profiles`, `menu_items`, `enterprise_modules`, captive defaults + demo HMAC secret, `subscription_plans`, and `qr_menu_items` over HTTPS with the service-role key. Ran against production Supabase to close gaps (missing `demo` café enterprise, 3 Wi-Fi nav items, `wifi` module disabled, plans/QR items empty). Later made the captive HMAC secret write conditional (only sets the demo default when NULL) and rotated the `demo-enterprise` secret to a random 64-char hex value.
 - Added Vitest (`vitest@4`, `vitest.config.ts` with node env, `lib/**/*.test.ts` only — deliberately separate from `vite.config.js` so tests never mount the API middleware). `npm test` / `test:watch` scripts; `npm test` added to the shared CI template. 64 unit tests across 6 files: `NetworkSessionController` (onboard/status preservation, provision + duplicate guard, verifyAndProvision, recordUsage byte- vs time-expiry, getActiveSession/getOnlineStatus, attachAcctContext, applyPaidUpgrade incl. unlimited cap, reset/extend/update limits, listActiveSessions, helpers), `IdentityVerificationService` (issue/echo, resend cooldown, TTL expiry, attempt lockout, consumed/foreign challenges, delivery-failure cleanup, normalization), `QuotaEventEmitter`, `InMemorySessionStore`, `HttpOtpDelivery` (Resend/Twilio request shapes, routing, dev fallback vs prod throw), `lib/wifi/quota-calculator`.
 - Added `typescript` + `@types/node` as devDependencies; `npm run typecheck` (`tsc --noEmit`) is now part of the shared CI workflow template (`test-module-template.yml`). `tsconfig.json` gained `node` in `types`, `allowImportingTsExtensions: true`, and an `exclude` for `src/app` (the Next.js App Router REFERENCE file — no `next` package in this repo). Fixes to reach zero errors: JSDoc types on `src/lib/apiClient.js` (`apiRequest` init) and `src/components/console/ConsoleChrome.jsx` (`actions`/`children` props), and explicit casts in `BlockRenderer.tsx`'s block switch. Full `tsc --noEmit` is clean.
 - Real OTP delivery: new `lib/network/delivery/HttpOtpDelivery.ts` — `ResendOtpDelivery` (email, `RESEND_API_KEY`/`RESEND_EMAIL_FROM`) + `TwilioSmsOtpDelivery` (SMS, `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_PHONE_NUMBER`), plain `fetch` (no SDKs). `HttpOtpDelivery` routes by identity kind; unconfigured channels log the code in dev only (`NODE_ENV !== "production"`) and throw a clear config error in prod. `createCaptiveController` now uses it. Delivery failure in `IdentityVerificationService.issue` deletes the just-created challenge (new `SessionStore.deleteChallenge`) so resend cooldown / brute-force surface isn't left behind.
@@ -233,16 +239,24 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 - Consolidated the captive `checkout` Stripe webhook upgrade onto the controller: `applyPlanUpgrade` now calls `NetworkSessionController.applyPaidUpgrade` (used‑bytes‑preserved quota credit, plan duration, plan speeds, `plan_id` + `stripe_checkout_session_id`, non‑blocking RADIUS CoA via the `RadiusNetworkAdapter`). Removed the route's raw `wifi_sessions` update + manual `sendCoABandwidthUpdate`; `StoredSession` gained `stripeCheckoutSessionId` and `SupabaseNetworkStore.updateSession` now writes `plan_id` / `stripe_checkout_session_id` (previously missing). Webhook response `session.status` is the mapped `NetworkStatus`; `coa.attempted` is derived from enterprise RADIUS config.
 - Fixed `checkout` route `mapDevice` to include migration‑007 fields (`email`, `phone_number`, `identity_verified_at`) — surfaced by a full typecheck, which the repo otherwise never runs (`typescript` is not a dependency; `vite build` uses esbuild).
 - `lib/network` module committed (`4eee311`); demo: `node --import tsx lib/network/examples/usage.ts` prints `demo:network ok`.
+- Captive OTP echo now works in production: `createCaptiveController` selects a `NoopOtpDelivery` when `CAPTIVE_OTP_ECHO=1` (the code is returned in the `/otp start` response) instead of `HttpOtpDelivery`, which previously threw in production when RESEND/TWILIO was unconfigured and deleted the just-created challenge. Set `CAPTIVE_OTP_ECHO=1` in `.env`.
+- `scripts/launch.mjs` now syncs an `OPTIONAL_SYNC` list to Vercel (production + preview) when present in `.env`: `CAPTIVE_OTP_ECHO`, `RESEND_API_KEY`, `RESEND_EMAIL_FROM`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_CHECKOUT_SUCCESS_URL`, `STRIPE_CHECKOUT_CANCEL_URL`. `.env.example` documents the Stripe publishable key + checkout URLs.
+- Wired live Stripe **test** keys and verified the paid-upgrade path end-to-end on `omnitaps.vercel.app`: `POST /api/v1/captive/checkout` returns a real hosted Checkout URL + `publishableKey`, and a signed `checkout.session.completed` webhook upgrades the session (`plan_id`, `quota_bytes` → plan `quota_mb`, `download_kbps`/`upload_kbps` → plan speeds, `ends_at` → plan duration, `stripe_checkout_session_id` recorded); a bad `Stripe-Signature` correctly 401s. Verified by hand-building a `wifi_sessions` row (see next bullet).
+- Applied migration `007_wifi_network_otp.sql` to the live Supabase project (SQL Editor) and verified the full captive path end-to-end on `omnitaps.vercel.app`: authenticate (HMAC) → OTP `start` (echoed code) → OTP `verify` (session `CONNECTED`) → checkout create (hosted URL) → signed `checkout.session.completed` webhook (session upgraded to plan quota/speeds/duration). Note: local `psql` to Supabase is blocked (direct host DNS `ENODATA`; pooler TCP-connects but never answers the Postgres handshake), so any future DDL has to go through the SQL Editor or a Supabase personal access token + Management API.
+- Fixed the Demo Café website MAP block showing "This content is blocked": the MAP block embeds **OpenStreetMap** (`https://www.openstreetmap.org/export/embed.html`), but the CSP `frame-src` only allowed Google Maps + Stripe, so Chrome blocked the iframe. Added `https://www.openstreetmap.org` to `frame-src` in both `vercel.json` and `scripts/docker-server.mjs` (they must stay in sync) and redeployed.
+- Added an owner **Insights** tab to `/demo/dashboard` (`EnterpriseConsole`): a read-only monitor with three panels — Wi‑Fi connections (active captive sessions/devices), Payments (live Stripe checkout sessions + collected charges via `STRIPE_SECRET_KEY`), and Orders (Wi‑Fi plan subscriptions from `wifi_sessions.plan_id` + QR menu scans from Prisma `MenuScanEvent` for tenant `demo`). Backed by new `GET /api/v1/admin/insights` (`app/api/v1/admin/insights/route.ts` + `api/_lib/handlers/v1AdminInsights.ts`, registered in `routeTable.js`), which reuses `profiles` auth and imports `getPrisma` from `api/_lib/prisma.js`. Frontend component: `src/components/console/OwnerInsights.tsx` (resolves the Supabase access token from the active session). Stripe + Prisma reads are non-fatal so the dashboard still renders when a provider is unconfigured. Verified live (200): 3 active sessions / 2 devices, 3 recent Stripe checkouts, 2 subscriptions.
+- Made the website chatbot LLM-backed: `api/_lib/chatbot/ai.js` calls Groq's OpenAI-compatible endpoint (`https://api.groq.com/openai/v1/chat/completions`, plain fetch) using `GROQ_API_KEY` and `CHATBOT_MODEL` (default `llama-3.3-70b-versatile`, an open-source model); `prompts.js` gained `buildKnowledgeContext` (flattens seeded HOURS/MENU/WIFI/FAQ JSON into the system prompt); `chatbotMessage.js` builds a system prompt from knowledge + the last 20 conversation turns and falls back to the keyword matcher. Synced `GROQ_API_KEY`, redeployed, and verified live multi-turn: grounded hours answer, dairy-free drink reasoning, and a cheapest-option follow-up all answered correctly.
+- Rotated `GROQ_API_KEY` after the chatbot silently fell back to the keyword matcher: Groq returned `401 invalid_api_key` for the *same* key from Vercel's serverless IP range while it worked from a home machine (proven by comparing the key's SHA-256 in the live function vs `.env` — byte-identical). The old key was effectively IP-restricted/blocked from cloud egress; a fresh key resolved it and the LLM path now answers live.
 
 ### 2026-08-13
 
 - Published Docker image to GHCR: `ghcr.io/onouh/omnitaps:latest` (multi-arch `linux/amd64` + `linux/arm64`). Dockerfile OCI label `org.opencontainers.image.source=https://github.com/onouh/Omnitaps`. CI workflow `.github/workflows/docker-publish.yml` on push to `main` + `workflow_dispatch`; build-args from GitHub secrets/vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (anon only). Pull/run: `docker pull ghcr.io/onouh/omnitaps:latest` then `docker run --rm -p 3000:3000 --env-file .env ghcr.io/onouh/omnitaps:latest`. Deps stage uses `npm ci --ignore-scripts` because `postinstall` (`prisma generate`) runs before `prisma/schema.prisma` is copied.
 - Docker production image (optional, does not change Vercel): multi-stage `Dockerfile` on `node:22-bookworm-slim` (`linux/amd64` + `linux/arm64` via Buildx). Runtime HTTP is `npm start` → `node --import tsx scripts/docker-server.mjs` (API dispatch + `dist/` SPA). Build-time env names: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Runtime env names: `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT`. Postgres is not bundled.
-- Product snapshot: React 19 + Vite 8 SPA on Vercel; production APIs remain **one** Serverless Function `api/[[...path]].js` (Hobby 12-function cap) with handlers in `api/_lib/handlers/`, dispatch via `routeTable.js` + `dispatch.js`, unmatched `/api/*` → 404 JSON, `bodyParser: false` and `maxDuration: 30` for Stripe. Guest Demo Café uses `api/_lib/demoCafe.js` when Prisma is down; café theme/chrome via `CafeThemeGate` (portaled, fixed). Chatbot lives in `src/modules/chatbot` + `api/_lib/handlers/chatbotMessage.js` + `api/_lib/chatbot/`. Dual Prisma/Supabase domains unchanged. Seed: `npm run db:seed` / `db:seed-http`; `/admin` still needs a real `DATABASE_URL`. Live: `https://omnitaps.vercel.app`.
+- Product snapshot: React 19 + Vite 8 SPA on Vercel; production APIs remain **one** Serverless Function `api/[...path].js` (Hobby 12-function cap) with handlers in `api/_lib/handlers/`, dispatch via `routeTable.js` + `dispatch.js`, unmatched `/api/*` → 404 JSON, `bodyParser: false` and `maxDuration: 30` for Stripe. Guest Demo Café uses `api/_lib/demoCafe.js` when Prisma is down; café theme/chrome via `CafeThemeGate` (portaled, fixed). Chatbot lives in `src/modules/chatbot` + `api/_lib/handlers/chatbotMessage.js` + `api/_lib/chatbot/`. Dual Prisma/Supabase domains unchanged. Seed: `npm run db:seed` / `db:seed-http`; `/admin` still needs a real `DATABASE_URL`. Live: `https://omnitaps.vercel.app`.
 
 ### 2026-08-12
 
-- Production APIs are a single Vercel catch-all (`api/[[...path]].js`) with `bodyParser: false`; handlers moved to `api/_lib/handlers/` so Hobby stays under the 12-function cap. Public `/api/*` URLs unchanged. Vite middleware uses the same route table + dispatcher; v1 still SSR-loads `app/api/v1/**/route.ts`.
+- Production APIs are a single Vercel catch-all (`api/[...path].js`) with `bodyParser: false`; handlers moved to `api/_lib/handlers/` so Hobby stays under the 12-function cap. Public `/api/*` URLs unchanged. Vite middleware uses the same route table + dispatcher; v1 still SSR-loads `app/api/v1/**/route.ts`.
 - Guest demo APIs fall back to `api/_lib/demoCafe.js` so website, menu, Wi‑Fi QR, and chatbot render without Prisma TCP. `/menu/demo` always uses the café menu (not an empty QR list). Café website drops the extra tenant chrome; chat launcher is docked with safe-area offset.
 - `npm run db:seed` no longer dies on Prisma “Can't reach database server” when `.env` still has `[YOUR-PASSWORD]`; it seeds Demo Café over HTTPS (`scripts/seed-http.mjs`) instead. Placeholder URL detection lives in `api/_lib/databaseUrl.js`.
 - Demo Café guest brand: scoped `.demo-cafe-theme` (espresso/cream/terracotta/brass, Fraunces display) on guest demo routes only; product tokens unchanged.

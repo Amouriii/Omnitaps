@@ -90,10 +90,6 @@ export default function EnterpriseWifiSettingsPage() {
       setError("Sign in required (omnitaps_access_token or ?access_token=).");
       return;
     }
-    if (!initial.enterpriseId && !initial.enterpriseSlug) {
-      setError("Provide enterprise_id or enterprise_slug.");
-      return;
-    }
 
     const response = await fetch(`/api/v1/admin/wifi/settings?${enterpriseQuery}`, {
       headers: { accept: "application/json", authorization: `Bearer ${token}` },

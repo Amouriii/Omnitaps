@@ -11,7 +11,10 @@
  */
 
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
-import { requireProfileForEnterprise } from "../../../../../../lib/wifi/profiles-auth.js";
+import {
+  loadProfileMembership,
+  requireProfileForEnterprise,
+} from "../../../../../../lib/wifi/profiles-auth.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -185,6 +188,25 @@ async function resolveEnterpriseId(
   return byId.data ? String((byId.data as JsonRecord).id) : null;
 }
 
+/**
+ * Resolve the enterprise from query/body, or fall back to the signed-in
+ * user's profile enterprise when none is supplied (mirrors the telemetry
+ * endpoint so the nav links — which carry no query params — keep working).
+ */
+async function resolveEnterpriseIdForCaller(
+  supabase: SupabaseClient,
+  user: User,
+  request: Request,
+  body?: Record<string, unknown>,
+): Promise<string | null> {
+  const explicit = await resolveEnterpriseId(supabase, request, body);
+  if (explicit) return explicit;
+
+  const loaded = await loadProfileMembership(supabase, user.id);
+  if (loaded.error || !loaded.membership) return null;
+  return loaded.membership.enterpriseId;
+}
+
 async function assertMember(
   supabase: SupabaseClient,
   enterpriseId: string,
@@ -226,7 +248,7 @@ export async function GET(request: Request): Promise<Response> {
   const user = await requireAuthUser(request);
   if (!user) return err(401, "Valid Bearer access token required.", "unauthorized");
 
-  const enterpriseId = await resolveEnterpriseId(supabase, request);
+  const enterpriseId = await resolveEnterpriseIdForCaller(supabase, user, request);
   if (!enterpriseId) {
     return err(400, "enterprise_id or enterprise_slug is required.", "bad_request");
   }
@@ -268,7 +290,7 @@ export async function PATCH(request: Request): Promise<Response> {
     return err(400, "JSON body required.", "bad_request");
   }
 
-  const enterpriseId = await resolveEnterpriseId(supabase, request, body);
+  const enterpriseId = await resolveEnterpriseIdForCaller(supabase, user, request, body);
   if (!enterpriseId) {
     return err(400, "enterprise_id or enterprise_slug is required.", "bad_request");
   }
@@ -425,7 +447,7 @@ export async function POST(request: Request): Promise<Response> {
     return err(400, "JSON body required.", "bad_request");
   }
 
-  const enterpriseId = await resolveEnterpriseId(supabase, request, body);
+  const enterpriseId = await resolveEnterpriseIdForCaller(supabase, user, request, body);
   if (!enterpriseId) {
     return err(400, "enterprise_id or enterprise_slug is required.", "bad_request");
   }
@@ -493,7 +515,7 @@ export async function DELETE(request: Request): Promise<Response> {
   const planId = asString(url.searchParams.get("plan_id"));
   if (!planId) return err(400, "plan_id query param required.", "bad_request");
 
-  const enterpriseId = await resolveEnterpriseId(supabase, request);
+  const enterpriseId = await resolveEnterpriseIdForCaller(supabase, user, request);
   if (!enterpriseId) {
     return err(400, "enterprise_id or enterprise_slug is required.", "bad_request");
   }

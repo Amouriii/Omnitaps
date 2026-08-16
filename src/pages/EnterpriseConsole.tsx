@@ -11,6 +11,7 @@ import ConsoleChrome, {
 import { DynamicMenu } from "../components/menu/DynamicMenu";
 import { MenuEditor } from "../components/menu/MenuEditor";
 import { ModuleGuard } from "../components/auth/ModuleGuard";
+import OwnerInsights from "../components/console/OwnerInsights";
 import { fetchMenuItems } from "../services/menuService";
 import {
   getSupabaseClient,
@@ -18,7 +19,7 @@ import {
 } from "../services/supabaseClient";
 import type { EnterpriseModule, Profile, UserRole } from "../types";
 
-type ConsoleTab = "overview" | "menu" | "modules";
+type ConsoleTab = "overview" | "menu" | "modules" | "insights";
 
 const MODULE_LABELS: Record<string, string> = {
   nav_console: "Dashboard",
@@ -283,6 +284,7 @@ export default function EnterpriseConsole() {
     { id: "overview", label: "Overview" },
     { id: "menu", label: "Menu" },
     { id: "modules", label: "Modules" },
+    { id: "insights", label: "Insights" },
   ];
 
   const greeting = profile.first_name
@@ -358,6 +360,13 @@ export default function EnterpriseConsole() {
                 className="rounded-xl px-3 py-2 text-left text-[13px] font-medium text-ink-muted hover:bg-porcelain hover:text-ink"
               >
                 Modules
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("insights")}
+                className="rounded-xl px-3 py-2 text-left text-[13px] font-medium text-ink-muted hover:bg-porcelain hover:text-ink"
+              >
+                Insights
               </button>
             </div>
           </aside>
@@ -528,6 +537,23 @@ export default function EnterpriseConsole() {
                       </Link>
                     </ModuleGuard>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {tab === "insights" && (
+              <div className="rounded-3xl border border-hairline bg-surface p-6 sm:p-8">
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-faint">
+                  Monitor
+                </p>
+                <h2 className="mt-2 font-display text-[22px] font-semibold tracking-[-0.02em]">
+                  Wi‑Fi, payments & orders
+                </h2>
+                <p className="mt-2 text-[14px] text-ink-muted">
+                  Live connections, Stripe payments, and customer activity for this location.
+                </p>
+                <div className="mt-6">
+                  <OwnerInsights enterpriseId={profile.enterprise_id} />
                 </div>
               </div>
             )}

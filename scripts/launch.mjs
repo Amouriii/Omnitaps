@@ -14,6 +14,25 @@ const REQUIRED = [
   "VITE_SUPABASE_ANON_KEY",
 ];
 
+// Optional config synced to Vercel only when present in .env. CAPTIVE_OTP_ECHO=1
+// enables the demo OTP echo path; the RESEND_*/TWILIO_* keys drive real provider
+// delivery and the STRIPE_* keys drive the captive paid-upgrade checkout + webhook.
+const OPTIONAL_SYNC = [
+  "CAPTIVE_OTP_ECHO",
+  "RESEND_API_KEY",
+  "RESEND_EMAIL_FROM",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_PHONE_NUMBER",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "STRIPE_PUBLISHABLE_KEY",
+  "STRIPE_CHECKOUT_SUCCESS_URL",
+  "STRIPE_CHECKOUT_CANCEL_URL",
+  "GROQ_API_KEY",
+  "CHATBOT_MODEL",
+];
+
 function hydrateEnv() {
   const envPath = resolve(root, ".env");
   if (!existsSync(envPath)) return;
@@ -98,6 +117,10 @@ run("vercel", ["link", "--yes"], { allowFail: true });
 console.log("\nSyncing .env → Vercel (production + preview)…");
 for (const key of REQUIRED) {
   syncEnvVar(key, process.env[key].trim());
+}
+for (const key of OPTIONAL_SYNC) {
+  const value = process.env[key]?.trim();
+  if (value) syncEnvVar(key, value);
 }
 
 console.log("\nDeploying production…");

@@ -9,7 +9,15 @@ import {
 import { getPrisma, isDatabaseConfigured, resolveTenantByParam } from "../tenants.js";
 import { z } from "zod";
 import { parseWithSchema } from "../validation.js";
-import { FALLBACK_REPLY, loadActiveKnowledgeSources, matchChatbotReply } from "../chatbot/index.js";
+import {
+  FALLBACK_REPLY,
+  buildGuestSystemPrompt,
+  buildKnowledgeContext,
+  generateChatReply,
+  isLlmEnabled,
+  loadActiveKnowledgeSources,
+  matchChatbotReply,
+} from "../chatbot/index.js";
 import { getDemoCafeKnowledgeSources, isDemoTenantParam } from "../demoCafe.js";
 
 const chatbotMessageSchema = z.object({
@@ -138,7 +146,34 @@ export default async function handler(req, res) {
 
     const sources = await loadActiveKnowledgeSources(prisma, bot.id);
 
-    const reply = matchChatbotReply(message, sources, FALLBACK_REPLY);
+    let reply = null;
+    if (isLlmEnabled()) {
+      try {
+        const recent = await prisma.chatbotMessage.findMany({
+          where: { conversationId },
+          orderBy: { createdAt: "asc" },
+          take: 20,
+          select: { role: true, content: true },
+        });
+        reply = await generateChatReply({
+          systemPrompt: buildGuestSystemPrompt({
+            botName: bot.name,
+            tenantPrompt: buildKnowledgeContext(sources),
+          }),
+          messages: recent.map((entry) => ({
+            role: entry.role === "USER" ? "user" : "assistant",
+            content: entry.content,
+          })),
+        });
+      } catch (error) {
+        console.error("[chatbot-llm]", error);
+        reply = null;
+      }
+    }
+
+    if (!reply) {
+      reply = matchChatbotReply(message, sources, FALLBACK_REPLY);
+    }
 
     await prisma.chatbotMessage.create({
       data: {
