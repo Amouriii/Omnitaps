@@ -61,4 +61,9 @@ export {
 export { InMemorySessionStore } from "./stores/InMemorySessionStore.js";
 export { SupabaseNetworkStore } from "./stores/SupabaseNetworkStore.js";
 export { ConsoleOtpDelivery, NoopOtpDelivery } from "./delivery/OtpDelivery.js";
+export {
+  HttpOtpDelivery,
+  ResendOtpDelivery,
+  TwilioSmsOtpDelivery,
+} from "./delivery/HttpOtpDelivery.js";
 export { captiveQuotaEvents, ensureDefaultQuotaSubscriber } from "./captiveQuota.js";

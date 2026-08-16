@@ -14,17 +14,18 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  WifiSessionStatus,
   type Enterprise,
   type SubscriptionPlan,
   type WifiDevice,
   type WifiSession,
 } from "../../../../../db/schema/wifi.js";
+import { createCaptiveController } from "../../../../../lib/network/createCaptiveController.js";
+import { toNetworkSession } from "../../../../../lib/network/NetworkSessionController.js";
+import type { NetworkSession } from "../../../../../lib/network/types.js";
 import {
   buildQuotaEntitlements,
   calculateSessionQuota,
 } from "../../../../../lib/wifi/quota-calculator.js";
-import { sendCoABandwidthUpdate } from "../../../../../lib/wifi/radius-client.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -166,6 +167,10 @@ function mapDevice(row: JsonRecord): WifiDevice {
       row.device_fingerprint == null ? null : String(row.device_fingerprint),
     displayName: row.display_name == null ? null : String(row.display_name),
     status: String(row.status) as WifiDevice["status"],
+    email: row.email == null ? null : String(row.email),
+    phoneNumber: row.phone_number == null ? null : String(row.phone_number),
+    identityVerifiedAt:
+      row.identity_verified_at == null ? null : String(row.identity_verified_at),
     firstSeenAt: String(row.first_seen_at ?? new Date().toISOString()),
     lastSeenAt: String(row.last_seen_at ?? new Date().toISOString()),
     createdAt: String(row.created_at ?? new Date().toISOString()),
@@ -481,9 +486,7 @@ async function applyPlanUpgrade(input: {
 }): Promise<
   | {
       ok: true;
-      session: WifiSession;
-      device: WifiDevice;
-      enterprise: Enterprise;
+      session: NetworkSession;
       plan: SubscriptionPlan;
       coa: CheckoutWebhookSuccess["coa"];
     }
@@ -527,18 +530,13 @@ async function applyPlanUpgrade(input: {
       .select("*")
       .eq("id", existing.deviceId)
       .maybeSingle();
-    const { data: enterpriseRow } = await supabase
-      .from("enterprises")
-      .select("*")
-      .eq("id", existing.enterpriseId)
-      .maybeSingle();
     const { data: planRow } = await supabase
       .from("subscription_plans")
       .select("*")
       .eq("id", planId)
       .maybeSingle();
 
-    if (!deviceRow || !enterpriseRow || !planRow) {
+    if (!deviceRow || !planRow) {
       return {
         ok: false,
         status: 404,
@@ -548,9 +546,7 @@ async function applyPlanUpgrade(input: {
 
     return {
       ok: true,
-      session: existing,
-      device: mapDevice(deviceRow as JsonRecord),
-      enterprise: mapEnterprise(enterpriseRow as JsonRecord),
+      session: toNetworkSession(existing, mapDevice(deviceRow as JsonRecord)),
       plan: mapPlan(planRow as JsonRecord),
       coa: { attempted: false },
     };
@@ -582,33 +578,38 @@ async function applyPlanUpgrade(input: {
     startedAt: new Date().toISOString(),
   });
 
-  // Remaining after upgrade = purchased plan allowance (used bytes preserved).
-  const usedBytes = existing.inputOctets + existing.outputOctets;
-  const purchasedBytes = entitlements.quotaBytes;
-  const nextQuotaBytes =
-    purchasedBytes >= Number.MAX_SAFE_INTEGER / 2
-      ? Number.MAX_SAFE_INTEGER
-      : usedBytes + purchasedBytes;
-
-  const { data: updatedRow, error: updateError } = await supabase
-    .from("wifi_sessions")
-    .update({
-      plan_id: plan.id,
-      // Stay ACTIVE so captive status polling treats the guest as online;
-      // plan_id marks the paid upgrade.
-      status: WifiSessionStatus.ACTIVE,
-      quota_bytes: nextQuotaBytes,
-      ends_at: entitlements.endsAt,
-      download_kbps: plan.downloadKbps,
-      upload_kbps: plan.uploadKbps,
-      stripe_checkout_session_id: checkoutSessionId,
-      disconnected_at: null,
-    })
-    .eq("id", existing.id)
+  const { data: enterpriseRow, error: enterpriseError } = await supabase
+    .from("enterprises")
     .select("*")
-    .single();
+    .eq("id", existing.enterpriseId)
+    .maybeSingle();
+  if (enterpriseError || !enterpriseRow) {
+    return {
+      ok: false,
+      status: 500,
+      body: {
+        ok: false,
+        error: "Failed to load enterprise for upgrade.",
+        code: "db_error",
+        details: enterpriseError?.message,
+      },
+    };
+  }
+  const enterprise = mapEnterprise(enterpriseRow as JsonRecord);
 
-  if (updateError || !updatedRow) {
+  // Session write + non-blocking RADIUS CoA (plan speeds) via the controller.
+  let session: NetworkSession;
+  try {
+    const controller = createCaptiveController(supabase, enterprise);
+    session = await controller.applyPaidUpgrade(existing.id, {
+      planId: plan.id,
+      stripeCheckoutSessionId: checkoutSessionId,
+      quotaBytes: entitlements.quotaBytes,
+      endsAt: entitlements.endsAt,
+      downloadKbps: plan.downloadKbps,
+      uploadKbps: plan.uploadKbps,
+    });
+  } catch (error) {
     return {
       ok: false,
       status: 500,
@@ -616,71 +617,17 @@ async function applyPlanUpgrade(input: {
         ok: false,
         error: "Failed to upgrade wifi session.",
         code: "db_error",
-        details: updateError?.message,
+        details: error instanceof Error ? error.message : String(error),
       },
     };
   }
 
-  const session = mapSession(updatedRow as JsonRecord);
+  const coa: CheckoutWebhookSuccess["coa"] = {
+    attempted: Boolean(enterprise.radiusCoaHost && enterprise.radiusSecret),
+    acknowledged: false,
+  };
 
-  const { data: deviceRow, error: deviceError } = await supabase
-    .from("wifi_devices")
-    .select("*")
-    .eq("id", session.deviceId)
-    .maybeSingle();
-  const { data: enterpriseRow, error: enterpriseError } = await supabase
-    .from("enterprises")
-    .select("*")
-    .eq("id", session.enterpriseId)
-    .maybeSingle();
-
-  if (deviceError || enterpriseError || !deviceRow || !enterpriseRow) {
-    return {
-      ok: false,
-      status: 500,
-      body: {
-        ok: false,
-        error: "Failed to load device/enterprise for CoA.",
-        code: "db_error",
-        details: deviceError?.message || enterpriseError?.message,
-      },
-    };
-  }
-
-  const device = mapDevice(deviceRow as JsonRecord);
-  const enterprise = mapEnterprise(enterpriseRow as JsonRecord);
-
-  let coa: CheckoutWebhookSuccess["coa"] = { attempted: false };
-  if (enterprise.radiusCoaHost && enterprise.radiusSecret) {
-    // Non-blocking: Vercel serverless UDP CoA is unreliable and must not delay Stripe ACK.
-    coa = { attempted: true, acknowledged: false };
-    void sendCoABandwidthUpdate(
-      {
-        mac: device.macAddress,
-        acctSessionId: session.acctSessionId ?? undefined,
-        nasIdentifier: session.apId ?? undefined,
-        replyMessage: `OmniTaps upgrade:${plan.name}`,
-      },
-      {
-        downloadKbps: plan.downloadKbps,
-        uploadKbps: plan.uploadKbps,
-        includeMikroTikRateLimit: true,
-      },
-      {
-        host: enterprise.radiusCoaHost,
-        port: enterprise.radiusCoaPort || 3799,
-        secret: enterprise.radiusSecret,
-        timeoutMs: 1500,
-      },
-    ).catch((error) => {
-      console.warn(
-        "[checkout] RADIUS CoA failed:",
-        error instanceof Error ? error.message : String(error),
-      );
-    });
-  }
-
-  return { ok: true, session, device, enterprise, plan, coa };
+  return { ok: true, session, plan, coa };
 }
 
 async function handleStripeWebhook(request: Request): Promise<Response> {
@@ -781,8 +728,8 @@ async function handleStripeWebhook(request: Request): Promise<Response> {
   }
 
   const quota = calculateSessionQuota({
-    inputOctets: upgraded.session.inputOctets,
-    outputOctets: upgraded.session.outputOctets,
+    inputOctets: upgraded.session.bytesUp,
+    outputOctets: upgraded.session.bytesDown,
     quotaBytes: upgraded.session.quotaBytes,
     startedAt: upgraded.session.startedAt,
     endsAt: upgraded.session.endsAt,

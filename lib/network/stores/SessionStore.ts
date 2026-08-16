@@ -32,6 +32,7 @@ export interface StoredSession {
   acctSessionId: string | null;
   apId: string | null;
   planId: string | null;
+  stripeCheckoutSessionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +55,7 @@ export interface CreateSessionInput {
   acctSessionId?: string | null;
   apId?: string | null;
   planId?: string | null;
+  stripeCheckoutSessionId?: string | null;
   status?: string;
 }
 
@@ -92,6 +94,8 @@ export interface SessionStore {
     id: string,
     patch: Partial<Pick<OtpChallengeRecord, "attemptCount" | "consumedAt">>,
   ): Promise<OtpChallengeRecord>;
+  /** Remove a challenge (e.g. after a failed delivery attempt). */
+  deleteChallenge(id: string): Promise<void>;
 }
 
 export type { QuotaLimit };

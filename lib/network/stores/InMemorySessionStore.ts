@@ -115,6 +115,7 @@ export class InMemorySessionStore implements SessionStore {
       acctSessionId: input.acctSessionId ?? null,
       apId: input.apId ?? null,
       planId: input.planId ?? null,
+      stripeCheckoutSessionId: input.stripeCheckoutSessionId ?? null,
       createdAt: ts,
       updatedAt: ts,
     };
@@ -176,5 +177,9 @@ export class InMemorySessionStore implements SessionStore {
     const updated = { ...current, ...patch };
     this.challenges.set(id, updated);
     return updated;
+  }
+
+  async deleteChallenge(id: string): Promise<void> {
+    this.challenges.delete(id);
   }
 }

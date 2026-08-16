@@ -22,7 +22,7 @@ npm run setup
 ```
 This installs deps, pushes the schema, and seeds the `demo` tenant (menu, reviews, Wi‑Fi, site, chatbot) + admin user.
 
-Env names only (never put secrets in `VITE_*`): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SEED_ADMIN_*`, `SEED_TENANT_*`. Captive Wi‑Fi also needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+Env names only (never put secrets in `VITE_*`): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SEED_ADMIN_*`, `SEED_TENANT_*`. Captive Wi‑Fi also needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Captive OTP delivery uses `RESEND_API_KEY` + `RESEND_EMAIL_FROM` (email codes) and `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_PHONE_NUMBER` (SMS codes); set `CAPTIVE_OTP_ECHO=1` to echo codes in dev/demo without a provider.
 
 ### 3. Go live
 ```bash

@@ -125,12 +125,19 @@ export class NetworkSessionController {
     apId?: string | null;
     deviceFingerprint?: string | null;
   }): Promise<{ device: StoredDevice; isNew: boolean; status: NetworkStatus }> {
+    // Preserve the row's status when it is blocked or already identity-verified;
+    // only unverified devices are (re)set to pending. Mirrors the captive
+    // authenticate contract so onboard never clobbers blocked/active rows.
+    const existing = await this.store.getDeviceByMac(input.enterpriseId, input.macAddress);
+    const preserveStatus =
+      existing !== null &&
+      (existing.status === "blocked" || Boolean(existing.identityVerifiedAt));
     const { device, isNew } = await this.store.upsertDevice({
       enterpriseId: input.enterpriseId,
       macAddress: input.macAddress,
       apId: input.apId,
       deviceFingerprint: input.deviceFingerprint,
-      status: "pending",
+      status: preserveStatus ? undefined : "pending",
     });
     if (device.identityVerifiedAt) {
       const active = await this.findHealthySession(device.id);
@@ -292,6 +299,28 @@ export class NetworkSessionController {
     return toNetworkSession(updated, device);
   }
 
+  /** In-quota active session for a device, or null after closing exhausted rows. */
+  async getActiveSession(deviceId: string): Promise<NetworkSession | null> {
+    const active = await this.findHealthySession(deviceId);
+    if (!active) return null;
+    const device = await this.requireDevice(deviceId);
+    return toNetworkSession(active, device);
+  }
+
+  /** Attach gateway acct-session/ap context onto an existing session. */
+  async attachAcctContext(
+    sessionId: string,
+    input: { acctSessionId?: string | null; apId?: string | null },
+  ): Promise<NetworkSession> {
+    const stored = await this.requireSession(sessionId);
+    const device = await this.requireDevice(stored.deviceId);
+    const updated = await this.store.updateSession(sessionId, {
+      acctSessionId: input.acctSessionId ?? stored.acctSessionId,
+      apId: input.apId ?? stored.apId,
+    });
+    return toNetworkSession(updated, device);
+  }
+
   async getOnlineStatus(sessionOrDeviceId: string): Promise<NetworkStatus> {
     const session = await this.store.getSessionById(sessionOrDeviceId);
     if (session) {
@@ -303,7 +332,7 @@ export class NetworkSessionController {
     }
     const device = await this.store.getDeviceById(sessionOrDeviceId);
     if (!device) return NetworkStatus.UNAUTHENTICATED;
-    const active = await this.findHealthySession(device.id);
+    const active = await this.getActiveSession(device.id);
     if (active) return NetworkStatus.CONNECTED;
     if (!device.identityVerifiedAt) return NetworkStatus.PENDING_VERIFICATION;
     return NetworkStatus.DISCONNECTED;
@@ -387,6 +416,54 @@ export class NetworkSessionController {
     return session;
   }
 
+  /**
+   * Paid upgrade after Stripe checkout: credit the purchased plan allowance on
+   * top of bytes already used, move the deadline to the plan duration, and
+   * re-throttle to the plan speeds (RADIUS CoA via the adapter).
+   */
+  async applyPaidUpgrade(
+    sessionId: string,
+    input: {
+      planId: string;
+      stripeCheckoutSessionId: string;
+      /** Purchased plan allowance in bytes (MAX_SAFE_INTEGER = unlimited). */
+      quotaBytes: number;
+      /** Plan duration end (ISO); null-ish plans pass a fresh/far deadline. */
+      endsAt: string | null;
+      downloadKbps: number;
+      uploadKbps: number;
+    },
+  ): Promise<NetworkSession> {
+    const stored = await this.requireSession(sessionId);
+    const device = await this.requireDevice(stored.deviceId);
+
+    // Remaining after upgrade = purchased plan allowance (used bytes preserved).
+    const usedBytes = stored.inputOctets + stored.outputOctets;
+    const nextQuotaBytes =
+      input.quotaBytes >= Number.MAX_SAFE_INTEGER / 2
+        ? Number.MAX_SAFE_INTEGER
+        : usedBytes + input.quotaBytes;
+
+    const updated = await this.store.updateSession(sessionId, {
+      planId: input.planId,
+      stripeCheckoutSessionId: input.stripeCheckoutSessionId,
+      status: "active",
+      quotaBytes: nextQuotaBytes,
+      endsAt: input.endsAt,
+      downloadKbps: input.downloadKbps,
+      uploadKbps: input.uploadKbps,
+      disconnectedAt: null,
+    });
+
+    const session = toNetworkSession(updated, device);
+    await this.adapter.throttleConnection({
+      session,
+      downloadKbps: input.downloadKbps,
+      uploadKbps: input.uploadKbps,
+    });
+    return session;
+  }
+
   sessionInQuota(session: StoredSession): boolean {
     const snap = calculateSessionQuota({
       inputOctets: session.inputOctets,
@@ -402,8 +479,16 @@ export class NetworkSessionController {
     const active = await this.store.findActiveSession(deviceId);
     if (!active) return null;
     if (this.sessionInQuota(active)) return active;
+    const snap = calculateSessionQuota({
+      inputOctets: active.inputOctets,
+      outputOctets: active.outputOctets,
+      quotaBytes: active.quotaBytes,
+      startedAt: active.startedAt,
+      endsAt: active.endsAt,
+    });
+    // Match recordUsage: bytes exhausted → quota_exceeded, time ran out → expired.
     await this.store.updateSession(active.id, {
-      status: "quota_exceeded",
+      status: snap.remainingBytes <= 0 ? "quota_exceeded" : "expired",
       disconnectedAt: new Date().toISOString(),
     });
     return null;

@@ -353,13 +353,13 @@ function CtaBlockView({ block }: { block: CtaBlock }) {
 function renderBlock(block: BlockConfig) {
     switch (block.type) {
         case "hero":
-            return <HeroBlockView block={block} />;
+            return <HeroBlockView block={block as HeroBlock} />;
         case "gallery":
-            return <GalleryBlockView block={block} />;
+            return <GalleryBlockView block={block as GalleryBlock} />;
         case "menu":
-            return <MenuBlockView block={block} />;
+            return <MenuBlockView block={block as MenuBlock} />;
         case "map":
-            return <MapBlockView block={block} />;
+            return <MapBlockView block={block as MapBlock} />;
         case "hours":
             return <HoursBlockView block={block as HoursBlock} />;
         case "cta":

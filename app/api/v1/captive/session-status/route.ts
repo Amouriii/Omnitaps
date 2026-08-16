@@ -533,6 +533,7 @@ async function closeIfExhausted(
       acctSessionId: closed.acctSessionId,
       apId: closed.apId,
       planId: closed.planId,
+      stripeCheckoutSessionId: closed.stripeCheckoutSessionId,
       createdAt: closed.createdAt,
       updatedAt: closed.updatedAt,
     },

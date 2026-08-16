@@ -10,6 +10,10 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * @param {string} path
+ * @param {{ method?: string; body?: unknown; signal?: AbortSignal; headers?: Record<string, string> }} [options]
+ */
 export async function apiRequest(path, { method = "GET", body, signal, headers: extraHeaders } = {}) {
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 

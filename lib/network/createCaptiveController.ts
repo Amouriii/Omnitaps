@@ -3,7 +3,7 @@ import type { Enterprise } from "../../db/schema/wifi.js";
 import { NoopNetworkAdapter } from "./adapters/MockNetworkAdapter.js";
 import { RadiusNetworkAdapter, radiusContextFromEnterprise } from "./adapters/RadiusNetworkAdapter.js";
 import { captiveQuotaEvents, ensureDefaultQuotaSubscriber } from "./captiveQuota.js";
-import { NoopOtpDelivery } from "./delivery/OtpDelivery.js";
+import { HttpOtpDelivery } from "./delivery/HttpOtpDelivery.js";
 import { IdentityVerificationService } from "./IdentityVerificationService.js";
 import { NetworkSessionController } from "./NetworkSessionController.js";
 import { SupabaseNetworkStore } from "./stores/SupabaseNetworkStore.js";
@@ -25,7 +25,11 @@ export function createCaptiveController(
     events: captiveQuotaEvents,
     identity: new IdentityVerificationService({
       store,
-      delivery: new NoopOtpDelivery(),
+      delivery: new HttpOtpDelivery({
+        // Local/demo only: log the code when a provider channel is unconfigured.
+        // Production never logs plaintext codes.
+        allowConsoleFallback: process.env.NODE_ENV !== "production",
+      }),
     }),
     radius,
   });

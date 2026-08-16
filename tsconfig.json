@@ -13,7 +13,8 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
-    "types": ["vite/client"]
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client", "node"]
   },
   "include": [
     "src",
@@ -22,5 +23,10 @@
     "lib",
     "api/**/*.ts",
     "db"
+  ],
+  "exclude": [
+    // src/app/r/** is a Next.js App Router REFERENCE kept for documentation;
+    // it is not part of the Vite SPA (no `next` package in this repo).
+    "src/app"
   ]
 }

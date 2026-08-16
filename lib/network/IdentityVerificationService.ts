@@ -156,12 +156,19 @@ export class IdentityVerificationService {
       expiresAt,
     });
 
-    await this.delivery.deliver({
-      identity,
-      code,
-      deviceId: input.deviceId,
-      expiresAt,
-    });
+    try {
+      await this.delivery.deliver({
+        identity,
+        code,
+        deviceId: input.deviceId,
+        expiresAt,
+      });
+    } catch (error) {
+      // A failed send must not leave an open challenge that blocks resends
+      // (resend cooldown) or can be brute-forced.
+      await this.store.deleteChallenge(challenge.id).catch(() => {});
+      throw error;
+    }
 
     const result: IssueOtpResult = {
       challengeId: challenge.id,

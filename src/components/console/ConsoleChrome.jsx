@@ -50,6 +50,14 @@ const AUTH_NAV = [
   { id: "website", label: "Website", to: "/s/demo" },
 ];
 
+/**
+ * @param {object} props
+ * @param {string} [props.eyebrow]
+ * @param {string} [props.title]
+ * @param {import('react').ReactNode} [props.children]
+ * @param {string} [props.role]
+ * @param {import('react').ReactNode} [props.actions]
+ */
 export function ConsoleStatusCard({
   eyebrow,
   title,
@@ -87,6 +95,16 @@ export function ConsoleSkeleton({ cards = 3 }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.eyebrow]
+ * @param {string} [props.title]
+ * @param {string} [props.subtitle]
+ * @param {string} [props.active]
+ * @param {string} [props.variant]
+ * @param {import('react').ReactNode} [props.actions]
+ * @param {import('react').ReactNode} [props.children]
+ */
 export default function ConsoleChrome({
   eyebrow,
   title,

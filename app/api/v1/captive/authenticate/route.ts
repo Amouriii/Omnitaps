@@ -1,6 +1,10 @@
 /**
  * TASK-3.1 — Captive portal authenticate endpoint.
  *
+ * Device onboarding, blocked checks, and in-quota session reuse are handled by
+ * NetworkSessionController (lib/network); this route owns gateway validation
+ * (HMAC, enterprise, MAC) and response shaping only.
+ *
  * Assumptions (stated):
  * 1. Gateway redirects with signed query params: mac, ap_id, challenge, sig|hmac|token,
  *    plus enterprise_id or enterprise_slug to select the tenant.
@@ -17,24 +21,18 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import {
-  WifiDeviceStatus,
-  WifiSessionStatus,
-  type Enterprise,
-  type WifiDevice,
-  type WifiSession,
-} from "../../../../../db/schema/wifi.js";
+import type { Enterprise } from "../../../../../db/schema/wifi.js";
+import { createCaptiveController } from "../../../../../lib/network/createCaptiveController.js";
 import { NetworkStatus } from "../../../../../lib/network/types.js";
+import type { NetworkSession } from "../../../../../lib/network/types.js";
+import type { StoredDevice } from "../../../../../lib/network/stores/SessionStore.js";
 import {
   parseGatewayQuery,
   verifyGatewayHmac,
   type GatewayQueryParams,
 } from "../../../../../lib/wifi/HMAC-verifier.js";
 import { buildDeviceFingerprint, normalizeMac } from "../../../../../lib/wifi/mac-utils.js";
-import {
-  buildQuotaEntitlements,
-  calculateSessionQuota,
-} from "../../../../../lib/wifi/quota-calculator.js";
+import { calculateSessionQuota } from "../../../../../lib/wifi/quota-calculator.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -169,53 +167,6 @@ function mapEnterprise(row: JsonRecord): Enterprise {
   };
 }
 
-function mapDevice(row: JsonRecord): WifiDevice {
-  return {
-    id: String(row.id),
-    enterpriseId: String(row.enterprise_id),
-    macAddress: String(row.mac_address),
-    deviceFingerprint:
-      row.device_fingerprint == null ? null : String(row.device_fingerprint),
-    displayName: row.display_name == null ? null : String(row.display_name),
-    status: String(row.status) as WifiDevice["status"],
-    email: row.email == null ? null : String(row.email),
-    phoneNumber: row.phone_number == null ? null : String(row.phone_number),
-    identityVerifiedAt:
-      row.identity_verified_at == null ? null : String(row.identity_verified_at),
-    firstSeenAt: String(row.first_seen_at ?? new Date().toISOString()),
-    lastSeenAt: String(row.last_seen_at ?? new Date().toISOString()),
-    createdAt: String(row.created_at ?? new Date().toISOString()),
-    updatedAt: String(row.updated_at ?? new Date().toISOString()),
-  };
-}
-
-function mapSession(row: JsonRecord): WifiSession {
-  return {
-    id: String(row.id),
-    enterpriseId: String(row.enterprise_id),
-    deviceId: String(row.device_id),
-    planId: row.plan_id == null ? null : String(row.plan_id),
-    status: String(row.status) as WifiSession["status"],
-    acctSessionId: row.acct_session_id == null ? null : String(row.acct_session_id),
-    apId: row.ap_id == null ? null : String(row.ap_id),
-    startedAt: String(row.started_at ?? new Date().toISOString()),
-    endsAt: row.ends_at == null ? null : String(row.ends_at),
-    disconnectedAt:
-      row.disconnected_at == null ? null : String(row.disconnected_at),
-    inputOctets: Number(row.input_octets ?? 0),
-    outputOctets: Number(row.output_octets ?? 0),
-    quotaBytes: Number(row.quota_bytes ?? 0),
-    downloadKbps: Number(row.download_kbps ?? 0),
-    uploadKbps: Number(row.upload_kbps ?? 0),
-    stripeCheckoutSessionId:
-      row.stripe_checkout_session_id == null
-        ? null
-        : String(row.stripe_checkout_session_id),
-    createdAt: String(row.created_at ?? new Date().toISOString()),
-    updatedAt: String(row.updated_at ?? new Date().toISOString()),
-  };
-}
-
 async function readParams(request: Request): Promise<GatewayQueryParams & {
   enterprise_id?: string;
   enterprise_slug?: string;
@@ -292,188 +243,9 @@ async function loadEnterprise(
   return { enterprise: null };
 }
 
-function sessionStillValid(session: WifiSession): boolean {
-  if (session.status !== WifiSessionStatus.ACTIVE) {
-    return false;
-  }
-  const snap = calculateSessionQuota({
-    inputOctets: session.inputOctets,
-    outputOctets: session.outputOctets,
-    quotaBytes: session.quotaBytes,
-    startedAt: session.startedAt,
-    endsAt: session.endsAt,
-  });
-  return !snap.isExhausted;
-}
-
-async function markSessionExpired(
-  supabase: SupabaseClient,
-  session: WifiSession,
-  reason: "expired" | "quota_exceeded",
-): Promise<void> {
-  await supabase
-    .from("wifi_sessions")
-    .update({
-      status:
-        reason === "quota_exceeded"
-          ? WifiSessionStatus.QUOTA_EXCEEDED
-          : WifiSessionStatus.EXPIRED,
-      disconnected_at: new Date().toISOString(),
-    })
-    .eq("id", session.id)
-    .eq("status", WifiSessionStatus.ACTIVE);
-}
-
-async function findActiveSession(
-  supabase: SupabaseClient,
-  deviceId: string,
-): Promise<WifiSession | null> {
-  const { data, error } = await supabase
-    .from("wifi_sessions")
-    .select("*")
-    .eq("device_id", deviceId)
-    .eq("status", WifiSessionStatus.ACTIVE)
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) {
-    return null;
-  }
-
-  const session = mapSession(data as JsonRecord);
-  if (sessionStillValid(session)) {
-    return session;
-  }
-
-  const snap = calculateSessionQuota({
-    inputOctets: session.inputOctets,
-    outputOctets: session.outputOctets,
-    quotaBytes: session.quotaBytes,
-    startedAt: session.startedAt,
-    endsAt: session.endsAt,
-  });
-  await markSessionExpired(
-    supabase,
-    session,
-    snap.remainingBytes <= 0 ? "quota_exceeded" : "expired",
-  );
-  return null;
-}
-
-async function upsertDevice(input: {
-  supabase: SupabaseClient;
-  enterprise: Enterprise;
-  macCanonical: string;
-  apId: string | null;
-}): Promise<{ device: WifiDevice; isNewDevice: boolean; error?: string }> {
-  const { supabase, enterprise, macCanonical, apId } = input;
-  const now = new Date().toISOString();
-
-  const existing = await supabase
-    .from("wifi_devices")
-    .select("*")
-    .eq("enterprise_id", enterprise.id)
-    .eq("mac_address", macCanonical)
-    .maybeSingle();
-
-  if (existing.error) {
-    return {
-      device: null as unknown as WifiDevice,
-      isNewDevice: false,
-      error: existing.error.message,
-    };
-  }
-
-  if (existing.data) {
-    const device = mapDevice(existing.data as JsonRecord);
-    const patch: Record<string, unknown> = { last_seen_at: now };
-    if (!device.identityVerifiedAt) {
-      patch.status = WifiDeviceStatus.PENDING;
-    }
-    const { data: updated, error: updateError } = await supabase
-      .from("wifi_devices")
-      .update(patch)
-      .eq("id", device.id)
-      .select("*")
-      .single();
-
-    if (updateError || !updated) {
-      return { device, isNewDevice: false, error: updateError?.message };
-    }
-    return { device: mapDevice(updated as JsonRecord), isNewDevice: false };
-  }
-
-  const fingerprint = buildDeviceFingerprint(macCanonical, [apId]);
-  const { data: created, error: insertError } = await supabase
-    .from("wifi_devices")
-    .insert({
-      enterprise_id: enterprise.id,
-      mac_address: macCanonical,
-      device_fingerprint: fingerprint,
-      status: WifiDeviceStatus.PENDING,
-      first_seen_at: now,
-      last_seen_at: now,
-    })
-    .select("*")
-    .single();
-
-  if (insertError || !created) {
-    return {
-      device: null as unknown as WifiDevice,
-      isNewDevice: true,
-      error: insertError?.message ?? "device_insert_failed",
-    };
-  }
-
-  return { device: mapDevice(created as JsonRecord), isNewDevice: true };
-}
-
-async function createFreeSession(input: {
-  supabase: SupabaseClient;
-  enterprise: Enterprise;
-  device: WifiDevice;
-  apId: string | null;
-  acctSessionId: string | null;
-}): Promise<{ session: WifiSession | null; error?: string }> {
-  const { supabase, enterprise, device, apId, acctSessionId } = input;
-  const startedAt = new Date().toISOString();
-  const entitlements = buildQuotaEntitlements({
-    quotaMb: enterprise.freeQuotaMb,
-    durationMinutes: enterprise.freeSessionMinutes,
-    startedAt,
-  });
-
-  const { data, error } = await supabase
-    .from("wifi_sessions")
-    .insert({
-      enterprise_id: enterprise.id,
-      device_id: device.id,
-      plan_id: null,
-      status: WifiSessionStatus.ACTIVE,
-      acct_session_id: acctSessionId,
-      ap_id: apId,
-      started_at: startedAt,
-      ends_at: entitlements.endsAt,
-      input_octets: 0,
-      output_octets: 0,
-      quota_bytes: entitlements.quotaBytes,
-      download_kbps: enterprise.defaultDownloadKbps,
-      upload_kbps: enterprise.defaultUploadKbps,
-    })
-    .select("*")
-    .single();
-
-  if (error || !data) {
-    return { session: null, error: error?.message ?? "session_insert_failed" };
-  }
-
-  return { session: mapSession(data as JsonRecord) };
-}
-
 function buildPending(input: {
   enterprise: Enterprise;
-  device: WifiDevice;
+  device: StoredDevice;
   isNewDevice: boolean;
 }): AuthenticatePendingBody {
   const { enterprise, device, isNewDevice } = input;
@@ -498,15 +270,15 @@ function buildPending(input: {
 
 function buildSuccess(input: {
   enterprise: Enterprise;
-  device: WifiDevice;
-  session: WifiSession;
+  device: StoredDevice;
+  session: NetworkSession;
   isNewDevice: boolean;
   isNewSession: boolean;
 }): AuthenticateSuccessBody {
   const { enterprise, device, session, isNewDevice, isNewSession } = input;
   const quota = calculateSessionQuota({
-    inputOctets: session.inputOctets,
-    outputOctets: session.outputOctets,
+    inputOctets: session.bytesUp,
+    outputOctets: session.bytesDown,
     quotaBytes: session.quotaBytes,
     startedAt: session.startedAt,
     endsAt: session.endsAt,
@@ -660,24 +432,16 @@ async function handleAuthenticate(request: Request): Promise<Response> {
   const apId = asString(params.ap_id) ?? null;
   const acctSessionId = asString(params.acct_session_id) ?? null;
 
-  const deviceResult = await upsertDevice({
-    supabase,
-    enterprise,
-    macCanonical: normalized.canonical,
+  const controller = createCaptiveController(supabase, enterprise);
+
+  const { device, isNew: isNewDevice } = await controller.onboard({
+    enterpriseId: enterprise.id,
+    macAddress: normalized.canonical,
     apId,
+    deviceFingerprint: buildDeviceFingerprint(normalized.canonical, [apId]),
   });
 
-  if (deviceResult.error || !deviceResult.device) {
-    return jsonResponse(500, {
-      ok: false,
-      error: "Failed to register or load device.",
-      code: "db_error",
-      details: deviceResult.error,
-    });
-  }
-
-  const device = deviceResult.device;
-  if (device.status === WifiDeviceStatus.BLOCKED) {
+  if (device.status === "blocked") {
     return jsonResponse(403, {
       ok: false,
       error: "Device is blocked from this network.",
@@ -691,35 +455,28 @@ async function handleAuthenticate(request: Request): Promise<Response> {
       buildPending({
         enterprise,
         device,
-        isNewDevice: deviceResult.isNewDevice,
+        isNewDevice,
       }),
     );
   }
 
-  let session = await findActiveSession(supabase, device.id);
-  let isNewSession = false;
-
+  let session = await controller.getActiveSession(device.id);
   if (!session) {
     return jsonResponse(
       200,
       buildPending({
         enterprise,
         device,
-        isNewDevice: deviceResult.isNewDevice,
+        isNewDevice,
       }),
     );
   }
 
   if (acctSessionId && !session.acctSessionId) {
-    const { data: patched } = await supabase
-      .from("wifi_sessions")
-      .update({ acct_session_id: acctSessionId, ap_id: apId ?? session.apId })
-      .eq("id", session.id)
-      .select("*")
-      .maybeSingle();
-    if (patched) {
-      session = mapSession(patched as JsonRecord);
-    }
+    session = await controller.attachAcctContext(session.id, {
+      acctSessionId,
+      apId,
+    });
   }
 
   return jsonResponse(
@@ -728,8 +485,8 @@ async function handleAuthenticate(request: Request): Promise<Response> {
       enterprise,
       device,
       session,
-      isNewDevice: deviceResult.isNewDevice,
-      isNewSession,
+      isNewDevice,
+      isNewSession: false,
     }),
   );
 }

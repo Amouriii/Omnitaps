@@ -29,6 +29,8 @@
 npm run setup     # install, prisma push, seed demo + admin
 npm run dev       # Vite (APIs mounted locally)
 npm run build     # prisma generate && vite build
+npm run typecheck # tsc --noEmit (typescript + @types/node are devDependencies; runs in CI)
+npm test          # vitest run (network module unit tests; runs in CI)
 npm start         # production HTTP: dist/ + API dispatch (scripts/docker-server.mjs via tsx)
 npm run db:seed   # re-seed Demo Café (Prisma TCP, or HTTPS if DATABASE_URL is a placeholder)
 npm run db:seed-http  # same café seed via Supabase REST (no Postgres TCP)
@@ -44,6 +46,7 @@ Required env families:
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `SEED_ADMIN_*`, `SEED_TENANT_*`
 - Captive Wi‑Fi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (+ per-enterprise `gateway_hmac_secret` in Supabase `enterprises`)
+- Captive OTP delivery: `RESEND_API_KEY`, `RESEND_EMAIL_FROM` (email) + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (SMS); dev/demo echo via `CAPTIVE_OTP_ECHO=1`
 - Docker **build-time** (baked into the SPA): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`--build-arg`; rebuild to change)
 - Docker **runtime** (container env, never bake `.env` into the image): `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT` (default `3000`)
 
@@ -100,7 +103,7 @@ Required env families:
 
 | Path | Methods | Notes |
 |------|---------|--------|
-| `/api/v1/captive/authenticate` | GET, POST | Gateway HMAC grant |
+| `/api/v1/captive/authenticate` | GET, POST | Gateway HMAC grant; device onboarding + in-quota session reuse via `NetworkSessionController` |
 | `/api/v1/captive/session-status` | GET, POST, PATCH | Poll / SSE-style status |
 | `/api/v1/captive/checkout` | GET, POST | Plans list; Stripe session + webhook (`bodyParser: false`) |
 | `/api/v1/admin/wifi/telemetry` | GET | Bearer + `profiles` |
@@ -130,6 +133,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 4. `004_task_1_4_indexes_realtime.sql` — indexes + realtime publication
 5. `005_wifi_captive_portal.sql` — captive columns on `enterprises` + `wifi_devices` / `wifi_sessions` / `subscription_plans`
 6. `006_qr_menu_items.sql` — QR menu items additions
+7. `007_wifi_network_otp.sql` — `wifi_devices` email / phone_number / identity_verified_at + `wifi_otp_challenges` (hashed 6‑digit codes; guest identity before free session)
 
 Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The SQL now upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
 
@@ -169,6 +173,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Web↔Node adapter | `api/_lib/webHandlerAdapter.js`, `api/_lib/lazyWebHandler.js` |
 | Profiles auth helper | `lib/wifi/profiles-auth.ts` |
 | Wi‑Fi libs | `lib/wifi/{mac-utils,HMAC-verifier,quota-calculator,radius-client}.ts` |
+| Network module (Path A engine) | `lib/network/` — `NetworkSessionController` (onboard / OTP verify / provision / quota record / reset / extend / getActiveSession / attachAcctContext / applyPaidUpgrade), `IdentityVerificationService`, `QuotaEventEmitter`, stores (`InMemorySessionStore` / `SupabaseNetworkStore`), adapters (`Mock`/`Noop`/`RadiusNetworkAdapter` non-blocking CoA), OTP delivery (`Console`/`Noop` + `HttpOtpDelivery` routing email→Resend / SMS→Twilio), `createCaptiveController` factory |
 | Schema (do not apply raw) | `db/schema/wifi.ts` (types/Zod only for agents; DB = migration 005) |
 | Prisma schema | `prisma/schema.prisma` |
 | Deploy | `vercel.json` (CSP allows Stripe), `scripts/launch.mjs` |
@@ -208,7 +213,7 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 - Realtime: avoid duplicate channel names when `DynamicMenu` and `MenuEditor` both subscribe — use unique channel IDs.
 - Dual trees (`app/` handler/UI sources vs `src/` Vite mounts): edit the `app/` / `components/wifi/` sources; keep re-exports in `src/pages/*` thin.
 - `/admin` (RequireAuth + Prisma User) ≠ `/enterprise/wifi*` (WifiModuleGate + `profiles`). A Supabase user may have a profile without a Prisma `User.authId` row.
-- Captive ops checklist: apply migration `005`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
+- Captive ops checklist: apply migrations `005` + `007`, re-run `seed_enterprise_nav.sql`, set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`; point Stripe webhooks at `/api/v1/captive/checkout`.
 - Demo `gateway_hmac_secret` from seed must be rotated outside local/demo use.
 - Richer Demo Café content (menu, website blocks including gallery, Wi‑Fi splash, chatbot knowledge) requires `npm run db:seed`.
 - `/menu/demo` shows Prisma café dishes after that seed. After `006` + `supabase/seed_enterprise_nav.sql`, the same URL can resolve the Supabase enterprise slug `demo` and `qr_menu_items` instead.
@@ -217,6 +222,17 @@ Runtime today: keyword match only. A later pass may install `ai` and add a strea
 ---
 
 ## Changelog (memory log)
+
+### 2026-08-16
+
+- Added Vitest (`vitest@4`, `vitest.config.ts` with node env, `lib/**/*.test.ts` only — deliberately separate from `vite.config.js` so tests never mount the API middleware). `npm test` / `test:watch` scripts; `npm test` added to the shared CI template. 64 unit tests across 6 files: `NetworkSessionController` (onboard/status preservation, provision + duplicate guard, verifyAndProvision, recordUsage byte- vs time-expiry, getActiveSession/getOnlineStatus, attachAcctContext, applyPaidUpgrade incl. unlimited cap, reset/extend/update limits, listActiveSessions, helpers), `IdentityVerificationService` (issue/echo, resend cooldown, TTL expiry, attempt lockout, consumed/foreign challenges, delivery-failure cleanup, normalization), `QuotaEventEmitter`, `InMemorySessionStore`, `HttpOtpDelivery` (Resend/Twilio request shapes, routing, dev fallback vs prod throw), `lib/wifi/quota-calculator`.
+- Added `typescript` + `@types/node` as devDependencies; `npm run typecheck` (`tsc --noEmit`) is now part of the shared CI workflow template (`test-module-template.yml`). `tsconfig.json` gained `node` in `types`, `allowImportingTsExtensions: true`, and an `exclude` for `src/app` (the Next.js App Router REFERENCE file — no `next` package in this repo). Fixes to reach zero errors: JSDoc types on `src/lib/apiClient.js` (`apiRequest` init) and `src/components/console/ConsoleChrome.jsx` (`actions`/`children` props), and explicit casts in `BlockRenderer.tsx`'s block switch. Full `tsc --noEmit` is clean.
+- Real OTP delivery: new `lib/network/delivery/HttpOtpDelivery.ts` — `ResendOtpDelivery` (email, `RESEND_API_KEY`/`RESEND_EMAIL_FROM`) + `TwilioSmsOtpDelivery` (SMS, `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_PHONE_NUMBER`), plain `fetch` (no SDKs). `HttpOtpDelivery` routes by identity kind; unconfigured channels log the code in dev only (`NODE_ENV !== "production"`) and throw a clear config error in prod. `createCaptiveController` now uses it. Delivery failure in `IdentityVerificationService.issue` deletes the just-created challenge (new `SessionStore.deleteChallenge`) so resend cooldown / brute-force surface isn't left behind.
+- Consolidated `/api/v1/captive/authenticate` onto `NetworkSessionController`: device onboarding (`onboard`), blocked check, and in‑quota session reuse (`getActiveSession`) replace the route‑local `upsertDevice` / `findActiveSession` / `markSessionExpired` helpers (removed ~150 lines + dead `createFreeSession`). `session.status` in the success body is now the mapped `NetworkStatus` (`CONNECTED`), matching the OTP route; the guest UI only branches on `session.id`.
+- `NetworkSessionController` improvements for the consolidation: `onboard` preserves blocked/verified device status instead of forcing `pending` (also fixes a latent bug where blocked+unverified devices were reset to pending); `findHealthySession` now marks time‑expired sessions `expired` and bytes‑exhausted ones `quota_exceeded` (consistent with `recordUsage`); added `getActiveSession(deviceId)` and `attachAcctContext(sessionId, …)` (gateway `acct_session_id`/`ap_id` patch).
+- Consolidated the captive `checkout` Stripe webhook upgrade onto the controller: `applyPlanUpgrade` now calls `NetworkSessionController.applyPaidUpgrade` (used‑bytes‑preserved quota credit, plan duration, plan speeds, `plan_id` + `stripe_checkout_session_id`, non‑blocking RADIUS CoA via the `RadiusNetworkAdapter`). Removed the route's raw `wifi_sessions` update + manual `sendCoABandwidthUpdate`; `StoredSession` gained `stripeCheckoutSessionId` and `SupabaseNetworkStore.updateSession` now writes `plan_id` / `stripe_checkout_session_id` (previously missing). Webhook response `session.status` is the mapped `NetworkStatus`; `coa.attempted` is derived from enterprise RADIUS config.
+- Fixed `checkout` route `mapDevice` to include migration‑007 fields (`email`, `phone_number`, `identity_verified_at`) — surfaced by a full typecheck, which the repo otherwise never runs (`typescript` is not a dependency; `vite build` uses esbuild).
+- `lib/network` module committed (`4eee311`); demo: `node --import tsx lib/network/examples/usage.ts` prints `demo:network ok`.
 
 ### 2026-08-13
 

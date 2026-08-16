@@ -49,6 +49,10 @@ function mapSession(row: JsonRecord): StoredSession {
     acctSessionId: row.acct_session_id == null ? null : String(row.acct_session_id),
     apId: row.ap_id == null ? null : String(row.ap_id),
     planId: row.plan_id == null ? null : String(row.plan_id),
+    stripeCheckoutSessionId:
+      row.stripe_checkout_session_id == null
+        ? null
+        : String(row.stripe_checkout_session_id),
     createdAt: String(row.created_at ?? new Date().toISOString()),
     updatedAt: String(row.updated_at ?? new Date().toISOString()),
   };
@@ -187,6 +191,7 @@ export class SupabaseNetworkStore implements SessionStore {
         enterprise_id: input.enterpriseId,
         device_id: input.deviceId,
         plan_id: input.planId ?? null,
+        stripe_checkout_session_id: input.stripeCheckoutSessionId ?? null,
         status: input.status ?? "active",
         acct_session_id: input.acctSessionId ?? null,
         ap_id: input.apId ?? null,
@@ -215,6 +220,10 @@ export class SupabaseNetworkStore implements SessionStore {
     if (patch.uploadKbps !== undefined) row.upload_kbps = patch.uploadKbps;
     if (patch.acctSessionId !== undefined) row.acct_session_id = patch.acctSessionId;
     if (patch.apId !== undefined) row.ap_id = patch.apId;
+    if (patch.planId !== undefined) row.plan_id = patch.planId;
+    if (patch.stripeCheckoutSessionId !== undefined) {
+      row.stripe_checkout_session_id = patch.stripeCheckoutSessionId;
+    }
     const { data, error } = await this.supabase
       .from("wifi_sessions")
       .update(row)
@@ -281,5 +290,13 @@ export class SupabaseNetworkStore implements SessionStore {
       .single();
     if (error || !data) throw new Error(error?.message ?? "otp_update_failed");
     return mapChallenge(data as JsonRecord);
+  }
+
+  async deleteChallenge(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("wifi_otp_challenges")
+      .delete()
+      .eq("id", id);
+    if (error) throw new Error(error.message);
   }
 }
