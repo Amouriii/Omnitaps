@@ -1,7 +1,7 @@
 # Omnitaps — Project Memory
 
 > Living knowledge base for agents and humans. **Update this file** whenever you add, remove, or materially change features, routes, schema, env vars, or known issues.
-> Last updated: 2026-08-16
+> Last updated: 2026-09-06
 
 ---
 
@@ -47,6 +47,7 @@ Required env families:
 - `SEED_ADMIN_*`, `SEED_TENANT_*`
 - Captive Wi‑Fi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (+ per-enterprise `gateway_hmac_secret` in Supabase `enterprises`)
 - Captive OTP delivery: `RESEND_API_KEY`, `RESEND_EMAIL_FROM` (email) + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (SMS); dev/demo echo via `CAPTIVE_OTP_ECHO=1`
+- Contact form (`POST /api/contact`): persists to `ContactMessage` (Prisma model + migration `008_contact_messages.sql`) and notifies the team inbox via Resend — needs `RESEND_API_KEY` + `RESEND_EMAIL_FROM`, with `CONTACT_NOTIFY_EMAIL` (optional) as the destination
 - Chatbot LLM: `GROQ_API_KEY` (Groq open-source models) + optional `CHATBOT_MODEL` (default `llama-3.3-70b-versatile`); falls back to the keyword matcher when unset or failing
 - Docker **build-time** (baked into the SPA): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`--build-arg`; rebuild to change)
 - Docker **runtime** (container env, never bake `.env` into the image): `DATABASE_URL`, `SUPABASE_*`, `STRIPE_*`, `SEED_*`, `PORT` (default `3000`)
@@ -81,6 +82,8 @@ Required env families:
 | Path | Purpose |
 |------|---------|
 | `/` | Marketing home |
+| `/about` · `/contact` · `/careers` | Marketing pages (About / Contact / Careers) |
+| `/privacy-policy` · `/terms-of-service` | Legal pages (draft copy) |
 | `/demo` | Demo Café guest hub (menu, reviews, Wi‑Fi, website) |
 | `/items/:id` | Product/module detail |
 | `/changelog` | Changelog |
@@ -136,6 +139,7 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 5. `005_wifi_captive_portal.sql` — captive columns on `enterprises` + `wifi_devices` / `wifi_sessions` / `subscription_plans`
 6. `006_qr_menu_items.sql` — QR menu items additions
 7. `007_wifi_network_otp.sql` — `wifi_devices` email / phone_number / identity_verified_at + `wifi_otp_challenges` (hashed 6‑digit codes; guest identity before free session)
+8. `008_contact_messages.sql` — `ContactMessage` for the marketing contact form (`POST /api/contact`; Prisma writes, no RLS)
 
 Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable) or `npm run db:seed-enterprise` (`scripts/seed-enterprise.mjs`, PostgREST/Auth-Admin mirror of the same seed — no psql needed). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The seed upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
 
@@ -179,6 +183,7 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Schema (do not apply raw) | `db/schema/wifi.ts` (types/Zod only for agents; DB = migration 005) |
 | Prisma schema | `prisma/schema.prisma` |
 | Deploy | `vercel.json` (CSP allows Stripe), `scripts/launch.mjs` |
+| Documentation | `README.md`, `pitch.md` (Cairo F&B positioning), `docs/QR_ORDERING_PLATFORM_PLAN.md` (ordering roadmap), `docs/ACCESSIBILITY_CHECKLIST.md`, `docs/COMPONENT_GUIDELINES.md` |
 | Docker HTTP server | `scripts/docker-server.mjs` — Node `http`, `createViteApiMiddleware` + `createProductionRouteTable()`, `dist/` + SPA fallback, same security headers as `vercel.json` |
 | Docker image | `ghcr.io/onouh/omnitaps:latest` (GHCR multi-arch `linux/amd64` + `linux/arm64`); `Dockerfile` (multi-stage `node:22-bookworm-slim`, OCI `org.opencontainers.image.source`), `.dockerignore`, `.github/workflows/docker-publish.yml` |
 
@@ -225,6 +230,22 @@ Runtime today: LLM via Groq (open-source `llama-3.3-70b-versatile`, grounded in 
 ---
 
 ## Changelog (memory log)
+
+### 2026-09-06
+
+- Added `docs/QR_ORDERING_PLATFORM_PLAN.md`, a staged implementation plan for table-aware QR ordering that preserves the existing QR menu, enterprise dashboard, captive Wi-Fi, and Wi-Fi Stripe surfaces. It defines the ordering data model, RLS/security boundaries, guest pay-at-counter flow, staff queue, provider-agnostic food payments, loyalty, chatbot cart actions, mocked Wi-Fi adapter, four-developer ownership boundaries, and verification criteria; ordering remains a plan and is not yet implemented.
+- Added `pitch.md`, a Cairo-specific F&B positioning document connecting Omnitaps' owned websites, QR menus, chatbot, review funnel, Wi-Fi capture, and operator console to local discovery, platform-dependence, capability, and margin problems.
+- Updated `README.md` to document the marketing contact endpoint, `ContactMessage` persistence, Resend notification configuration, and `CONTACT_NOTIFY_EMAIL`.
+
+### 2026-08-19
+
+- Added the shared `SiteHeader` + `SiteFooter` to the remaining secondary pages (`/changelog`, 404 page, `/items/:id` — both the valid and module-not-found branches) with a flex-column sticky-header/footer layout so the site chrome is consistent across all pages.
+- Wired footers into the captive/enterprise Wi‑Fi module: the three `app/(dashboard)/enterprise/wifi/*` pages now render the shared `SiteFooter` (imported from `src/components/SiteFooter.jsx` — the `app/` tree already compiles with Vite, so this crosses the reference-tree boundary safely). The three `app/(portal)/wifi-guest/*` pages use a new compact branded footer, `components/wifi/portal/PortalFooter.tsx` (wordmark + tagline + About/Contact + the secure-access line) — the full marketing sitemap footer is deliberately not used on the guest captive portal (440px flow for venue guests).
+- Same split for top navigation: the enterprise Wi‑Fi pages render the shared `SiteHeader` (logo + Try demos + Book a Demo); the guest captive portal pages use a new compact branded header, `components/wifi/portal/PortalHeader.tsx` (wordmark only — no marketing CTAs for venue guests), which replaced the old "OmniTaps Portal" eyebrow text on the landing and session pages.
+- The Wi‑Fi module gate screens are branded too: `src/components/WifiModuleGate.jsx` now renders `PortalHeader` + `PortalFooter` (the compact captive-portal chrome) on its loading and "Enterprise profile required" screens, and on the ModuleGuard "Wi‑Fi module disabled" fallback (all restructured to the flex-column sticky-footer layout). ModuleGuard's inline loading/error alerts are left untouched since they render inside page content.
+- `/login` now uses the shared `SiteHeader` + `SiteFooter` instead of `ConsoleChrome`'s auth variant (the sign-in form and `ConsoleStatusCard` setup state are unchanged).
+- `ConsoleChrome` (the `/admin` + `/demo/dashboard` operator shell) was rebuilt around the shared `SiteHeader` + `SiteFooter` too — its old operator nav header (Site / Demo Café / Website / Dashboard / Admin) and `active`/`variant` props were removed; title/eyebrow/subtitle/actions now render in the content area. Every page on the site now carries the same header/footer chrome.
+- Wired the marketing contact form (`/contact`) to a real endpoint: `POST /api/contact` (`api/_lib/handlers/contactMessage.js`, registered in `routeTable.js`). Validates with `contactMessageSchema` (new, in `shared/validation.js`), sanitizes, rate-limits (10/min/IP), and delivers through up to two channels: (1) persist to the new `ContactMessage` Prisma model (schema + `supabase/migrations/008_contact_messages.sql`; missing table `P2021` degrades gracefully), and (2) notify the team inbox via Resend (`RESEND_API_KEY` + `RESEND_EMAIL_FROM`, destination `CONTACT_NOTIFY_EMAIL` or the sender). Unconfigured in non-production logs the message (`console` channel) so local dev still returns 201; production returns `503 CONTACT_DELIVERY_UNCONFIGURED` when nothing is wired. `src/lib/apiClient.js` gained `submitContactMessage`; `src/pages/Contact.jsx` now submits with loading/error/success states (fixed a React event `currentTarget` null after `await`). `scripts/launch.mjs` syncs `CONTACT_NOTIFY_EMAIL` to Vercel. Migration `008` is NOT yet applied to the live Supabase project; apply via SQL Editor (local psql/Prisma TCP to the pooler is blocked from this machine).
 
 ### 2026-08-16
 
