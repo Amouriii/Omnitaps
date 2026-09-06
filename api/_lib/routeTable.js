@@ -7,6 +7,7 @@ export function createJsRoutes() {
   return [
     { pattern: "/api/r/:tenantId/menu", load: () => import("./handlers/menuShortlink.js") },
     { pattern: "/r/:tenantId/menu", load: () => import("./handlers/menuShortlink.js") },
+    { pattern: "/api/contact", load: () => import("./handlers/contactMessage.js") },
     { pattern: "/api/reviews/visit", load: () => import("./handlers/reviewsVisit.js") },
     { pattern: "/api/reviews/feedback", load: () => import("./handlers/reviewsFeedback.js") },
     { pattern: "/api/tenants/:tenantId/menu", load: () => import("./handlers/tenantMenu.js") },

@@ -5,6 +5,10 @@ import DemoChrome from "./DemoChrome";
 
 export function isDemoCafePath(pathname) {
   const path = String(pathname || "").replace(/\/$/, "") || "/";
+
+  if (path.startsWith("/enterprise")) return false;
+  if (path === "/demo/dashboard") return false;
+
   if (path === "/demo") return true;
   if (path === "/menu/demo" || path === "/menu-prisma/demo") return true;
   if (path === "/s/demo") return true;

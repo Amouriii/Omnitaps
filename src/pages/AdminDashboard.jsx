@@ -53,7 +53,6 @@ export default function AdminDashboard() {
       eyebrow="Admin"
       title={displayName}
       subtitle="Locations linked to this account — guest pages stay public."
-      active="admin"
       actions={
         <button
           type="button"

@@ -18,6 +18,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   UsageProgressCircle,
 } from "../../../components/wifi/portal/UsageProgressCircle";
+import PortalFooter from "../../../components/wifi/portal/PortalFooter";
+import PortalHeader from "../../../components/wifi/portal/PortalHeader";
 
 type AuthPhase =
   | "booting"
@@ -272,22 +274,12 @@ export default function WifiGuestLandingPage() {
           boxSizing: "border-box",
         }}
       >
+        <PortalHeader />
+
         <header style={{ marginBottom: 28 }}>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#9a9fa8",
-              fontWeight: 600,
-            }}
-          >
-            OmniTaps Portal
-          </p>
           <h1
             style={{
-              margin: "10px 0 0",
+              margin: 0,
               fontSize: "clamp(1.75rem, 6vw, 2.15rem)",
               lineHeight: 1.15,
               fontWeight: 650,
@@ -449,18 +441,7 @@ export default function WifiGuestLandingPage() {
           ) : null}
         </section>
 
-        <footer
-          style={{
-            marginTop: 32,
-            paddingTop: 16,
-            borderTop: "1px solid #e7e4dd",
-            color: "#9a9fa8",
-            fontSize: 12,
-            textAlign: "center",
-          }}
-        >
-          Secure captive access · session quotas enforced in real time
-        </footer>
+        <PortalFooter />
       </div>
 
       <style>{`

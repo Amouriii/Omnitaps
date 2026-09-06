@@ -1,4 +1,5 @@
 export {
+  contactMessageSchema,
   reviewFeedbackSchema,
   reviewVisitSchema,
   parseWithSchema,

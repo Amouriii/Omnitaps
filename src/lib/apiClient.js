@@ -50,6 +50,10 @@ export async function apiRequest(path, { method = "GET", body, signal, headers: 
   return payload;
 }
 
+export function submitContactMessage(payload) {
+  return apiRequest("/api/contact", { method: "POST", body: payload });
+}
+
 export function recordReviewVisit(payload) {
   return apiRequest("/api/reviews/visit", { method: "POST", body: payload });
 }

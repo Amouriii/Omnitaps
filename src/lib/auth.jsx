@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseBrowserClient, isAuthConfigured } from "./supabaseClient";
 import { apiRequest } from "./apiClient";
 
@@ -10,8 +10,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
   const configured = isAuthConfigured();
+  const profileRequestRef = useRef(null);
 
   const refreshProfile = useCallback(async (activeSession) => {
+    const previousRequest = profileRequestRef.current;
+    if (previousRequest) {
+      profileRequestRef.current = null;
+      previousRequest.controller.abort();
+    }
+
     if (!activeSession?.access_token) {
       setProfile(null);
       setProfileError("");
@@ -19,7 +26,9 @@ export function AuthProvider({ children }) {
     }
 
     const controller = new AbortController();
+    const request = { controller };
     const timer = window.setTimeout(() => controller.abort(), 8000);
+    profileRequestRef.current = request;
 
     try {
       const payload = await apiRequest("/api/admin/session", {
@@ -28,15 +37,20 @@ export function AuthProvider({ children }) {
         },
         signal: controller.signal,
       });
+      if (profileRequestRef.current !== request) return null;
       setProfile(payload);
       setProfileError("");
       return payload;
     } catch (error) {
+      if (profileRequestRef.current !== request) return null;
       setProfile(null);
       setProfileError(error.message || "Unable to load account profile.");
       return null;
     } finally {
       window.clearTimeout(timer);
+      if (profileRequestRef.current === request) {
+        profileRequestRef.current = null;
+      }
     }
   }, []);
 
@@ -84,6 +98,9 @@ export function AuthProvider({ children }) {
 
     return () => {
       cancelled = true;
+      const activeRequest = profileRequestRef.current;
+      profileRequestRef.current = null;
+      activeRequest?.controller.abort();
       subscription.subscription.unsubscribe();
     };
   }, [configured, refreshProfile]);

@@ -21,6 +21,8 @@ import {
   BandwidthChart,
   type BandwidthPoint,
 } from "../../../../components/wifi/dashboard/BandwidthChart";
+import SiteFooter from "../../../../src/components/SiteFooter.jsx";
+import SiteHeader from "../../../../src/components/SiteHeader.jsx";
 
 interface TelemetrySuccess {
   ok: true;
@@ -231,6 +233,8 @@ export default function EnterpriseWifiDashboardPage() {
   const metrics = data?.metrics;
 
   return (
+    <>
+    <SiteHeader />
     <main
       style={{
         minHeight: "100dvh",
@@ -394,5 +398,8 @@ export default function EnterpriseWifiDashboardPage() {
         />
       </div>
     </main>
+
+    <SiteFooter />
+    </>
   );
 }

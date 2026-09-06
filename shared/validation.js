@@ -10,6 +10,13 @@ export const reviewFeedbackSchema = z.object({
   gateVisitId: z.string().trim().min(1).max(128).optional(),
 });
 
+export const contactMessageSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().min(1).max(254),
+  company: z.string().trim().max(200).optional().default(""),
+  message: z.string().trim().min(1).max(4000),
+});
+
 export const reviewVisitSchema = z.object({
   tenantId: z.string().trim().min(1).max(128),
   rating: z.number().int().min(1).max(5).optional().nullable(),

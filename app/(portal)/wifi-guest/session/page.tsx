@@ -12,6 +12,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { UsageProgressCircle } from "../../../../components/wifi/portal/UsageProgressCircle";
+import PortalFooter from "../../../../components/wifi/portal/PortalFooter";
+import PortalHeader from "../../../../components/wifi/portal/PortalHeader";
 
 interface StatusSuccess {
   ok: true;
@@ -223,22 +225,12 @@ export default function WifiGuestSessionPage() {
           boxSizing: "border-box",
         }}
       >
+        <PortalHeader />
+
         <header style={{ marginBottom: 22 }}>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#9a9fa8",
-              fontWeight: 600,
-            }}
-          >
-            OmniTaps Portal
-          </p>
           <h1
             style={{
-              margin: "10px 0 0",
+              margin: 0,
               fontSize: "clamp(1.6rem, 5.5vw, 2rem)",
               lineHeight: 1.15,
               fontWeight: 650,
@@ -411,6 +403,8 @@ export default function WifiGuestSessionPage() {
             )}
           </section>
         )}
+
+        <PortalFooter />
       </div>
     </main>
   );

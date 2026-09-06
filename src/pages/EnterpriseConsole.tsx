@@ -116,7 +116,6 @@ function Frame({
       eyebrow="Dashboard"
       title={title}
       subtitle={subtitle}
-      active="dashboard"
       actions={actions}
     >
       {children}

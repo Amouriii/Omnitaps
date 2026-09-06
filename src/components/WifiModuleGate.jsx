@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { ModuleGuard } from "./auth/ModuleGuard";
+import PortalFooter from "../../components/wifi/portal/PortalFooter";
+import PortalHeader from "../../components/wifi/portal/PortalHeader";
 import { getSupabaseClient, isEnterpriseSupabaseConfigured } from "../services/supabaseClient";
 
 /**
@@ -74,22 +76,30 @@ export default function WifiModuleGate({ children }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-porcelain text-ink-muted" role="status">
-        Loading Wi‑Fi module…
+      <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
+        <PortalHeader />
+        <main className="flex-1 flex items-center justify-center text-ink-muted" role="status">
+          Loading Wi‑Fi module…
+        </main>
+        <PortalFooter />
       </div>
     );
   }
 
   if (error || !enterpriseId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-porcelain px-5 text-ink">
-        <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8" role="alert">
-          <h1 className="font-display text-[24px] font-semibold">Enterprise profile required</h1>
-          <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
-            {error || "Sign in with an account that has a public.profiles row."}
-          </p>
-        </div>
-      </main>
+      <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
+        <PortalHeader />
+        <main className="flex-1 flex items-center justify-center px-5 text-ink">
+          <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8" role="alert">
+            <h1 className="font-display text-[24px] font-semibold">Enterprise profile required</h1>
+            <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
+              {error || "Sign in with an account that has a public.profiles row."}
+            </p>
+          </div>
+        </main>
+        <PortalFooter />
+      </div>
     );
   }
 
@@ -98,15 +108,19 @@ export default function WifiModuleGate({ children }) {
       moduleKey="wifi"
       enterpriseId={enterpriseId}
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-porcelain px-5 text-ink">
-          <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8" role="alert">
-            <h1 className="font-display text-[24px] font-semibold">Wi‑Fi module disabled</h1>
-            <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
-              Enable the <code className="font-mono text-[13px]">wifi</code> module for this enterprise
-              to access captive-portal telemetry and settings.
-            </p>
-          </div>
-        </main>
+        <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
+          <PortalHeader />
+          <main className="flex-1 flex items-center justify-center px-5 text-ink">
+            <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8" role="alert">
+              <h1 className="font-display text-[24px] font-semibold">Wi‑Fi module disabled</h1>
+              <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
+                Enable the <code className="font-mono text-[13px]">wifi</code> module for this enterprise
+                to access captive-portal telemetry and settings.
+              </p>
+            </div>
+          </main>
+          <PortalFooter />
+        </div>
       }
     >
       {children}

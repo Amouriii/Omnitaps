@@ -1,5 +1,7 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { items } from "../data/items";
+import SiteFooter from "../components/SiteFooter";
+import SiteHeader from "../components/SiteHeader";
 
 const MODULE_DEMOS = {
   website: {
@@ -38,73 +40,81 @@ export default function ItemDetail() {
 
   if (!item) {
     return (
-      <main
-        id="main"
-        className="min-h-screen flex flex-col items-center justify-center bg-porcelain text-ink"
-        tabIndex="-1"
-      >
-        <h1 className="text-2xl font-bold mb-4">Module Not Found</h1>
-        <button onClick={() => navigate("/")} className="btn-primary px-6 py-2 rounded-lg">
-          Back to Overview
-        </button>
-      </main>
+      <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
+        <SiteHeader />
+        <main
+          id="main"
+          className="flex-1 flex flex-col items-center justify-center bg-porcelain text-ink p-8"
+          tabIndex="-1"
+        >
+          <h1 className="text-2xl font-bold mb-4">Module Not Found</h1>
+          <button onClick={() => navigate("/")} className="btn-primary px-6 py-2 rounded-lg">
+            Back to Overview
+          </button>
+        </main>
+        <SiteFooter />
+      </div>
     );
   }
 
   return (
-    <main id="main" className="min-h-screen bg-porcelain text-ink font-body p-8" tabIndex="-1">
-      <div className="max-w-3xl mx-auto bg-surface rounded-2xl shadow-sm border border-hairline p-8 md:p-12">
-        <button
-          onClick={() => navigate("/")}
-          className="mb-8 text-sm font-semibold text-ink-muted hover:text-ink transition-colors inline-flex items-center gap-2"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
+    <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
+      <SiteHeader />
+      <main id="main" className="flex-1 p-8" tabIndex="-1">
+        <div className="max-w-3xl mx-auto bg-surface rounded-2xl shadow-sm border border-hairline p-8 md:p-12">
+          <button
+            onClick={() => navigate("/")}
+            className="mb-8 text-sm font-semibold text-ink-muted hover:text-ink transition-colors inline-flex items-center gap-2"
           >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Overview
-        </button>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back to Overview
+          </button>
 
-        <div className="font-mono text-[12px] tracking-widest uppercase text-tap mb-4">
-          Omnitaps Module Details
-        </div>
-        <h1 className="font-display text-[32px] md:text-[40px] font-semibold mb-6">{item.title}</h1>
-        <p className="text-[18px] leading-relaxed text-ink-muted mb-8">{item.desc}</p>
-
-        <div className="bg-tap-soft rounded-xl p-6 text-tap border border-tap/10">
-          <h3 className="font-semibold mb-2">Integration Readiness</h3>
-          <p className="text-sm opacity-80">
-            This module connects seamlessly with your existing Omnitaps dashboard and customer
-            records.
-          </p>
-        </div>
-
-        {demo ? (
-          <div className="mt-6 rounded-xl border border-hairline bg-porcelain p-6">
-            <h3 className="font-semibold mb-2">Live demo</h3>
-            <p className="text-sm text-ink-muted mb-4">{demo.blurb}</p>
-            <Link to={demo.href} className="btn-primary inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold">
-              {demo.label}
-            </Link>
+          <div className="font-mono text-[12px] tracking-widest uppercase text-tap mb-4">
+            Omnitaps Module Details
           </div>
-        ) : null}
+          <h1 className="font-display text-[32px] md:text-[40px] font-semibold mb-6">{item.title}</h1>
+          <p className="text-[18px] leading-relaxed text-ink-muted mb-8">{item.desc}</p>
 
-        {id === "website" ? (
-          <div className="mt-4 text-sm text-ink-muted">
-            Operator dashboard demo:{" "}
-            <Link to="/demo/dashboard" className="text-tap hover:underline">
-              /demo/dashboard
-            </Link>
+          <div className="bg-tap-soft rounded-xl p-6 text-tap border border-tap/10">
+            <h3 className="font-semibold mb-2">Integration Readiness</h3>
+            <p className="text-sm opacity-80">
+              This module connects seamlessly with your existing Omnitaps dashboard and customer
+              records.
+            </p>
           </div>
-        ) : null}
-      </div>
-    </main>
+
+          {demo ? (
+            <div className="mt-6 rounded-xl border border-hairline bg-porcelain p-6">
+              <h3 className="font-semibold mb-2">Live demo</h3>
+              <p className="text-sm text-ink-muted mb-4">{demo.blurb}</p>
+              <Link to={demo.href} className="btn-primary inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold">
+                {demo.label}
+              </Link>
+            </div>
+          ) : null}
+
+          {id === "website" ? (
+            <div className="mt-4 text-sm text-ink-muted">
+              Operator dashboard demo:{" "}
+              <Link to="/demo/dashboard" className="text-tap hover:underline">
+                /demo/dashboard
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

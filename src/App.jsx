@@ -1,10 +1,11 @@
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
 import CafeThemeGate from "./components/demo/CafeThemeGate";
 import { AuthProvider } from "./lib/auth";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./App.css";
 
 const ItemDetail = lazy(() => import("./pages/ItemDetail"));
@@ -26,6 +27,28 @@ const EnterpriseWifiSettings = lazy(() => import("./pages/EnterpriseWifiSettings
 const EnterpriseWifiPlans = lazy(() => import("./pages/EnterpriseWifiPlans"));
 const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
 const DemoHub = lazy(() => import("./pages/DemoHub"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Careers = lazy(() => import("./pages/Careers"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+
+function ScrollManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) {
+        el.scrollIntoView({ behavior: "instant" });
+        return;
+      }
+    }
+    window.scrollTo(0, 0);
+  }, [location]);
+
+  return null;
+}
 
 function RouteFallback() {
   return (
@@ -41,7 +64,9 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<RouteFallback />}>
           <CafeThemeGate>
-          <Routes>
+            <ScrollManager />
+            <ErrorBoundary>
+              <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/items/:id" element={<ItemDetail />} />
             <Route path="/changelog" element={<Changelog />} />
@@ -50,6 +75,11 @@ export default function App() {
             <Route path="/menu/:restaurantId" element={<CustomerMenuPage />} />
             <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
             <Route path="/demo" element={<DemoHub />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/s/:tenantId" element={<WebsitePreview />} />
             <Route path="/login" element={<Login />} />
             {/* Captive portal (public guest) */}
@@ -94,7 +124,8 @@ export default function App() {
             <Route path="/admin/menu" element={<AdminMenuPage />} />
             <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
+              </Routes>
+            </ErrorBoundary>
           </CafeThemeGate>
         </Suspense>
       </BrowserRouter>

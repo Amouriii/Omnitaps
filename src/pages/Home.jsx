@@ -1,37 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { items as SERVICES } from "../data/items";
+import LogoMark from "../components/LogoMark";
+import SiteFooter from "../components/SiteFooter";
 
 /* ================================================================== */
-/*  Logo mark & Icons                                                  */
+/*  Logo                                                               */
 /* ================================================================== */
-function LogoMark({ className = "" }) {
-    return (
-        <svg
-            viewBox="0 0 40 40"
-            fill="none"
-            className={className}
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-        >
-            <circle cx="13" cy="27" r="4.5" fill="#3A36E0" />
-            <path
-                d="M19.5 27C19.5 20.6487 24.6487 15.5 31 15.5"
-                stroke="#3A36E0"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-            />
-            <path
-                d="M19.5 33.5C19.5 23.2827 27.7827 15 38 15"
-                stroke="#FF8A34"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                opacity="0.5"
-            />
-        </svg>
-    );
-}
-
 function Logo({ word = "text-ink" }) {
     return (
         <a href="#top" className="flex items-center gap-2.5 shrink-0" aria-label="Omnitaps home">
@@ -282,7 +257,7 @@ export default function Home() {
                 </section>
 
                 {/* ---------------- SERVICES (bento) ---------------- */}
-                <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
+                <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28 scroll-mt-20">
                 <div className="max-w-xl mb-12">
                     <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
                         The platform
@@ -388,63 +363,9 @@ export default function Home() {
                 </div>
                 </section>
 
-                {/* ---------------- FOOTER ---------------- */}
             </main>
 
-            <footer className="border-t border-hairline" aria-label="Footer">
-                <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 grid sm:grid-cols-2 md:grid-cols-4 gap-10">
-                    <div>
-                        <Logo />
-                        <p className="text-[14.5px] leading-[1.6] text-ink-muted mt-4 max-w-[200px]">
-                            Digital infrastructure for hospitality &amp; retail.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div className="font-mono text-[11px] uppercase tracking-widest text-ink-faint mb-4">
-                            Product
-                        </div>
-                        <ul className="space-y-2.5 text-[14.5px]">
-                            {["Websites", "QR Menus", "AI Chatbots", "Reservations", "Review Management", "WiFi Access"].map((t) => (
-                                <li key={t}>
-                                    <a href="#solutions" className="nav-link">{t}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <div className="font-mono text-[11px] uppercase tracking-widest text-ink-faint mb-4">
-                            Company
-                        </div>
-                        <ul className="space-y-2.5 text-[14.5px]">
-                            {["About", "Careers", "Contact"].map((t) => (
-                                <li key={t}>
-                                    <a href="#" className="nav-link">{t}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <div className="font-mono text-[11px] uppercase tracking-widest text-ink-faint mb-4">
-                            Legal
-                        </div>
-                        <ul className="space-y-2.5 text-[14.5px]">
-                            {["Privacy Policy", "Terms of Service"].map((t) => (
-                                <li key={t}>
-                                    <a href="#" className="nav-link">{t}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                <div className="max-w-6xl mx-auto px-5 sm:px-8 py-6 border-t border-hairline flex flex-col sm:flex-row justify-between gap-2 text-[13px] text-ink-faint">
-                    <span>© {new Date().getFullYear()} Omnitaps, Inc. All rights reserved.</span>
-                    <span className="font-mono">Built for businesses that never close.</span>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     );
 }

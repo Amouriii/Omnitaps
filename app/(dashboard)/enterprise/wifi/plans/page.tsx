@@ -15,6 +15,8 @@ import {
   emptyPlanValues,
   type PlanEditorValues,
 } from "../../../../../components/wifi/dashboard/PlanCardEditor";
+import SiteFooter from "../../../../../src/components/SiteFooter.jsx";
+import SiteHeader from "../../../../../src/components/SiteHeader.jsx";
 
 interface PlanRecord {
   id: string;
@@ -287,6 +289,8 @@ export default function EnterpriseWifiPlansPage() {
   const q = windowQuery(initial);
 
   return (
+    <>
+    <SiteHeader />
     <main
       style={{
         minHeight: "100dvh",
@@ -425,6 +429,9 @@ export default function EnterpriseWifiPlansPage() {
         </div>
       </div>
     </main>
+
+    <SiteFooter />
+    </>
   );
 }
 

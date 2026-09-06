@@ -16,6 +16,8 @@ import {
   SubscriptionTierCard,
   type SubscriptionTierPlan,
 } from "../../../../components/wifi/portal/SubscriptionTierCard";
+import PortalFooter from "../../../../components/wifi/portal/PortalFooter";
+import PortalHeader from "../../../../components/wifi/portal/PortalHeader";
 
 interface PlanCatalogSuccess {
   ok: true;
@@ -230,6 +232,8 @@ export default function WifiGuestCheckoutPage() {
           gap: 18,
         }}
       >
+        <PortalHeader />
+
         <header>
           <button
             type="button"
@@ -374,6 +378,8 @@ export default function WifiGuestCheckoutPage() {
             )}
           </section>
         ) : null}
+
+        <PortalFooter />
       </div>
     </main>
   );

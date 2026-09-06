@@ -14,6 +14,8 @@ import {
   QuotaConfigForm,
   type QuotaPolicyValues,
 } from "../../../../../components/wifi/dashboard/QuotaConfigForm";
+import SiteFooter from "../../../../../src/components/SiteFooter.jsx";
+import SiteHeader from "../../../../../src/components/SiteHeader.jsx";
 
 interface EnterprisePolicy {
   id: string;
@@ -175,6 +177,8 @@ export default function EnterpriseWifiSettingsPage() {
   const canWrite = role === "owner" || role === "admin";
 
   return (
+    <>
+    <SiteHeader />
     <main
       style={{
         minHeight: "100dvh",
@@ -220,6 +224,9 @@ export default function EnterpriseWifiSettingsPage() {
         ) : null}
       </div>
     </main>
+
+    <SiteFooter />
+    </>
   );
 }
 

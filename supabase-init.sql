@@ -44,6 +44,21 @@ CREATE TYPE "ChatbotConversationStatus" AS ENUM ('OPEN', 'HANDOFF', 'CLOSED');
 CREATE TYPE "ChatbotMessageRole" AS ENUM ('SYSTEM', 'USER', 'ASSISTANT', 'TOOL');
 
 -- CreateTable
+CREATE TABLE "ContactMessage" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "company" TEXT,
+    "message" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'NEW',
+    "ipHash" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ContactMessage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "authId" TEXT NOT NULL,
@@ -571,6 +586,12 @@ CREATE TABLE "ChatbotHandover" (
 );
 
 -- CreateIndex
+CREATE INDEX "ContactMessage_status_createdAt_idx" ON "ContactMessage"("status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ContactMessage_email_createdAt_idx" ON "ContactMessage"("email", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "User_authId_key" ON "User"("authId");
 
 -- CreateIndex
@@ -1022,6 +1043,9 @@ GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+-- Contact form submissions are server-only; do not expose this table through PostgREST.
+REVOKE ALL ON TABLE "ContactMessage" FROM anon, authenticated;
+GRANT ALL ON TABLE "ContactMessage" TO postgres, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
 NOTIFY pgrst, 'reload schema';
