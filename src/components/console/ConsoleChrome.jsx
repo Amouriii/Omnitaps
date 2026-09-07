@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import SiteFooter from "../SiteFooter";
 import SiteHeader from "../SiteHeader";
@@ -67,6 +68,24 @@ const OPERATOR_NAV = [
   },
 ];
 
+const FADE_PX = 28;
+
+/**
+ * Edge-fade mask for the swipeable mobile nav: fades the left edge while
+ * scrolled right, the right edge while more content remains, and disables
+ * entirely when nothing overflows (e.g. desktop widths, where the nav wraps).
+ */
+function navMaskStyle({ left, right }) {
+  if (!left && !right) return undefined;
+  const start = left ? "transparent 0, #000 " + FADE_PX + "px" : "#000 0";
+  const end =
+    right
+      ? "#000 calc(100% - " + FADE_PX + "px), transparent 100%"
+      : "#000 100%";
+  const image = "linear-gradient(to right, " + start + ", " + end + ")";
+  return { maskImage: image, WebkitMaskImage: image };
+}
+
 /**
  * Operator shell for the admin/enterprise surfaces — merged from the two
  * previous designs. It keeps the shared SiteHeader/SiteFooter so the pages
@@ -88,6 +107,32 @@ export default function ConsoleChrome({
   children,
 }) {
   const { pathname } = useLocation();
+  const navRef = useRef(null);
+  const [navOverflow, setNavOverflow] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return undefined;
+
+    const update = () => {
+      setNavOverflow({
+        left: nav.scrollLeft > 1,
+        right: nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1,
+      });
+    };
+
+    update();
+    nav.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(nav);
+    if (nav.firstElementChild) observer.observe(nav.firstElementChild);
+    window.addEventListener("resize", update);
+    return () => {
+      nav.removeEventListener("scroll", update);
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
@@ -108,7 +153,9 @@ export default function ConsoleChrome({
             )}
             <div className="flex min-w-0 items-center gap-x-4 gap-y-1">
               <nav
+                ref={navRef}
                 aria-label="Product"
+                style={navMaskStyle(navOverflow)}
                 className="-mx-1 flex min-w-0 flex-1 items-center gap-x-3.5 overflow-x-auto px-1 py-1 text-[13px] [scrollbar-width:none] sm:max-w-none sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
               >
                 {OPERATOR_NAV.map((link) => {
