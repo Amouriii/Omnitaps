@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router-dom";
 import SiteFooter from "../SiteFooter";
 import SiteHeader from "../SiteHeader";
 
@@ -47,9 +48,30 @@ export function ConsoleSkeleton({ cards = 3 }) {
 }
 
 /**
- * Operator shell for the admin/enterprise surfaces. Uses the same shared
- * SiteHeader + SiteFooter as the rest of the site so every page carries
- * uniform chrome.
+ * Operator section nav, shared by every ConsoleChrome page. The active link is
+ * derived from the current location, so pages no longer pass an `active` prop.
+ */
+const OPERATOR_NAV = [
+  { label: "Site", to: "/", match: (path) => path === "/" },
+  { label: "Demo Café", to: "/demo", match: (path) => path === "/demo" },
+  { label: "Website", to: "/s/demo", match: (path) => path.startsWith("/s/") },
+  {
+    label: "Dashboard",
+    to: "/demo/dashboard",
+    match: (path) => path.startsWith("/demo/dashboard") || path.startsWith("/enterprise"),
+  },
+  {
+    label: "Admin",
+    to: "/admin",
+    match: (path) => path.startsWith("/admin"),
+  },
+];
+
+/**
+ * Operator shell for the admin/enterprise surfaces — merged from the two
+ * previous designs. It keeps the shared SiteHeader/SiteFooter so the pages
+ * stay uniform with the rest of the site, and adds a slim operator strip
+ * carrying the section nav (with active state) and page actions.
  *
  * @param {object} props
  * @param {string} [props.eyebrow]
@@ -65,32 +87,68 @@ export default function ConsoleChrome({
   actions = null,
   children,
 }) {
+  const { pathname } = useLocation();
+
   return (
     <div className="min-h-screen flex flex-col bg-porcelain text-ink font-body">
-      <SiteHeader />
+      {/* Operator pages: the strip below already links the demo surfaces, so
+          the header's "Try demos" would duplicate it. Book a Demo stays — it's
+          the global conversion CTA. */}
+      <SiteHeader showTryDemos={false} />
+
+      {(eyebrow || actions) && (
+        <div className="sticky top-[64px] z-20 border-b border-hairline bg-porcelain/95 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-2.5 sm:px-8 sm:py-3">
+            {eyebrow ? (
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">
+                {eyebrow}
+              </p>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <div className="flex min-w-0 items-center gap-x-4 gap-y-1">
+              <nav
+                aria-label="Product"
+                className="-mx-1 flex min-w-0 flex-1 items-center gap-x-3.5 overflow-x-auto px-1 py-1 text-[13px] [scrollbar-width:none] sm:max-w-none sm:flex-none sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+              >
+                {OPERATOR_NAV.map((link) => {
+                  const isActive = link.match(pathname);
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.to}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`inline-flex shrink-0 items-center rounded-md py-2 ${
+                        isActive
+                          ? "font-semibold text-tap"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              {actions ? <div className="flex shrink-0 flex-wrap gap-3">{actions}</div> : null}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main id="main" className="flex-1" tabIndex="-1">
         <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
-          {(title || subtitle || actions) && (
-            <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                {eyebrow ? (
-                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">
-                    {eyebrow}
-                  </p>
-                ) : null}
-                {title ? (
-                  <h1 className="mt-2 font-display text-[28px] font-semibold tracking-[-0.02em] sm:text-[32px]">
-                    {title}
-                  </h1>
-                ) : null}
-                {subtitle ? (
-                  <p className="mt-2 max-w-2xl text-[15px] leading-[1.7] text-ink-muted">
-                    {subtitle}
-                  </p>
-                ) : null}
-              </div>
-              {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+          {(title || subtitle) && (
+            <div className="mb-8">
+              {title ? (
+                <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] sm:text-[32px]">
+                  {title}
+                </h1>
+              ) : null}
+              {subtitle ? (
+                <p className="mt-2 max-w-2xl text-[15px] leading-[1.7] text-ink-muted">
+                  {subtitle}
+                </p>
+              ) : null}
             </div>
           )}
           {children}

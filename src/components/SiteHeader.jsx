@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import LogoMark from "./LogoMark";
 
-export default function SiteHeader({ ctaHref = null }) {
+/**
+ * @param {object} props
+ * @param {string} [props.ctaHref]
+ * @param {boolean} [props.showTryDemos=true] set false on operator pages, where
+ *   ConsoleChrome's strip already links the same destinations.
+ */
+export default function SiteHeader({ ctaHref = null, showTryDemos = true }) {
     return (
         <header className="sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
             <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -13,9 +19,11 @@ export default function SiteHeader({ ctaHref = null }) {
                 </Link>
 
                 <nav aria-label="Primary" className="flex items-center gap-3 sm:gap-6">
-                    <Link to="/demo" className="nav-link hidden text-[15px] sm:inline">
-                        Try demos
-                    </Link>
+                    {showTryDemos && (
+                        <Link to="/demo" className="nav-link hidden text-[15px] sm:inline">
+                            Try demos
+                        </Link>
+                    )}
                     {ctaHref ? (
                         <a
                             href={ctaHref}

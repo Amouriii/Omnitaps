@@ -1,57 +1,126 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseBrowserClient, isAuthConfigured } from "./supabaseClient";
-import { apiRequest } from "./apiClient";
+import { apiRequest, ApiError } from "./apiClient";
+
+// Measured cold-start on the remote Supabase pooler (Prisma pool connect) runs
+// ~7-8s, so the per-attempt timeout must sit above that; a genuinely hung server
+// still surfaces within two attempts.
+const PROFILE_TIMEOUT_MS = 12000;
 
 const AuthContext = createContext(null);
+
+/** Unverified JWT sub read — used only to identify the profile request owner. */
+function sessionUserId(session) {
+  const token = session?.access_token;
+  if (!token) return null;
+  try {
+    return JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")))?.sub || null;
+  } catch {
+    return token;
+  }
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
+  const [profileErrorCode, setProfileErrorCode] = useState("");
   const configured = isAuthConfigured();
   const profileRequestRef = useRef(null);
+  const lastSuccessfulUserIdRef = useRef(null);
 
   const refreshProfile = useCallback(async (activeSession) => {
-    const previousRequest = profileRequestRef.current;
-    if (previousRequest) {
-      profileRequestRef.current = null;
-      previousRequest.controller.abort();
-    }
-
     if (!activeSession?.access_token) {
+      const previousRequest = profileRequestRef.current;
+      if (previousRequest) {
+        profileRequestRef.current = null;
+        previousRequest.controller.abort();
+      }
+      lastSuccessfulUserIdRef.current = null;
       setProfile(null);
       setProfileError("");
+      setProfileErrorCode("");
       return null;
+    }
+
+    // getSession, INITIAL_SESSION, TOKEN_REFRESHED, and StrictMode remounts all
+    // fire back-to-back. Join the in-flight request for the same user (or reuse
+    // the last result) instead of starting a competing fetch that aborts the
+    // previous one — the losing fetch used to surface as net::ERR_ABORTED noise
+    // in the network log. A genuinely different user still supersedes.
+    const userId = sessionUserId(activeSession);
+    const existing = profileRequestRef.current;
+    if (existing?.userId === userId) {
+      return existing.promise;
+    }
+    if (!existing && lastSuccessfulUserIdRef.current === userId) {
+      return null;
+    }
+
+    // Different user than the in-flight one: supersede it.
+    if (existing) {
+      profileRequestRef.current = null;
+      existing.controller.abort();
     }
 
     const controller = new AbortController();
-    const request = { controller };
-    const timer = window.setTimeout(() => controller.abort(), 8000);
-    profileRequestRef.current = request;
+    const request = { controller, token: activeSession.access_token, userId };
+    request.promise = (async () => {
+      profileRequestRef.current = request;
 
-    try {
-      const payload = await apiRequest("/api/admin/session", {
-        headers: {
-          Authorization: `Bearer ${activeSession.access_token}`,
-        },
-        signal: controller.signal,
-      });
-      if (profileRequestRef.current !== request) return null;
-      setProfile(payload);
-      setProfileError("");
-      return payload;
-    } catch (error) {
-      if (profileRequestRef.current !== request) return null;
-      setProfile(null);
-      setProfileError(error.message || "Unable to load account profile.");
-      return null;
-    } finally {
-      window.clearTimeout(timer);
-      if (profileRequestRef.current === request) {
-        profileRequestRef.current = null;
+      // Two attempts with independent per-attempt timers: the first often pays
+      // the Prisma pool cold-start against the remote database (~7-8s), and the
+      // retry lands on a warm pool and returns quickly.
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        if (attempt > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, 300));
+          if (profileRequestRef.current !== request) return null;
+        }
+        const timer = window.setTimeout(() => controller.abort(), PROFILE_TIMEOUT_MS);
+        try {
+          const payload = await apiRequest("/api/admin/session", {
+            headers: {
+              Authorization: `Bearer ${request.token}`,
+            },
+            signal: controller.signal,
+          });
+          if (profileRequestRef.current !== request) return null;
+          lastSuccessfulUserIdRef.current = request.userId;
+          setProfile(payload);
+          setProfileError("");
+          setProfileErrorCode("");
+          return payload;
+        } catch (error) {
+          lastError = error;
+          if (profileRequestRef.current !== request) return null;
+          // Timeout (AbortError): retry once. Anything else is a real failure.
+          if (error?.name !== "AbortError") break;
+        } finally {
+          window.clearTimeout(timer);
+        }
       }
-    }
+
+      if (profileRequestRef.current !== request) return null;
+      lastSuccessfulUserIdRef.current = null;
+      setProfile(null);
+      if (lastError?.name === "AbortError") {
+        setProfileError("Checking your account took too long. Please try again.");
+        setProfileErrorCode("PROFILE_TIMEOUT");
+      } else {
+        setProfileError(lastError?.message || "Unable to load account profile.");
+        setProfileErrorCode(
+          lastError instanceof ApiError
+            ? lastError.code || (lastError.status >= 500 ? "PROFILE_UNAVAILABLE" : "PROFILE_ERROR")
+            : // Non-ApiError rejections are network-level failures: transient.
+              "PROFILE_UNAVAILABLE",
+        );
+      }
+      return null;
+    })();
+
+    return request.promise;
   }, []);
 
   useEffect(() => {
@@ -98,9 +167,9 @@ export function AuthProvider({ children }) {
 
     return () => {
       cancelled = true;
-      const activeRequest = profileRequestRef.current;
-      profileRequestRef.current = null;
-      activeRequest?.controller.abort();
+      // Leave any in-flight profile request alone: refreshProfile() joins it on
+      // remount (StrictMode) instead of racing it, so aborting here would just
+      // kill a fetch the remounted effect immediately re-issues.
       subscription.subscription.unsubscribe();
     };
   }, [configured, refreshProfile]);
@@ -132,9 +201,11 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore
     }
+    lastSuccessfulUserIdRef.current = null;
     setSession(null);
     setProfile(null);
     setProfileError("");
+    setProfileErrorCode("");
   }, []);
 
   const value = useMemo(
@@ -144,13 +215,14 @@ export function AuthProvider({ children }) {
       session,
       profile,
       profileError,
+      profileErrorCode,
       accessToken: session?.access_token || null,
       isAuthenticated: Boolean(session?.access_token),
       signIn,
       signOut,
       refreshProfile,
     }),
-    [configured, loading, session, profile, profileError, signIn, signOut, refreshProfile],
+    [configured, loading, session, profile, profileError, profileErrorCode, signIn, signOut, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

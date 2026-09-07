@@ -1,8 +1,13 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 
+// Server-reported transient conditions (DB unavailable, 5xx, timeout) — the
+// account itself is fine, so offer a retry instead of the provisioning warning.
+const TRANSIENT_PROFILE_CODES = new Set(["PROFILE_UNAVAILABLE", "PROFILE_TIMEOUT"]);
+
 export default function RequireAuth({ children }) {
-  const { configured, loading, isAuthenticated, profile, profileError } = useAuth();
+  const { configured, loading, isAuthenticated, profile, profileError, profileErrorCode, session, refreshProfile } =
+    useAuth();
   const location = useLocation();
 
   if (!configured) {
@@ -33,6 +38,27 @@ export default function RequireAuth({ children }) {
   }
 
   if (profileError && !profile) {
+    if (TRANSIENT_PROFILE_CODES.has(profileErrorCode)) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-porcelain px-5 text-ink">
+          <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8 text-center" role="status">
+            <h1 className="font-display text-[24px] font-semibold">Can’t reach your account</h1>
+            <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">
+              We couldn’t load your account details. This is usually temporary — check your connection and try
+              again.
+            </p>
+            <button
+              type="button"
+              onClick={() => refreshProfile(session)}
+              className="mt-6 rounded-full bg-ink px-6 py-2.5 text-[14px] font-medium text-surface transition-opacity hover:opacity-90"
+            >
+              Try again
+            </button>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="flex min-h-screen items-center justify-center bg-porcelain px-5 text-ink">
         <div className="max-w-md rounded-3xl border border-hairline bg-surface p-8" role="alert">

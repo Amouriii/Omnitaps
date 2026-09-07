@@ -1,7 +1,7 @@
 # Omnitaps — Project Memory
 
 > Living knowledge base for agents and humans. **Update this file** whenever you add, remove, or materially change features, routes, schema, env vars, or known issues.
-> Last updated: 2026-09-06
+> Last updated: 2026-09-07
 
 ---
 
@@ -236,6 +236,10 @@ Runtime today: LLM via Groq (open-source `llama-3.3-70b-versatile`, grounded in 
 - Added `docs/QR_ORDERING_PLATFORM_PLAN.md`, a staged implementation plan for table-aware QR ordering that preserves the existing QR menu, enterprise dashboard, captive Wi-Fi, and Wi-Fi Stripe surfaces. It defines the ordering data model, RLS/security boundaries, guest pay-at-counter flow, staff queue, provider-agnostic food payments, loyalty, chatbot cart actions, mocked Wi-Fi adapter, four-developer ownership boundaries, and verification criteria; ordering remains a plan and is not yet implemented.
 - Added `pitch.md`, a Cairo-specific F&B positioning document connecting Omnitaps' owned websites, QR menus, chatbot, review funnel, Wi-Fi capture, and operator console to local discovery, platform-dependence, capability, and margin problems.
 - Updated `README.md` to document the marketing contact endpoint, `ContactMessage` persistence, Resend notification configuration, and `CONTACT_NOTIFY_EMAIL`.
+
+### 2026-09-07
+
+- Merged the two `ConsoleChrome` designs into one (`src/components/console/ConsoleChrome.jsx`): the shell keeps the shared `SiteHeader` + `SiteFooter` for site-wide uniformity, and adds a slim **operator strip** directly below the header (sticky `top-[64px]` under the 64px `SiteHeader`, hairline border, `bg-porcelain/95 backdrop-blur`) carrying the page `eyebrow` on the left and the section nav **Site / Demo Café / Website / Dashboard / Admin** plus page `actions` (e.g. Sign out) on the right. This restores the operator nav + header actions from the pre-`SiteHeader` design (removed in the 2026-08-19 rebuild) without giving up shared chrome. Nav active state is now derived from `useLocation` (`aria-current="page"`) instead of the old `active` prop — Dashboard also matches `/enterprise*` and Admin `/admin*`, Website `/s/*`, so pages no longer prop-drill. The content area renders title + subtitle only (no duplicate eyebrow). No page changes needed: `EnterpriseConsole` and `AdminDashboard` already pass `eyebrow`/`title`/`actions`; `/login` uses only `ConsoleStatusCard` and is unaffected. To de-duplicate the stacked navs, `SiteHeader` gained a `showTryDemos` prop (default `true`); `ConsoleChrome` passes `false` because the strip's "Demo Café" link targets the same `/demo` as the header's "Try demos" — the "Book a Demo" CTA stays (global conversion path, nothing in the strip duplicates it, and the dashboard demo is a prospect surface).
 
 ### 2026-08-19
 
