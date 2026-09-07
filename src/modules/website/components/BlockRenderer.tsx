@@ -1,9 +1,17 @@
-import type { ReactNode } from "react";
-import { Clock, ExternalLink, MapPin, UtensilsCrossed } from "lucide-react";
+import { useEffect, useRef } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { ArrowDown, ArrowDownRight, ArrowUpRight, Clock, ExternalLink, MapPin, UtensilsCrossed } from "lucide-react";
+import CafeReveal from "../../../components/demo/CafeReveal";
 
 type CtaConfig = {
     label: string;
     href: string;
+};
+
+type TodayInfo = {
+    status?: string;
+    hours?: string;
+    location?: string;
 };
 
 type HeroBlock = {
@@ -16,6 +24,7 @@ type HeroBlock = {
     imageUrl?: string;
     imageAlt?: string;
     badge?: string;
+    today?: TodayInfo;
 };
 
 type GalleryImage = {
@@ -151,55 +160,146 @@ function SectionShell({
 }
 
 function HeroBlockView({ block }: { block: HeroBlock }) {
-    return (
-        <SectionShell inverted>
-            <div className="grid min-w-0 gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-center">
-                <div className="min-w-0">
-                    {block.eyebrow ? <p className="font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-brass">{block.eyebrow}</p> : null}
-                    <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-[#faf4ea] md:text-5xl">{block.title}</h1>
-                    {block.description ? <p className="mt-4 max-w-2xl text-base leading-7 text-[#faf4ea]/80 md:text-lg">{block.description}</p> : null}
+    const mediaRef = useRef<HTMLDivElement>(null);
+    const enterStyle = (index: number) => ({ "--enter-delay": `${index * 120}ms` } as CSSProperties);
+    const imageUrl = block.imageUrl;
+    const responsiveImage = imageUrl?.includes("images.unsplash.com")
+        ? [480, 768, 1200, 1800]
+            .map((width) => `${imageUrl.replace(/([?&])w=\\d+/, `$1w=${width}`)} ${width}w`)
+            .join(", ")
+        : undefined;
 
-                    <div className="mt-6 flex flex-wrap gap-3">
+    useEffect(() => {
+        const media = mediaRef.current;
+        if (!media || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+        const updateScrollPosition = () => {
+            const bounds = media.getBoundingClientRect();
+            const progress = Math.max(-1, Math.min(1, (window.innerHeight / 2 - (bounds.top + bounds.height / 2)) / window.innerHeight));
+            media.style.setProperty("--hero-scroll-y", `${progress * 18}px`);
+        };
+        const onPointerMove = (event: PointerEvent) => {
+            const bounds = media.getBoundingClientRect();
+            const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 8;
+            const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 8;
+            media.style.setProperty("--hero-pointer-x", `${x}px`);
+            media.style.setProperty("--hero-pointer-y", `${y}px`);
+        };
+        const resetPointer = () => {
+            media.style.setProperty("--hero-pointer-x", "0px");
+            media.style.setProperty("--hero-pointer-y", "0px");
+        };
+
+        updateScrollPosition();
+        window.addEventListener("scroll", updateScrollPosition, { passive: true });
+        media.addEventListener("pointermove", onPointerMove);
+        media.addEventListener("pointerleave", resetPointer);
+        return () => {
+            window.removeEventListener("scroll", updateScrollPosition);
+            media.removeEventListener("pointermove", onPointerMove);
+            media.removeEventListener("pointerleave", resetPointer);
+        };
+    }, []);
+
+    return (
+        <SectionShell inverted className="cafe-hero-shell">
+            <div className="cafe-hero-grid">
+                <div className="cafe-hero-copy min-w-0">
+                    <div className="cafe-hero-meta cafe-enter" style={enterStyle(0)}>
+                        <span className="cafe-hero-meta__dot" aria-hidden="true" />
+                        {block.eyebrow || "Harbor Lane"}
+                    </div>
+                    <h1 className="cafe-enter mt-5 max-w-4xl font-display text-5xl font-semibold leading-[0.95] tracking-[-0.045em] text-[#faf4ea] sm:text-6xl lg:text-8xl" style={enterStyle(1)}>
+                        {block.title}
+                    </h1>
+                    {block.description ? (
+                        <p className="cafe-enter mt-7 max-w-xl text-base leading-7 text-[#faf4ea]/75 sm:text-lg" style={enterStyle(2)}>
+                            {block.description}
+                        </p>
+                    ) : null}
+
+                    <div className="cafe-enter mt-8 flex flex-wrap items-center gap-4" style={enterStyle(3)}>
                         {block.primaryCta ? (
                             <a
                                 href={block.primaryCta.href}
-                                className="inline-flex items-center justify-center rounded-xl bg-[#faf4ea] px-5 py-3 text-sm font-semibold text-[#2c1b12] transition hover:bg-white"
+                                className="cafe-btn cafe-btn--light inline-flex items-center justify-center gap-3 rounded-full bg-[#faf4ea] px-5 py-3.5 text-sm font-semibold text-[#2c1b12] shadow-[0_18px_40px_-22px_rgba(250,244,234,0.65)]"
                             >
                                 {block.primaryCta.label}
+                                <ArrowDownRight aria-hidden="true" className="h-4 w-4" />
                             </a>
                         ) : null}
                         {block.secondaryCta ? (
                             <a
                                 href={block.secondaryCta.href}
-                                className="inline-flex items-center justify-center rounded-xl border border-[#faf4ea]/35 px-5 py-3 text-sm font-semibold text-[#faf4ea] transition hover:bg-[#faf4ea]/10"
+                                className="cafe-btn inline-flex items-center justify-center gap-2 rounded-full px-2 py-3 text-sm font-semibold text-[#faf4ea]"
                             >
                                 {block.secondaryCta.label}
+                                <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
                             </a>
                         ) : null}
                     </div>
                 </div>
 
-                <div className="relative min-w-0 overflow-hidden rounded-3xl border border-[#faf4ea]/10 bg-[#faf4ea]/5 p-4">
+                <div ref={mediaRef} className="cafe-enter--scale cafe-hero-media relative min-w-0" style={enterStyle(2)}>
                     {block.badge ? (
-                        <div className="absolute left-4 top-4 rounded-full bg-[#c45c26] px-3 py-1 text-xs font-medium text-[#faf4ea]">
+                        <div className="cafe-enter--pop cafe-hero-badge" style={enterStyle(5)}>
+                            <span className="cafe-hero-badge__dot" aria-hidden="true" />
                             {block.badge}
                         </div>
                     ) : null}
                     {block.imageUrl ? (
                         <img
                             src={block.imageUrl}
+                            srcSet={responsiveImage}
+                            sizes="(max-width: 767px) 100vw, (max-width: 1199px) 48vw, 42rem"
                             alt={block.imageAlt ?? block.title}
-                            className="h-72 w-full rounded-2xl object-cover"
+                            className="cafe-hero-image"
+                            width="1800"
+                            height="1400"
+                            loading="eager"
+                            fetchPriority="high"
+                            decoding="async"
                         />
                     ) : (
-                        <div className="cafe-hero-art relative h-72 overflow-hidden rounded-2xl" aria-hidden="true">
+                        <div className="cafe-hero-art cafe-hero-image relative overflow-hidden" aria-hidden="true">
                             <span className="cafe-hero-art__cup" />
                             <span className="cafe-hero-art__steam" />
                         </div>
                     )}
+                    <div className="cafe-hero-media__caption">
+                        <span>{block.today?.status || "Open daily"}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{block.today?.hours || "Walk-ins welcome"}</span>
+                    </div>
+                    {block.today ? (
+                        <a className="cafe-hero-scroll-cue" href="#cafe-today" aria-label="Explore today's café details">
+                            <span>Explore the café</span>
+                            <ArrowDown aria-hidden="true" className="h-4 w-4" />
+                        </a>
+                    ) : null}
                 </div>
             </div>
+            {block.today ? <CafeTodayStrip today={block.today} /> : null}
         </SectionShell>
+    );
+}
+
+function CafeTodayStrip({ today }: { today: TodayInfo }) {
+    return (
+        <div id="cafe-today" className="cafe-today-strip cafe-enter" style={{ "--enter-delay": "480ms" } as CSSProperties}>
+            <div>
+                <span className="cafe-today-strip__label">Today</span>
+                <strong>{today.status || "Open today"}</strong>
+            </div>
+            <div>
+                <span className="cafe-today-strip__label">Hours</span>
+                <strong>{today.hours || "Walk-ins welcome"}</strong>
+            </div>
+            <div>
+                <span className="cafe-today-strip__label">Find us</span>
+                <strong>{today.location || "Harbor Lane"}</strong>
+            </div>
+        </div>
     );
 }
 
@@ -209,24 +309,42 @@ function GalleryBlockView({ block }: { block: GalleryBlock }) {
 
     return (
         <SectionShell eyebrow="Gallery" title={block.title} description={block.description}>
-            <div className={cx("grid gap-4", columnsClassName)}>
+            <div className={cx("cafe-gallery-grid grid gap-4", columnsClassName)}>
                 {block.images.map((image, index) => (
-                    <figure key={`${image.src}-${index}`} className="overflow-hidden rounded-2xl border border-hairline bg-porcelain">
-                        <img src={image.src} alt={image.alt ?? `Gallery image ${index + 1}`} className="h-56 w-full object-cover" />
+                    <CafeReveal key={`${image.src}-${index}`} delay={index * 90} variant="scale" as="figure" className={`cafe-gallery-figure overflow-hidden rounded-2xl border border-hairline bg-porcelain ${index === 0 ? "cafe-gallery-figure--feature" : ""}`.trim()}>
+                        <img
+                            src={image.src}
+                            alt={image.alt ?? `Gallery image ${index + 1}`}
+                            className="h-56 w-full object-cover"
+                            loading={index === 0 ? "eager" : "lazy"}
+                            decoding="async"
+                        />
                         {image.caption ? <figcaption className="border-t border-hairline px-4 py-3 text-sm text-ink-muted">{image.caption}</figcaption> : null}
-                    </figure>
+                    </CafeReveal>
                 ))}
             </div>
         </SectionShell>
     );
 }
 
+function menuCategoryId(title: string, index: number) {
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return `menu-category-${slug || index}`;
+}
+
 function MenuBlockView({ block }: { block: MenuBlock }) {
     return (
         <SectionShell eyebrow="Menu" title={block.title} description={block.description}>
+            <nav className="cafe-menu-tabs" aria-label="Menu categories">
+                {block.categories.map((category, index) => (
+                    <a key={`${category.title}-${index}`} href={`#${menuCategoryId(category.title, index)}`}>
+                        {category.title}
+                    </a>
+                ))}
+            </nav>
             <div className="grid gap-6 lg:grid-cols-2">
                 {block.categories.map((category, categoryIndex) => (
-                    <div key={`${category.title}-${categoryIndex}`} className="rounded-2xl border border-hairline p-5">
+                    <div id={menuCategoryId(category.title, categoryIndex)} key={`${category.title}-${categoryIndex}`} className="cafe-menu-category rounded-2xl border border-hairline p-5">
                         <div className="mb-4 flex items-center gap-2">
                             <UtensilsCrossed className="h-4 w-4 text-tap" />
                             <h3 className="text-lg font-semibold text-ink">{category.title}</h3>
@@ -234,7 +352,7 @@ function MenuBlockView({ block }: { block: MenuBlock }) {
                         {category.description ? <p className="mb-4 text-sm leading-6 text-ink-muted">{category.description}</p> : null}
                         <div className="space-y-4">
                             {category.items.map((item, itemIndex) => (
-                                <article key={`${item.name}-${itemIndex}`} className="border-b border-hairline pb-4 last:border-b-0 last:pb-0">
+                                <article key={`${item.name}-${itemIndex}`} className="cafe-menu-row -mx-2 border-b border-hairline px-2 pb-4 last:border-b-0 last:pb-0">
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2">
@@ -327,22 +445,24 @@ function HoursBlockView({ block }: { block: HoursBlock }) {
 
 function CtaBlockView({ block }: { block: CtaBlock }) {
     return (
-        <SectionShell eyebrow={block.eyebrow} title={block.title} description={block.description} className="bg-tap-soft">
+        <SectionShell eyebrow={block.eyebrow} title={block.title} description={block.description} className="cafe-final-cta bg-tap-soft">
             <div className="flex flex-wrap gap-3">
                 {block.primaryCta ? (
                     <a
                         href={block.primaryCta.href}
-                        className="inline-flex items-center justify-center rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-porcelain transition hover:bg-ink-muted"
+                        className="cafe-btn inline-flex items-center justify-center gap-3 rounded-full bg-ink px-5 py-3.5 text-sm font-semibold text-porcelain transition hover:bg-ink-muted"
                     >
                         {block.primaryCta.label}
+                        <ArrowDownRight aria-hidden="true" className="h-4 w-4" />
                     </a>
                 ) : null}
                 {block.secondaryCta ? (
                     <a
                         href={block.secondaryCta.href}
-                        className="inline-flex items-center justify-center rounded-xl border border-hairline bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:border-hairline-strong"
+                        className="cafe-btn inline-flex items-center justify-center gap-3 rounded-full border border-hairline bg-surface px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-hairline-strong"
                     >
                         {block.secondaryCta.label}
+                        <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
                     </a>
                 ) : null}
             </div>
@@ -369,6 +489,23 @@ function renderBlock(block: BlockConfig) {
     }
 }
 
+const TICKER_ITEMS = ["Single-origin espresso", "All-day plates", "Oat & almond milk", "Fresh pastries daily", "Walk-ins welcome", "Harbor Lane · Demo City"];
+
+function CafeTicker() {
+    return (
+        <div className="cafe-ticker border-y border-[#faf4ea]/10 bg-[#2c1b12] py-3" aria-hidden="true">
+            <div className="cafe-ticker__track font-mono text-[11px] uppercase tracking-[0.22em] text-[#faf4ea]/70">
+                {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, index) => (
+                    <span key={`${item}-${index}`} className="inline-flex items-center gap-11">
+                        {item}
+                        <span className="h-1 w-1 rounded-full bg-[#c4a35a]/70" />
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function BlockRenderer({ blocks, className, renderUnknownBlock }: BlockRendererProps) {
     const normalizedBlocks = parseBlocks(blocks);
 
@@ -382,7 +519,22 @@ export default function BlockRenderer({ blocks, className, renderUnknownBlock }:
                 const renderedBlock = renderBlock(block);
 
                 if (renderedBlock) {
-                    return <div key={`${block.type}-${index}`}>{renderedBlock}</div>;
+                    if (block.type === "hero") {
+                        return (
+                            <div key={`hero-${index}`}>
+                                {renderedBlock}
+                                <div className="mt-8">
+                                    <CafeTicker />
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <CafeReveal key={`${block.type}-${index}`} as="section">
+                            {renderedBlock}
+                        </CafeReveal>
+                    );
                 }
 
                 return renderUnknownBlock ? <div key={`${block.type}-${index}`}>{renderUnknownBlock(block, index)}</div> : null;

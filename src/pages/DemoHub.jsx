@@ -34,19 +34,25 @@ export default function DemoHub() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] cafe-glow" />
       <div className="relative border-b border-hairline bg-porcelain/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Guest demos</p>
-          <Link to="/" className="text-[14px] text-ink-muted hover:text-ink">
+          <p className="cafe-enter font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Guest demos</p>
+          <Link to="/" className="cafe-enter text-[14px] text-ink-muted hover:text-ink" style={{ "--enter-delay": "80ms" }}>
             Omnitaps
           </Link>
         </div>
       </div>
 
       <div className="relative mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Harbor Lane · Demo Café</p>
-        <h1 className="mt-3 font-display text-[36px] font-semibold tracking-[-0.02em] sm:text-[44px]">
+        <p className="cafe-enter font-mono text-[11px] uppercase tracking-[0.18em] text-tap">Harbor Lane · Demo Café</p>
+        <h1
+          className="cafe-enter mt-3 font-display text-[36px] font-semibold tracking-[-0.02em] sm:text-[44px]"
+          style={{ "--enter-delay": "100ms" }}
+        >
           Walk the guest experience
         </h1>
-        <p className="mt-4 max-w-2xl text-[16px] leading-[1.7] text-ink-muted">
+        <p
+          className="cafe-enter mt-4 max-w-2xl text-[16px] leading-[1.7] text-ink-muted"
+          style={{ "--enter-delay": "200ms" }}
+        >
           Public pages for the Demo Café tenant (slug <span className="font-mono text-ink">demo</span>
           ). Re-seed with <span className="font-mono text-[13px] text-ink">npm run db:seed</span> for the
           full menu, Wi‑Fi splash, website, and chatbot. Apply{" "}
@@ -55,18 +61,24 @@ export default function DemoHub() {
         </p>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {CARDS.map((card) => (
+          {CARDS.map((card, index) => (
             <Link
               key={card.to}
               to={card.to}
-              className="group rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] transition hover:border-hairline-strong sm:p-8"
+              className="cafe-enter cafe-card-hover group rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] transition-colors hover:border-hairline-strong sm:p-8"
+              style={{ "--enter-delay": `${280 + index * 110}ms` }}
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">{card.eyebrow}</p>
-              <h2 className="mt-3 font-display text-[24px] font-semibold tracking-[-0.02em] group-hover:text-tap">
+              <h2 className="mt-3 font-display text-[24px] font-semibold tracking-[-0.02em] transition-colors group-hover:text-tap">
                 {card.title}
               </h2>
               <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">{card.body}</p>
-              <p className="mt-5 text-[13px] font-medium text-tap">Open {card.label} →</p>
+              <p className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-tap">
+                Open {card.label}
+                <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </p>
             </Link>
           ))}
         </div>

@@ -483,6 +483,14 @@ async function seedTenant(ownerUserId) {
         config: {
           eyebrow: "Harbor Lane",
           title: TENANT_NAME,
+          imageUrl:
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1800&q=85",
+          imageAlt: "Espresso being prepared at the Demo Café bar",
+          today: {
+            status: "Open today",
+            hours: "7:00 AM – 6:00 PM",
+            location: "14 Harbor Lane",
+          },
           description:
             "Espresso, all-day plates, and a quiet corner facing the harbor. Scan a table QR for the menu, guest Wi‑Fi, or a review — or ask the café assistant on this page.",
           badge: "Open today",

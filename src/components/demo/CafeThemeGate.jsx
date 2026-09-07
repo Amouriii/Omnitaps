@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
+import CafeIntro from "./CafeIntro";
 import DemoChrome from "./DemoChrome";
 
 export function isDemoCafePath(pathname) {
@@ -14,6 +15,11 @@ export function isDemoCafePath(pathname) {
   if (path === "/s/demo") return true;
   if (path.startsWith("/r/demo/")) return true;
   return false;
+}
+
+export function isDemoCafeWebsitePath(pathname) {
+  const path = String(pathname || "").replace(/\/$/, "") || "/";
+  return path === "/s/demo";
 }
 
 export default function CafeThemeGate({ children }) {
@@ -31,8 +37,11 @@ export default function CafeThemeGate({ children }) {
   return (
     <>
       {mounted ? createPortal(<DemoChrome />, document.body) : null}
+      {isDemoCafeWebsitePath(pathname) ? <CafeIntro tenantName="Demo Café" /> : null}
       <div className="demo-cafe-theme min-h-screen pt-[var(--demo-chrome-h,3.5rem)]">
-        {children}
+        <div key={pathname} className="demo-cafe-route">
+          {children}
+        </div>
       </div>
     </>
   );

@@ -1,4 +1,8 @@
 /* Demo Café guest brand — scoped. Does not change Omnitaps marketing/operator tokens. */
+html.cafe-intro-active {
+  overflow: hidden;
+}
+
 .demo-cafe-theme {
   --color-porcelain: #f3eadc;
   --color-surface: #faf4ea;
@@ -40,6 +44,7 @@
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--color-tap) 18%, transparent), transparent 42%),
     radial-gradient(circle at top right, color-mix(in srgb, var(--color-brass) 16%, transparent), transparent 40%);
+  animation: cafe-glow-pulse 8s ease-in-out infinite alternate;
 }
 
 .demo-cafe-chat {
@@ -81,8 +86,197 @@
 }
 
 .cafe-hero-panel {
-  background: #2c1b12;
+  background: #21130d;
   color: #faf4ea;
+}
+
+.cafe-hero-shell {
+  min-height: min(47rem, calc(100vh - var(--demo-chrome-h, 3.5rem) - 3rem));
+  display: flex;
+  align-items: center;
+  padding: clamp(2rem, 6vw, 5.5rem);
+  border-radius: 0;
+  border: 0;
+}
+
+.cafe-hero-grid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: clamp(2.5rem, 7vw, 7rem);
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cafe-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.cafe-hero-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #c4a35a;
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.cafe-hero-meta__dot,
+.cafe-hero-badge__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #c45c26;
+  box-shadow: 0 0 0 0.25rem rgba(196, 92, 38, 0.14);
+}
+
+.cafe-hero-media {
+  min-height: clamp(22rem, 58vw, 36rem);
+}
+
+.cafe-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  border-radius: 1.25rem;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: 0 30px 70px -38px rgba(0, 0, 0, 0.75);
+  filter: saturate(0.86) contrast(1.04);
+  transform: translate3d(var(--hero-pointer-x, 0px), calc(var(--hero-scroll-y, 0px) + var(--hero-pointer-y, 0px)), 0) scale(1.035);
+  transition: transform 0.8s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)), filter 0.5s ease;
+  will-change: transform;
+}
+
+.cafe-hero-media:hover .cafe-hero-image {
+  filter: saturate(1) contrast(1.04);
+}
+
+.cafe-hero-scroll-cue {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 4.75rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(250, 244, 234, 0.24);
+  border-radius: 999px;
+  background: rgba(33, 19, 13, 0.42);
+  color: rgba(250, 244, 234, 0.86);
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px) saturate(125%);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s var(--cafe-ease-out);
+}
+
+.cafe-hero-scroll-cue:hover,
+.cafe-hero-scroll-cue:focus-visible {
+  border-color: rgba(250, 244, 234, 0.58);
+  background: rgba(33, 19, 13, 0.72);
+  transform: translateY(-2px);
+}
+
+.cafe-today-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(2.5rem, 5vw, 4.5rem);
+  border-top: 1px solid rgba(250, 244, 234, 0.16);
+  border-bottom: 1px solid rgba(250, 244, 234, 0.16);
+}
+
+.cafe-today-strip > div {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1.1rem 1rem 0.95rem 0;
+  border-right: 1px solid rgba(250, 244, 234, 0.16);
+}
+
+.cafe-today-strip > div:last-child {
+  border-right: 0;
+  padding-left: 1rem;
+}
+
+.cafe-today-strip__label {
+  color: rgba(250, 244, 234, 0.52);
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.61rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cafe-today-strip strong {
+  color: #faf4ea;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.cafe-hero-media__caption {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(250, 244, 234, 0.22);
+  border-radius: 999px;
+  background: rgba(33, 19, 13, 0.72);
+  color: rgba(250, 244, 234, 0.78);
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.cafe-hero-badge {
+  position: absolute;
+  top: -0.9rem;
+  right: 1.25rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(250, 244, 234, 0.18);
+  border-radius: 999px;
+  background: #c45c26;
+  color: #fff7ee;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 18px 30px -20px rgba(196, 92, 38, 0.85);
+}
+
+.cafe-hero-badge__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  background: #fff7ee;
+  box-shadow: none;
+}
+
+@media (min-width: 768px) {
+  .cafe-hero-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(22rem, 0.85fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .cafe-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(28rem, 0.85fr);
+  }
 }
 
 .cafe-hero-art {
@@ -102,6 +296,7 @@
   border-radius: 0 0 2.4rem 2.4rem;
   transform: translate(-50%, -40%);
   box-shadow: inset 0 -18px 0 rgba(196, 92, 38, 0.35);
+  animation: cafe-float 5.4s ease-in-out infinite;
 }
 
 .cafe-hero-art__cup::after {
@@ -126,4 +321,763 @@
   transform: translateX(-50%);
   border-radius: 999px;
   box-shadow: -12px 8px 0 0 rgba(250, 244, 234, 0.28), 12px 12px 0 0 rgba(250, 244, 234, 0.22);
+  animation: cafe-steam-rise 3.8s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Motion foundation — easings, keyframes, reveal & entrance classes  */
+/* ------------------------------------------------------------------ */
+.demo-cafe-theme,
+.demo-cafe-chat {
+  --cafe-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --cafe-ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --cafe-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cafe-glow-pulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+@keyframes cafe-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cafe-rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cafe-scale-in {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes cafe-pop {
+  0% { opacity: 0; transform: scale(0.55); }
+  60% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cafe-slide-down {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cafe-float {
+  0%, 100% { transform: translate(-50%, -40%); }
+  50% { transform: translate(-50%, calc(-40% - 9px)); }
+}
+
+@keyframes cafe-steam-rise {
+  0% { opacity: 0; transform: translateX(-50%) translateY(8px) scaleY(0.85); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-26px) scaleY(1.18); }
+}
+
+@keyframes cafe-route-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cafe-star-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.16) rotate(-3deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cafe-marquee {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cafe-intro-scan {
+  from { transform: translateY(-120%); }
+  to { transform: translateY(120%); }
+}
+
+/* Scroll-triggered reveal (driven by CafeReveal + IntersectionObserver) */
+.cafe-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.7s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.cafe-reveal--left { transform: translateX(-26px); }
+.cafe-reveal--right { transform: translateX(26px); }
+.cafe-reveal--scale { transform: scale(0.95) translateY(12px); }
+
+.cafe-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Entrance-on-load (staged hero, route chrome, pops) */
+.cafe-enter {
+  animation: cafe-rise-in 0.8s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.cafe-enter--fade {
+  animation: cafe-fade-in 0.9s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.cafe-enter--scale {
+  animation: cafe-scale-in 0.7s var(--cafe-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.cafe-enter--pop {
+  animation: cafe-pop 0.55s var(--cafe-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Route transition inside the café theme (removed once settled so fixed
+   children never live under a lingering transform). */
+.demo-cafe-route {
+  animation: cafe-route-in 0.5s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+.demo-cafe-route.is-settled {
+  animation: none;
+}
+
+/* Micro-interactions */
+.cafe-card-hover {
+  transition:
+    transform 0.35s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 0.35s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    border-color 0.35s ease;
+}
+
+.cafe-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 32px 64px -40px rgba(44, 27, 18, 0.55);
+}
+
+.cafe-btn {
+  transition:
+    transform 0.2s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.cafe-btn:hover { transform: translateY(-1px); }
+.cafe-btn:active { transform: translateY(1px) scale(0.98); }
+
+.cafe-menu-row {
+  border-radius: 10px;
+  transition: background 0.25s ease;
+}
+
+.cafe-menu-row:hover {
+  background: color-mix(in srgb, var(--color-tap, #c45c26) 6%, transparent);
+}
+
+.cafe-gallery-figure img {
+  transition: transform 0.7s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.cafe-gallery-figure:hover img,
+.cafe-gallery-figure:focus-within img {
+  transform: scale(1.05);
+}
+
+.cafe-gallery-grid {
+  grid-auto-flow: dense;
+}
+
+.cafe-gallery-figure--feature {
+  grid-column: span 2;
+}
+
+.cafe-gallery-figure--feature img {
+  height: 28rem;
+}
+
+.cafe-menu-tabs {
+  position: sticky;
+  top: calc(var(--demo-chrome-h, 3.5rem) + 0.75rem);
+  z-index: 5;
+  display: flex;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 1.5rem;
+  padding: 0.4rem;
+  overflow-x: auto;
+  border: 1px solid var(--color-hairline, #e4d4c0);
+  border-radius: 999px;
+  background: rgba(250, 244, 234, 0.84);
+  box-shadow: 0 16px 34px -28px rgba(44, 27, 18, 0.55);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.cafe-menu-tabs a {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  color: var(--color-ink-muted, #6d5344);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s var(--cafe-ease-out);
+}
+
+.cafe-menu-tabs a:hover,
+.cafe-menu-tabs a:focus-visible {
+  color: var(--color-ink, #2c1b12);
+  background: var(--color-brass-soft, #f1e6c8);
+  transform: translateY(-1px);
+}
+
+.cafe-menu-category {
+  scroll-margin-top: calc(var(--demo-chrome-h, 3.5rem) + 5rem);
+}
+
+.cafe-final-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.cafe-final-cta::after {
+  content: "";
+  position: absolute;
+  right: -8rem;
+  bottom: -11rem;
+  width: 23rem;
+  height: 23rem;
+  border: 1px solid rgba(196, 92, 38, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cafe-star-selected {
+  animation: cafe-star-pop 0.45s var(--cafe-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+/* Chrome bar entrance + scroll state */
+.demo-chrome-bar {
+  animation: cafe-slide-down 0.6s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  transition: box-shadow 0.3s ease;
+}
+
+.demo-chrome-bar.is-scrolled {
+  background: rgba(243, 234, 220, 0.88);
+  box-shadow: 0 12px 32px -20px rgba(44, 27, 18, 0.5);
+  backdrop-filter: blur(16px) saturate(130%);
+}
+
+.demo-chrome-inner {
+  min-height: 3.5rem;
+}
+
+.demo-chrome-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.demo-chrome-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.demo-chrome-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--color-hairline-strong, #d2bea4);
+  border-radius: 999px;
+  color: var(--color-ink, #2c1b12);
+  background: rgba(250, 244, 234, 0.7);
+  transition: transform 0.2s var(--cafe-ease-out), background 0.2s ease;
+}
+
+.demo-chrome-menu-toggle:hover,
+.demo-chrome-menu-toggle:focus-visible {
+  background: #faf4ea;
+  transform: translateY(-1px);
+}
+
+.demo-chrome-link {
+  position: relative;
+  padding-bottom: 2px;
+  transition: color 0.25s ease;
+}
+
+.demo-chrome-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-tap, #c45c26);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.demo-chrome-link:hover::after,
+.demo-chrome-link.is-active::after {
+  transform: scaleX(1);
+}
+
+/* Marquee ticker */
+.cafe-ticker {
+  overflow: hidden;
+}
+
+.cafe-ticker__track {
+  display: inline-flex;
+  gap: 2.75rem;
+  width: max-content;
+  white-space: nowrap;
+  padding-right: 2.75rem;
+  animation: cafe-marquee 26s linear infinite;
+}
+
+/* Wi-Fi QR glow */
+.cafe-qr-glow {
+  position: relative;
+}
+
+.cafe-qr-glow::before {
+  content: "";
+  position: absolute;
+  inset: -16%;
+  border-radius: 36px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-tap, #c45c26) 20%, transparent), transparent 68%);
+  animation: cafe-glow-pulse 5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Chat widget */
+.demo-cafe-chat .cafe-chat-open {
+  animation: cafe-scale-in 0.4s var(--cafe-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+  transform-origin: bottom right;
+}
+
+.demo-cafe-chat .cafe-chat-launch button {
+  transition:
+    transform 0.25s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 0.25s ease;
+}
+
+.demo-cafe-chat .cafe-chat-launch button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 46px -22px rgba(44, 27, 18, 0.65);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Entry screen — "Demo Café" splash (once per session, skippable)    */
+/* ------------------------------------------------------------------ */
+.cafe-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #21130d;
+  color: #faf4ea;
+  cursor: pointer;
+}
+
+.cafe-intro::before {
+  content: "";
+  position: absolute;
+  inset: 1.5rem;
+  border: 1px solid rgba(250, 244, 234, 0.12);
+  pointer-events: none;
+}
+
+.cafe-intro::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(250, 244, 234, 0.18);
+  animation: cafe-intro-scan 3.2s linear infinite;
+  pointer-events: none;
+}
+
+.cafe-intro__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.cafe-intro.is-leaving {
+  animation: cafe-intro-out 0.55s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  pointer-events: none;
+}
+
+@keyframes cafe-intro-out {
+  from { opacity: 1; }
+  to { opacity: 0; transform: scale(1.04); }
+}
+
+.cafe-intro__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  max-width: min(34rem, calc(100% - 3rem));
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+  animation: cafe-fade-in 0.5s ease both;
+}
+
+.cafe-intro__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: rgba(250, 244, 234, 0.62);
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cafe-intro__kicker-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #c4a35a;
+}
+
+.cafe-intro__cup-wrap {
+  position: relative;
+  width: 8rem;
+  height: 8.4rem;
+  margin-top: 1rem;
+}
+
+.cafe-intro__cup {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 8rem;
+  height: 5.6rem;
+  border: 3px solid rgba(250, 244, 234, 0.85);
+  border-top-width: 2px;
+  border-radius: 0 0 2.6rem 2.6rem;
+  overflow: hidden;
+}
+
+.cafe-intro__cup-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: linear-gradient(180deg, #c45c26, #9a3f16);
+  border-radius: 0.6rem 0.6rem 0 0;
+  animation: cafe-intro-fill 1.5s 0.25s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
+}
+
+@keyframes cafe-intro-fill {
+  to { height: 76%; }
+}
+
+.cafe-intro__cup-handle {
+  position: absolute;
+  right: -1.75rem;
+  bottom: 3.4rem;
+  width: 1.9rem;
+  height: 2.5rem;
+  border: 3px solid rgba(250, 244, 234, 0.85);
+  border-left: 0;
+  border-radius: 0 1.3rem 1.3rem 0;
+}
+
+.cafe-intro__steam {
+  position: absolute;
+  bottom: 6.4rem;
+  width: 2px;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: rgba(250, 244, 234, 0.5);
+  animation: cafe-intro-steam 2.4s ease-out infinite;
+}
+
+.cafe-intro__steam:nth-child(1) { left: 38%; animation-delay: 0.2s; }
+.cafe-intro__steam:nth-child(2) { left: 50%; animation-delay: 0.9s; }
+.cafe-intro__steam:nth-child(3) { left: 62%; animation-delay: 1.6s; }
+
+@keyframes cafe-intro-steam {
+  0% { opacity: 0; transform: translateY(10px) scaleY(0.8); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-34px) scaleY(1.2); }
+}
+
+.cafe-intro__word {
+  font-family: "Fraunces", "Instrument Sans", ui-serif, Georgia, serif;
+  font-size: clamp(2.5rem, 8vw, 3.8rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+
+.cafe-intro__letter {
+  display: inline-block;
+  animation: cafe-letter-in 0.7s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes cafe-letter-in {
+  from { opacity: 0; transform: translateY(16px) rotate(4deg); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0) rotate(0); filter: blur(0); }
+}
+
+.cafe-intro__rule {
+  width: 5.5rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #c4a35a, transparent);
+  transform: scaleX(0);
+  animation: cafe-rule-in 0.9s 1s var(--cafe-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
+}
+
+@keyframes cafe-rule-in {
+  to { transform: scaleX(1); }
+}
+
+.cafe-intro__tag {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: rgba(250, 244, 234, 0.62);
+  animation: cafe-fade-in 0.8s 1.25s ease both;
+}
+
+.cafe-intro__enter,
+.cafe-intro__skip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.cafe-intro__enter {
+  margin-top: 0.35rem;
+  padding: 0.85rem 1.2rem;
+  border: 1px solid rgba(250, 244, 234, 0.3);
+  border-radius: 999px;
+  background: rgba(250, 244, 234, 0.06);
+  color: #faf4ea;
+}
+
+.cafe-intro__enter:hover,
+.cafe-intro__enter:focus-visible {
+  border-color: rgba(250, 244, 234, 0.72);
+  background: rgba(250, 244, 234, 0.12);
+  transform: translateY(-2px);
+}
+
+.cafe-intro__skip {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  z-index: 2;
+  padding: 0.5rem 0.8rem;
+  border: 0;
+  background: transparent;
+  color: rgba(250, 244, 234, 0.55);
+}
+
+.cafe-intro__skip:hover,
+.cafe-intro__skip:focus-visible {
+  color: #faf4ea;
+  transform: translateY(-1px);
+}
+
+/* Reduced motion: reveal states must never hide content */
+@media (prefers-reduced-motion: reduce) {
+  .cafe-intro::after,
+  .cafe-intro__cup-fill,
+  .cafe-intro__inner,
+  .cafe-intro__letter,
+  .cafe-intro__rule,
+  .cafe-intro__tag,
+  .cafe-intro__enter,
+  .cafe-intro__skip,
+  .cafe-enter,
+  .cafe-enter--fade,
+  .cafe-enter--scale,
+  .cafe-enter--pop,
+  .demo-chrome-bar,
+  .demo-cafe-route {
+    animation: none !important;
+  }
+
+  .cafe-intro__cup-fill {
+    height: 76%;
+  }
+
+  .cafe-reveal,
+  .cafe-reveal--left,
+  .cafe-reveal--right,
+  .cafe-reveal--scale {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .cafe-ticker__track,
+  .cafe-hero-art__cup,
+  .cafe-hero-art__steam,
+  .demo-cafe-theme .cafe-glow,
+  .cafe-qr-glow::before,
+  .cafe-intro__steam {
+    animation: none !important;
+  }
+
+  .cafe-hero-image,
+  .cafe-gallery-figure img {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .cafe-hero-media__caption,
+  .cafe-hero-scroll-cue {
+    background: #21130d;
+    backdrop-filter: none;
+  }
+
+  .cafe-menu-tabs,
+  .demo-chrome-bar.is-scrolled,
+  .demo-chrome-nav {
+    background: #faf4ea;
+    backdrop-filter: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .demo-chrome-menu-toggle {
+    display: inline-flex;
+  }
+
+  .demo-chrome-nav {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    display: none;
+    min-width: min(15rem, calc(100vw - 2.5rem));
+    padding: 0.55rem;
+    border: 1px solid var(--color-hairline, #e4d4c0);
+    border-radius: 1rem;
+    background: rgba(250, 244, 234, 0.96);
+    box-shadow: 0 24px 48px -26px rgba(44, 27, 18, 0.5);
+    backdrop-filter: blur(18px) saturate(135%);
+  }
+
+  .demo-chrome-nav.is-open {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .demo-chrome-nav .demo-chrome-link,
+  .demo-chrome-nav > a:last-child {
+    display: block;
+    padding: 0.7rem 0.8rem;
+    border-radius: 0.7rem;
+  }
+
+  .demo-chrome-nav .demo-chrome-link:hover,
+  .demo-chrome-nav .demo-chrome-link:focus-visible,
+  .demo-chrome-nav > a:last-child:hover,
+  .demo-chrome-nav > a:last-child:focus-visible {
+    background: var(--color-brass-soft, #f1e6c8);
+  }
+
+  .demo-chrome-nav > span {
+    display: none;
+  }
+
+  .cafe-today-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .cafe-today-strip > div,
+  .cafe-today-strip > div:last-child {
+    padding: 0.9rem 0;
+    border-right: 0;
+    border-bottom: 1px solid rgba(250, 244, 234, 0.16);
+  }
+
+  .cafe-today-strip > div:last-child {
+    border-bottom: 0;
+  }
+
+  .cafe-gallery-figure--feature {
+    grid-column: span 1;
+  }
+
+  .cafe-gallery-figure--feature img {
+    height: 18rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .cafe-hero-shell {
+    min-height: auto;
+    padding: 2rem 1.25rem 2.5rem;
+  }
+
+  .cafe-hero-media {
+    min-height: 24rem;
+  }
+
+  .cafe-hero-media__caption {
+    align-items: flex-start;
+    border-radius: 1rem;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .cafe-hero-scroll-cue {
+    right: 0.75rem;
+    bottom: 6.8rem;
+  }
+
+  .cafe-hero-media__caption span:nth-child(2) {
+    display: none;
+  }
+
+  .cafe-intro::before {
+    inset: 0.75rem;
+  }
+
+  .cafe-intro__skip {
+    right: 1.25rem;
+    bottom: 1.25rem;
+  }
 }

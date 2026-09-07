@@ -1,3 +1,5 @@
+import CafeReveal from "../demo/CafeReveal";
+
 function MenuSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-label="Loading menu">
@@ -62,9 +64,10 @@ export default function PrismaPublicMenu({ data, loading, error }) {
         </nav>
       ) : null}
 
-      {categories.map((category) => (
-        <section
+      {categories.map((category, categoryIndex) => (
+        <CafeReveal
           key={category.id}
+          as="section"
           id={`menu-cat-${category.id}`}
           className="scroll-mt-[calc(var(--demo-chrome-h,3.5rem)+4.5rem)] rounded-3xl border border-hairline bg-surface p-6 sm:p-8"
         >
@@ -73,12 +76,13 @@ export default function PrismaPublicMenu({ data, loading, error }) {
             <p className="mt-2 text-[14px] leading-[1.7] text-ink-muted">{category.description}</p>
           ) : null}
           <ul className="mt-6 space-y-5">
-            {category.items.map((item) => {
+            {category.items.map((item, itemIndex) => {
               const soldOut = item.isAvailable === false;
               return (
                 <li
                   key={item.id}
-                  className={`border-b border-hairline pb-5 last:border-b-0 last:pb-0 ${soldOut ? "opacity-60" : ""}`}
+                  style={{ "--reveal-delay": `${Math.min(itemIndex * 60, 360)}ms` }}
+                  className={`cafe-reveal cafe-menu-row -mx-2 border-b border-hairline px-2 pb-5 last:border-b-0 last:pb-0 ${soldOut ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -111,7 +115,7 @@ export default function PrismaPublicMenu({ data, loading, error }) {
               );
             })}
           </ul>
-        </section>
+        </CafeReveal>
       ))}
     </div>
   );

@@ -84,7 +84,7 @@ export default function WebsitePreview() {
             <p className="mt-3 text-[15px] leading-[1.7] text-ink-muted">{error}</p>
           </div>
         ) : (
-          <BlockRenderer blocks={data.page.blocks} />
+          <BlockRenderer blocks={data.page.blocks} className={demo ? "cafe-website-blocks" : ""} />
         )}
       </div>
 
