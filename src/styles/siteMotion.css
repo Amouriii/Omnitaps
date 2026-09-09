@@ -40,7 +40,7 @@
 
   /* ---- Durations: ambient loops ---- */
   --motion-dur-steam-intro: 3.4s; /* café intro steam                 */
-  --motion-dur-scan-intro: 4.6s; /* café intro scan line              */
+  --motion-dur-scan-intro: 7.2s; /* café intro scan + pour sequence    */
   --motion-dur-scan: 5.2s;      /* idle QR scan sweep                 */
   --motion-dur-steam: 5.4s;     /* hero steam rise                    */
   --motion-dur-glow: 7s;        /* QR glow pulse                      */

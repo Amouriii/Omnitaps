@@ -2,47 +2,47 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, X } from "lucide-react";
 import { motionMs } from "../../lib/motion.js";
 
-const INTRO_SEEN_KEY = "cafe-intro-seen";
-
 const TITLE = "Demo Café";
 // The auto-dismiss shadows --motion-dur-scan-intro (the intro's longest
 // animation); read live so retunes of the CSS retime the conductor too.
 const INTRO_TOKEN = "--motion-dur-scan-intro";
-const INTRO_FALLBACK_MS = 3200;
+const INTRO_FALLBACK_MS = 7200;
 const LEAVE_FALLBACK_MS = 550;
 
 function CupSteam() {
   return (
-    <>
-      <span className="cafe-intro__steam" />
-      <span className="cafe-intro__steam" />
-      <span className="cafe-intro__steam" />
-      <span className="cafe-intro__cup-wrap" aria-hidden="true">
+    <div className="cafe-intro__pour-scene" aria-hidden="true">
+      <span className="cafe-intro__steam cafe-intro__steam--one" />
+      <span className="cafe-intro__steam cafe-intro__steam--two" />
+      <span className="cafe-intro__steam cafe-intro__steam--three" />
+      <span className="cafe-intro__pitcher">
+        <span className="cafe-intro__pitcher-body" />
+        <span className="cafe-intro__pitcher-handle" />
+        <span className="cafe-intro__pitcher-spout" />
+      </span>
+      <span className="cafe-intro__milk-stream" />
+      <span className="cafe-intro__cup-wrap">
         <span className="cafe-intro__cup">
           <span className="cafe-intro__cup-fill" />
+          <span className="cafe-intro__cup-foam" />
         </span>
         <span className="cafe-intro__cup-handle" />
       </span>
-    </>
+    </div>
   );
 }
 
 /**
  * CafeIntro — entry screen for the Demo Café guest experience.
  *
- * Plays once per browser session (sessionStorage gate), is fully
- * skippable (click anywhere, Escape, or the Skip button), and never
- * renders at all for users who prefer reduced motion.
+ * Plays on every page load so a refresh reliably gets the full café welcome,
+ * is fully skippable (click anywhere, Escape, or the Skip button), and never
+ * renders for users who prefer reduced motion.
  */
 export default function CafeIntro({ tenantName = TITLE }) {
   const [visible, setVisible] = useState(() => {
     if (typeof window === "undefined") return false;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    try {
-      return window.sessionStorage.getItem(INTRO_SEEN_KEY) !== "1";
-    } catch {
-      return true;
-    }
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
   const [leaving, setLeaving] = useState(false);
   const hideTimer = useRef(null);
@@ -52,11 +52,6 @@ export default function CafeIntro({ tenantName = TITLE }) {
   const dismiss = useCallback(() => {
     setLeaving((alreadyLeaving) => {
       if (alreadyLeaving) return alreadyLeaving;
-      try {
-        window.sessionStorage.setItem(INTRO_SEEN_KEY, "1");
-      } catch {
-        // Storage may be unavailable; intro still dismisses for this visit.
-      }
       return true;
     });
   }, []);
