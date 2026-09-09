@@ -7,3 +7,9 @@ dist
 .vercel
 *.log
 .env*
+
+# Tool & runtime state
+.freebuff/
+.obsidian/
+.claude/
+test-results/

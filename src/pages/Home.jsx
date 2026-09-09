@@ -263,11 +263,11 @@ export default function Home() {
                                     website, menus, reservations, reviews, WiFi, and support.
                                 </p>
                                 <div className="hero-enter flex flex-wrap items-center gap-3" style={enter(3)}>
-                                    <a href="#cta" className="btn-primary rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
+                                    <a href="#cta" className="btn-primary press-scale rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
                                         Get Started
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                                     </a>
-                                    <a href="#solutions" className="btn-ghost rounded-lg px-6 py-3.5 text-[15px] font-semibold">
+                                    <a href="#solutions" className="btn-ghost press-scale rounded-lg px-6 py-3.5 text-[15px] font-semibold">
                                         View Solutions
                                     </a>
                                 </div>

@@ -66,17 +66,32 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
 
     const fetchMenu = useCallback(async () => {
         if (menuCache) return menuCache;
-        const response = await fetch(`/api/tenants/${encodeURIComponent(tenantId)}/menu`);
-        if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
-        const payload = await response.json();
-        const categories = Array.isArray(payload?.menu?.categories) ? payload.menu.categories : [];
-        if (!categories.length) throw new Error("Empty menu payload");
-        menuCache = categories;
-        return categories;
+        const load = async () => {
+            const response = await fetch(`/api/tenants/${encodeURIComponent(tenantId)}/menu`);
+            if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
+            const payload = await response.json();
+            const categories = Array.isArray(payload?.menu?.categories) ? payload.menu.categories : [];
+            if (!categories.length) throw new Error("Empty menu payload");
+            return categories;
+        };
+        // One quick retry rides out transient backend hiccups so the demo
+        // doesn't flash its error face on a momentary failure.
+        try {
+            const categories = await load();
+            menuCache = categories;
+            return categories;
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            const categories = await load();
+            menuCache = categories;
+            return categories;
+        }
     }, [tenantId]);
 
     const startScan = useCallback(() => {
-        if (phase === "scanning") return;
+        // Only an idle card may begin a scan — a stray timer firing while the
+        // menu is open must never wipe it back to the QR face.
+        if (phase !== "idle") return;
         clearTimers();
         setOrder([]);
         setActiveCat(0);
@@ -141,13 +156,22 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
         setLitCount(SCAN_STEPS);
     }, [clearTimers]);
 
-    // Auto-play the scan once shortly after the hero entrance, unless the
-    // visitor prefers reduced motion (then the demo waits for a tap).
+    // Auto-play the scan ONCE per mount, shortly after the hero entrance.
+    // The guard is essential: startScan's identity changes on every phase
+    // change, so an unguarded effect would re-schedule itself forever and
+    // yank the menu back to the QR card every couple of seconds.
+    const hasAutoPlayedRef = useRef(false);
     useEffect(() => {
-        if (prefersReducedMotion()) return undefined;
+        if (hasAutoPlayedRef.current || prefersReducedMotion()) return undefined;
         // Wait for the hero entrance to land (hero-rise + beats) before autoplaying.
+        // Flag flips only when the timer actually fires: StrictMode's
+        // mount→cleanup→mount cycle clears the first schedule, so claiming
+        // the flag at schedule time would permanently cancel the autoplay.
         const t = window.setTimeout(
-            () => startScan(),
+            () => {
+                hasAutoPlayedRef.current = true;
+                startScan();
+            },
             motionMs("--motion-dur-hero", 850) + 750
         );
         timersRef.current.push(t);
@@ -176,7 +200,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                         ? "Scan the table QR to preview today's menu"
                         : "Try the live QR menu demo — scan now"
             }
-            className={`qr-card group relative z-10 w-52 sm:w-56 rounded-3xl bg-ink text-porcelain p-6 shadow-[0_32px_64px_-24px_rgba(18,21,26,0.45)] text-left ${
+            className={`qr-card press-scale group relative z-10 w-52 sm:w-56 rounded-3xl bg-ink text-porcelain p-6 shadow-[0_32px_64px_-24px_rgba(18,21,26,0.45)] text-left ${
                 phase === "scanning" ? "qr-card--scanning cursor-wait" : "cursor-pointer"
             }`}
         >

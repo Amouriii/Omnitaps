@@ -395,12 +395,47 @@
   animation: route-fade-in var(--motion-dur-route) var(--motion-ease-out) both;
 }
 
-/* ---------- Header elevation on scroll ---------- */
+/* §1 Response — instant press feedback for Tailwind-styled interactive
+   elements (buttons, cards-as-buttons): scale down on pointer-down with a
+   100ms ease-out, restore on release. Feedback lives on the press. */
+.press-scale {
+  transition: transform 100ms ease-out;
+}
+.press-scale:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Header elevation on scroll ----------
+   §12 Materials: the hairline under floating chrome only exists where content
+   actually scrolls underneath — transparent at the top of the page, fading in
+   with a soft shadow once content passes under (edge effect, not a divider). */
 .site-header {
-  transition: box-shadow var(--motion-dur-fast) var(--motion-ease), background var(--motion-dur-fast) var(--motion-ease);
+  border-bottom-color: transparent;
+  transition:
+    box-shadow var(--motion-dur-fast) var(--motion-ease),
+    background var(--motion-dur-fast) var(--motion-ease),
+    border-color var(--motion-dur-fast) var(--motion-ease);
 }
 .site-header.is-scrolled {
+  border-bottom-color: var(--color-hairline);
   box-shadow: 0 10px 30px -18px rgba(18, 21, 26, 0.25);
+}
+
+/* §14 — honor the user's transparency & contrast settings on floating chrome. */
+@media (prefers-reduced-transparency: reduce) {
+  .site-header {
+    background: var(--color-porcelain);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .site-header {
+    background: #fff;
+    border-bottom-color: var(--color-ink-muted);
+  }
+  .site-header.is-scrolled {
+    box-shadow: none;
+  }
 }
 
 /* ---------- Reduced motion: everything static & visible ---------- */

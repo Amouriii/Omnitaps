@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LogoMark from "./LogoMark";
 
@@ -8,8 +9,19 @@ import LogoMark from "./LogoMark";
  *   ConsoleChrome's strip already links the same destinations.
  */
 export default function SiteHeader({ ctaHref = null, showTryDemos = true }) {
+    // §12 Materials: the hairline + shadow only appear once content actually
+    // scrolls underneath the floating chrome — an edge effect, not a divider.
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
     return (
-        <header className="site-chrome--top sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
+        <header className={`site-chrome--top site-header sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur ${scrolled ? "is-scrolled" : ""}`}>
             <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Omnitaps home">
                     <LogoMark className="w-7 h-7" />

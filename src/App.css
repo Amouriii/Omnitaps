@@ -87,6 +87,10 @@
 .nav-link:hover::after {
   right: 0;
 }
+.nav-link:active {
+  color: var(--color-tap);
+  transition-duration: 100ms;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Buttons                                                             */
@@ -100,6 +104,14 @@
 .btn-primary:hover {
   background: var(--color-tap-dark);
   transform: translateY(-1px);
+}
+/* §1 Response: feedback on pointer-DOWN, instant — never wait for release. */
+.btn-primary:active {
+  background: var(--color-tap-dark);
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap) * 100%), transparent);
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
 }
 .btn-primary:focus-visible {
   box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-strong) * 100%), transparent);
@@ -120,6 +132,12 @@
 .btn-ghost:hover {
   border-color: var(--color-tap);
   background: var(--color-tap-soft);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+  background: color-mix(in srgb, var(--color-tap-soft) 70%, var(--color-tap) 6%);
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
 }
 .btn-ghost:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-tap) calc(var(--motion-focus-tint) * 100%), transparent);
