@@ -1,0 +1,32 @@
+name: CI
+
+# Single always-on gate for branch protection. The test-module-* workflows add
+# semgrep/audit signal on matching paths; this one reports on every PR and
+# push to main so a required check never gets stuck "Expected" on a PR whose
+# paths match no filter.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # sharp needs its prebuilt binaries; build also exercises the
+      # pwa-icons plugin end to end.
+      - run: npm run build
