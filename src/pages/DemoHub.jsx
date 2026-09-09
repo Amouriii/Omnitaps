@@ -1,27 +1,38 @@
 import { Link } from "react-router-dom";
-import { DEMO_LINKS } from "../components/demo/DemoChrome";
+import useScrollReveal from "../hooks/useScrollReveal";
 
 const CARDS = [
   {
-    ...DEMO_LINKS[0],
+    to: "/demo/qr",
+    label: "QR menu demo",
+    eyebrow: "Table QR",
+    title: "Scan-to-order demo",
+    body: "The scan → live menu → order-tally loop your guests trigger from the table sticker — now on its own page.",
+  },
+  {
+    to: "/menu/demo",
+    label: "Menu",
     eyebrow: "QR menu",
     title: "Guest menu",
     body: "Drinks, plates, and sweets with categories, badges, and a sold-out item — the seeded Prisma café menu.",
   },
   {
-    ...DEMO_LINKS[1],
+    to: "/r/demo/review",
+    label: "Reviews",
     eyebrow: "Reviews",
     title: "Review funnel",
     body: "4–5 stars continue to Google. 1–3 stars open a private form for the café team.",
   },
   {
-    ...DEMO_LINKS[2],
+    to: "/r/demo/wifi",
+    label: "Wi‑Fi",
     eyebrow: "Wi‑Fi",
     title: "Guest Wi‑Fi",
     body: "Scan the QR on a phone, or copy the demo password on a laptop. Splash copy is seeded with the network.",
   },
   {
-    ...DEMO_LINKS[3],
+    to: "/s/demo",
+    label: "Website",
     eyebrow: "Website + chat",
     title: "Café website",
     body: "Hours, map, menu embed, and a chatbot that answers café questions from seeded knowledge.",
@@ -29,8 +40,10 @@ const CARDS = [
 ];
 
 export default function DemoHub() {
+  const rootRef = useScrollReveal();
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-porcelain text-ink font-body">
+    <main ref={rootRef} className="relative min-h-screen overflow-hidden bg-porcelain text-ink font-body">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] cafe-glow" />
       <div className="relative border-b border-hairline bg-porcelain/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
@@ -65,8 +78,8 @@ export default function DemoHub() {
             <Link
               key={card.to}
               to={card.to}
-              className="cafe-enter cafe-card-hover group rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] transition-colors hover:border-hairline-strong sm:p-8"
-              style={{ "--enter-delay": `${280 + index * 110}ms` }}
+              className="reveal-child cafe-card-hover group rounded-3xl border border-hairline bg-surface p-6 shadow-[0_28px_60px_-42px_rgba(18,21,26,0.38)] transition-colors hover:border-hairline-strong sm:p-8"
+              style={{ "--child-delay": `${index * 110}ms` }}
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-tap">{card.eyebrow}</p>
               <h2 className="mt-3 font-display text-[24px] font-semibold tracking-[-0.02em] transition-colors group-hover:text-tap">

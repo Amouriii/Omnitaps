@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import LogoMark from "./LogoMark";
+import useScrollReveal from "../hooks/useScrollReveal";
 
 const PRODUCT_LINKS = [
     "Websites",
@@ -11,8 +12,13 @@ const PRODUCT_LINKS = [
 ];
 
 export default function SiteFooter() {
+    const revealRef = useScrollReveal();
     return (
-        <footer className="border-t border-hairline" aria-label="Footer">
+        <footer
+            ref={revealRef}
+            className="chrome-reveal border-t border-hairline"
+            aria-label="Footer"
+        >
             <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 grid sm:grid-cols-2 md:grid-cols-4 gap-10">
                 <div>
                     <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Omnitaps home">

@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, X } from "lucide-react";
+import { motionMs } from "../../lib/motion.js";
 
 const INTRO_SEEN_KEY = "cafe-intro-seen";
 
 const TITLE = "Demo Café";
-const INTRO_DURATION = 3200;
+// The auto-dismiss shadows --motion-dur-scan-intro (the intro's longest
+// animation); read live so retunes of the CSS retime the conductor too.
+const INTRO_TOKEN = "--motion-dur-scan-intro";
+const INTRO_FALLBACK_MS = 3200;
+const LEAVE_FALLBACK_MS = 550;
 
 function CupSteam() {
   return (
@@ -61,7 +66,10 @@ export default function CafeIntro({ tenantName = TITLE }) {
 
     document.documentElement.classList.add("cafe-intro-active");
     enterButtonRef.current?.focus();
-    autoTimer.current = window.setTimeout(dismiss, INTRO_DURATION);
+    autoTimer.current = window.setTimeout(
+      dismiss,
+      motionMs(INTRO_TOKEN, INTRO_FALLBACK_MS)
+    );
 
     const onKeyDown = (event) => {
       if (event.key === "Escape") dismiss();
@@ -77,7 +85,11 @@ export default function CafeIntro({ tenantName = TITLE }) {
 
   useEffect(() => {
     if (!leaving) return undefined;
-    hideTimer.current = window.setTimeout(() => setVisible(false), 700);
+    // Shadows the .is-leaving animation (cafe-intro-out @ --motion-dur-pop).
+    hideTimer.current = window.setTimeout(
+      () => setVisible(false),
+      motionMs("--motion-dur-pop", LEAVE_FALLBACK_MS)
+    );
     return () => window.clearTimeout(hideTimer.current);
   }, [leaving]);
 

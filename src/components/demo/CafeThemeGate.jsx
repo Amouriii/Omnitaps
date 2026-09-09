@@ -13,6 +13,7 @@ export function isDemoCafePath(pathname) {
   if (path === "/demo") return true;
   if (path === "/menu/demo" || path === "/menu-prisma/demo") return true;
   if (path === "/s/demo") return true;
+  if (path === "/demo/qr") return true;
   if (path.startsWith("/r/demo/")) return true;
   return false;
 }

@@ -3,6 +3,7 @@ import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import { submitContactMessage } from "../lib/apiClient";
+import useScrollReveal from "../hooks/useScrollReveal";
 
 /* Dummy contact details — replace with real data when available. */
 const CONTACT_CHANNELS = [
@@ -18,6 +19,8 @@ const inputClass =
 export default function Contact() {
     const [status, setStatus] = useState("idle"); // idle | submitting | success | error
     const [error, setError] = useState("");
+    const rootRef = useScrollReveal();
+    const child = (i) => ({ "--child-delay": `${i * 90}ms` });
 
     async function onSubmit(e) {
         e.preventDefault();
@@ -45,19 +48,19 @@ export default function Contact() {
     }
 
     return (
-        <main id="main" className="min-h-screen bg-porcelain text-ink font-body" tabIndex="-1">
+        <main id="main" ref={rootRef} className="min-h-screen bg-porcelain text-ink font-body" tabIndex="-1">
             <SiteHeader ctaHref="#contact-form" />
 
             {/* ---------------- HERO ---------------- */}
             <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-12 md:pt-24 md:pb-16">
                 <div className="max-w-2xl">
-                    <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5">
+                    <div className="reveal font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5">
                         Contact
                     </div>
-                    <h1 className="font-display font-semibold text-[36px] leading-[1.1] sm:text-[48px] md:text-[52px] tracking-[-0.02em] text-ink mb-6">
+                    <h1 className="reveal font-display font-semibold text-[36px] leading-[1.1] sm:text-[48px] md:text-[52px] tracking-[-0.02em] text-ink mb-6" style={{ "--reveal-delay": "90ms" }}>
                         Talk to us.
                     </h1>
-                    <p className="text-[17px] leading-[1.6] text-ink-muted max-w-xl">
+                    <p className="reveal text-[17px] leading-[1.6] text-ink-muted max-w-xl" style={{ "--reveal-delay": "180ms" }}>
                         Questions about the platform, a walkthrough for your team, or a partnership —
                         we would love to hear from you.
                     </p>
@@ -67,8 +70,8 @@ export default function Contact() {
             {/* ---------------- CHANNELS ---------------- */}
             <section className="max-w-6xl mx-auto px-5 sm:px-8 pb-16 md:pb-20">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {CONTACT_CHANNELS.map((c) => (
-                        <div key={c.label} className="rounded-2xl border border-hairline bg-surface p-6">
+                    {CONTACT_CHANNELS.map((c, i) => (
+                        <div key={c.label} className="reveal-child rounded-2xl border border-hairline bg-surface p-6" style={child(i)}>
                             <div className="w-10 h-10 rounded-xl bg-tap-soft text-tap flex items-center justify-center mb-4">
                                 <c.icon className="w-5 h-5" />
                             </div>
@@ -85,7 +88,7 @@ export default function Contact() {
             {/* ---------------- FORM ---------------- */}
             <section id="contact-form" className="border-t border-hairline bg-surface scroll-mt-20">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-24 grid lg:grid-cols-2 gap-12">
-                    <div>
+                    <div className="reveal">
                         <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
                             Send us a message
                         </div>
@@ -98,7 +101,7 @@ export default function Contact() {
                         </p>
                     </div>
 
-                    <form onSubmit={onSubmit} className="space-y-5" aria-label="Contact form">
+                    <form onSubmit={onSubmit} className="reveal-child space-y-5" aria-label="Contact form" style={{ "--child-delay": "150ms" }}>
                         <div className="grid sm:grid-cols-2 gap-5">
                             <label className="block">
                                 <span className="mb-2 block text-[13px] font-medium text-ink">Name</span>

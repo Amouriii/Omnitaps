@@ -1,4 +1,23 @@
 import { useEffect, useState } from "react";
+
+/**
+ * In-flight website fetches by tenantId. StrictMode double-mounts effects in
+ * dev, firing the same request twice; reusing the first promise keeps one
+ * request on the wire. Cleaned up on success/failure so refetches stay fresh.
+ */
+const inflightWebsiteRequests = new Map();
+
+function fetchWebsitePayload(tenantId) {
+  const existing = inflightWebsiteRequests.get(tenantId);
+  if (existing) {
+    return existing;
+  }
+  const promise = apiRequest(`/api/tenants/${encodeURIComponent(tenantId)}/website`).finally(
+    () => inflightWebsiteRequests.delete(tenantId),
+  );
+  inflightWebsiteRequests.set(tenantId, promise);
+  return promise;
+}
 import { Link, useParams } from "react-router-dom";
 import { isDemoSlug } from "../components/demo/DemoChrome";
 import BlockRenderer from "../modules/website/components/BlockRenderer";
@@ -34,7 +53,7 @@ export default function WebsitePreview() {
     setLoading(true);
     setError("");
 
-    apiRequest(`/api/tenants/${encodeURIComponent(tenantId)}/website`)
+    fetchWebsitePayload(tenantId)
       .then((payload) => {
         if (!cancelled) setData(payload);
       })

@@ -8,6 +8,7 @@ import { stat } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getPrisma } from "../api/_lib/prisma.js";
 import { createProductionRouteTable } from "../api/_lib/routeTable.js";
 import { createViteApiMiddleware } from "../api/_lib/viteAdapter.js";
 
@@ -157,4 +158,20 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Omnitaps listening on 0.0.0.0:${PORT}`);
+  warmDatabasePool();
 });
+
+/**
+ * The remote Supabase pooler needs 3–6s for a cold connection handshake, so
+ * the first /api request after a container start pays the whole cost. Open
+ * the pool during boot instead — non-blocking, failures are non-fatal.
+ */
+function warmDatabasePool() {
+  const prisma = getPrisma();
+  if (!prisma) return;
+  const startedAt = Date.now();
+  prisma
+    .$connect()
+    .then(() => console.log(`[docker-server] database pool warm (${Date.now() - startedAt}ms)`))
+    .catch((error) => console.warn("[docker-server] database warm-up failed:", error?.message ?? error));
+}

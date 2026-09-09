@@ -6,6 +6,7 @@ import RequireAuth from "./components/RequireAuth";
 import CafeThemeGate from "./components/demo/CafeThemeGate";
 import { AuthProvider } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
+import PageTransition from "./components/PageTransition";
 import "./App.css";
 
 const ItemDetail = lazy(() => import("./pages/ItemDetail"));
@@ -27,45 +28,28 @@ const EnterpriseWifiSettings = lazy(() => import("./pages/EnterpriseWifiSettings
 const EnterpriseWifiPlans = lazy(() => import("./pages/EnterpriseWifiPlans"));
 const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
 const DemoHub = lazy(() => import("./pages/DemoHub"));
+const QrDemo = lazy(() => import("./pages/QrDemo"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Careers = lazy(() => import("./pages/Careers"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 function ScrollManager() {
-  const location = useLocation();
-
+  const { pathname } = useLocation();
   useEffect(() => {
-    if (location.hash) {
-      const el = document.getElementById(location.hash.slice(1));
-      if (el) {
-        el.scrollIntoView({ behavior: "instant" });
-        return;
-      }
-    }
     window.scrollTo(0, 0);
-  }, [location]);
-
+  }, [pathname]);
   return null;
-}
-
-function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-porcelain text-ink-muted" role="status">
-      Loading…
-    </div>
-  );
 }
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Suspense fallback={<RouteFallback />}>
+        <Suspense>
           <CafeThemeGate>
             <ScrollManager />
             <ErrorBoundary>
+              <PageTransition>
               <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/items/:id" element={<ItemDetail />} />
@@ -75,44 +59,11 @@ export default function App() {
             <Route path="/menu/:restaurantId" element={<CustomerMenuPage />} />
             <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
             <Route path="/demo" element={<DemoHub />} />
+            <Route path="/demo/qr" element={<QrDemo />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<Careers />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/s/:tenantId" element={<WebsitePreview />} />
             <Route path="/login" element={<Login />} />
-            {/* Captive portal (public guest) */}
-            <Route path="/wifi-guest" element={<WifiGuestLanding />} />
-            <Route path="/wifi-guest/session" element={<WifiGuestSession />} />
-            <Route path="/wifi-guest/checkout" element={<WifiGuestCheckout />} />
-            {/* Enterprise dashboard demo */}
-            <Route path="/demo/dashboard" element={<EnterpriseConsole />} />
-            <Route path="/enterprise" element={<Navigate to="/demo/dashboard" replace />} />
-            <Route
-              path="/enterprise/wifi"
-              element={
-                <WifiModuleGate>
-                  <EnterpriseWifiDashboard />
-                </WifiModuleGate>
-              }
-            />
-            <Route
-              path="/enterprise/wifi/settings"
-              element={
-                <WifiModuleGate>
-                  <EnterpriseWifiSettings />
-                </WifiModuleGate>
-              }
-            />
-            <Route
-              path="/enterprise/wifi/plans"
-              element={
-                <WifiModuleGate>
-                  <EnterpriseWifiPlans />
-                </WifiModuleGate>
-              }
-            />
             <Route
               path="/admin"
               element={
@@ -121,10 +72,10 @@ export default function App() {
                 </RequireAuth>
               }
             />
-            <Route path="/admin/menu" element={<AdminMenuPage />} />
             <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
+              </PageTransition>
             </ErrorBoundary>
           </CafeThemeGate>
         </Suspense>

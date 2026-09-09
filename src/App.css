@@ -5,10 +5,10 @@
 @keyframes tap-ripple {
   0% {
     transform: scale(0.55);
-    opacity: 0.55;
+    opacity: var(--motion-ripple-peak);
   }
   70% {
-    opacity: 0.12;
+    opacity: var(--motion-ripple-mid);
   }
   100% {
     transform: scale(1.9);
@@ -22,7 +22,7 @@
   margin: auto;
   border-radius: 9999px;
   border: 1.5px solid var(--color-tap);
-  animation: tap-ripple 3.2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  animation: tap-ripple var(--motion-dur-ripple) var(--motion-ease-out) infinite;
 }
 .ripple-ring.delay-1 {
   animation-delay: 1.05s;
@@ -44,19 +44,19 @@
 /* ------------------------------------------------------------------ */
 .bento-card {
   transition:
-    border-color 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+    border-color var(--motion-dur-quick) ease,
+    transform var(--motion-dur-quick) ease,
+    box-shadow var(--motion-dur-quick) ease;
 }
 .bento-card:hover,
 .bento-card:focus-within {
   border-color: var(--color-tap);
   transform: translateY(-3px);
-  box-shadow: 0 20px 40px -24px rgba(21, 94, 239, 0.35);
+  box-shadow: 0 20px 40px -24px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-soft) * 100%), transparent);
 }
 
 .bento-card .card-dot {
-  transition: transform 0.3s ease, background 0.3s ease;
+  transition: transform var(--motion-dur-fast) ease, background var(--motion-dur-fast) ease;
 }
 .bento-card:hover .card-dot,
 .bento-card:focus-within .card-dot {
@@ -69,7 +69,7 @@
 .nav-link {
   position: relative;
   color: var(--color-ink-muted);
-  transition: color 0.2s ease;
+  transition: color var(--motion-dur-snappy) ease;
 }
 .nav-link::after {
   content: '';
@@ -79,7 +79,7 @@
   bottom: -3px;
   height: 1.5px;
   background: var(--color-tap);
-  transition: right 0.25s ease;
+  transition: right var(--motion-dur-quick) ease;
 }
 .nav-link:hover {
   color: var(--color-ink);
@@ -94,19 +94,19 @@
 .btn-primary {
   background: var(--color-tap);
   color: #fff;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 12px 24px -12px rgba(21, 94, 239, 0.55);
+  transition: background var(--motion-dur-snappy) ease, transform var(--motion-dur-snappy) ease, box-shadow var(--motion-dur-snappy) ease;
+  box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap) * 100%), transparent);
 }
 .btn-primary:hover {
   background: var(--color-tap-dark);
   transform: translateY(-1px);
 }
 .btn-primary:focus-visible {
-  box-shadow: 0 12px 30px -14px rgba(21,94,239,0.6);
+  box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-strong) * 100%), transparent);
   transform: translateY(-1px);
 }
 .btn-primary svg {
-  transition: transform 0.18s ease;
+  transition: transform var(--motion-dur-instant) ease;
 }
 .btn-primary:hover svg {
   transform: translateX(4px);
@@ -115,13 +115,13 @@
 .btn-ghost {
   border: 1.5px solid var(--color-hairline-strong);
   color: var(--color-ink);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--motion-dur-snappy) ease, background var(--motion-dur-snappy) ease;
 }
 .btn-ghost:hover {
   border-color: var(--color-tap);
   background: var(--color-tap-soft);
 }
 .btn-ghost:focus-visible {
-  outline: 3px solid rgba(21,94,239,0.12);
+  outline: 3px solid color-mix(in srgb, var(--color-tap) calc(var(--motion-focus-tint) * 100%), transparent);
   outline-offset: 2px;
 }

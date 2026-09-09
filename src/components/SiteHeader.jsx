@@ -9,7 +9,7 @@ import LogoMark from "./LogoMark";
  */
 export default function SiteHeader({ ctaHref = null, showTryDemos = true }) {
     return (
-        <header className="sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
+        <header className="site-chrome--top sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
             <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Omnitaps home">
                     <LogoMark className="w-7 h-7" />

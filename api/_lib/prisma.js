@@ -71,9 +71,30 @@ export function getPrisma() {
       log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
     });
     globalForPrisma.__omnitapsPrisma = withModelRetry(client);
+    startPoolKeepAlive(globalForPrisma.__omnitapsPrisma);
   }
 
   return globalForPrisma.__omnitapsPrisma;
+}
+
+const POOL_KEEPALIVE_MS = 60_000;
+
+/**
+ * The remote Supabase pooler drops idle connections after a few minutes and a
+ * fresh handshake costs 1–3s, which every post-idle request would pay. Run a
+ * cheap `SELECT 1` once a minute so the pool stays warm. Failures are ignored
+ * here — the retry proxy still guards real requests — and the timer never
+ * blocks process exit.
+ */
+function startPoolKeepAlive(client) {
+  if (globalForPrisma.__omnitapsPrismaKeepAlive) {
+    return;
+  }
+  globalForPrisma.__omnitapsPrismaKeepAlive = true;
+  const timer = setInterval(() => {
+    client.$queryRaw`SELECT 1`.catch(() => {});
+  }, POOL_KEEPALIVE_MS);
+  timer.unref?.();
 }
 
 export { isTransientDbError, withDbRetry };

@@ -6,6 +6,7 @@ export const DEMO_SLUG = "demo";
 
 export const DEMO_LINKS = [
   { label: "Menu", to: "/menu/demo" },
+  { label: "QR demo", to: "/demo/qr" },
   { label: "Reviews", to: "/r/demo/review" },
   { label: "Wi‑Fi", to: "/r/demo/wifi" },
   { label: "Website", to: "/s/demo" },

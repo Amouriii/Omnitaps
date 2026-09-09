@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { items as SERVICES } from "../data/items";
 import LogoMark from "../components/LogoMark";
 import SiteFooter from "../components/SiteFooter";
+import useScrollReveal, { useBentoPointerGlow } from "../hooks/useScrollReveal";
+import HeroMenuDemo from "../components/home/HeroMenuDemo";
 
 /* ================================================================== */
 /*  Logo                                                               */
@@ -92,12 +94,30 @@ const STEPS = [
     },
 ];
 
+const MARQUEE_ITEMS = [
+    "Cafés",
+    "Boutique hotels",
+    "Restaurant groups",
+    "Retail chains",
+    "Cloud kitchens",
+    "Bakeries & delis",
+];
+
+const HERO_STATS = [
+    { value: "6", label: "modules, one platform" },
+    { value: "1", label: "scan to connect" },
+    { value: "1", label: "customer record" },
+];
+
 /* ================================================================== */
 /*  Home Component                                                     */
 /* ================================================================== */
 export default function Home() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+    const [demoPhase, setDemoPhase] = useState("idle");
     const firstMobileLink = useRef(null);
+    const rootRef = useScrollReveal();
 
     useEffect(() => {
         function onKey(e) {
@@ -111,11 +131,24 @@ export default function Home() {
         return () => window.removeEventListener("keydown", onKey);
     }, [mobileOpen]);
 
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
+    // Pointer-tracked glow for the bento cards (single delegated listener).
+    const onBentoPointerMove = useBentoPointerGlow();
+
+    const enter = (i) => ({ "--enter-delay": `${i * 110}ms` });
+    const child = (i) => ({ "--child-delay": `${i * 90}ms` });
+
     return (
-        <div id="top" className="min-h-screen w-full bg-porcelain text-ink font-body">
+        <div id="top" ref={rootRef} className="min-h-screen w-full bg-porcelain text-ink font-body">
             <a href="#main" className="sr-only focus:not-sr-only absolute left-4 top-4 z-50 bg-surface/95 text-sm rounded-md px-3 py-2">Skip to content</a>
             {/* ---------------- NAV ---------------- */}
-            <header className="sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur">
+            <header className={`site-chrome--top site-header sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur ${scrolled ? "is-scrolled" : ""}`}>
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
                     <Logo />
 
@@ -199,66 +232,105 @@ export default function Home() {
             </header>
 
             <main id="main" tabIndex="-1">
-                {/* ---------------- HERO ---------------- */}
-                <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-8 md:pt-24 md:pb-16 grid md:grid-cols-2 gap-14 items-center">
-                <div>
-                    <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5">
-                        Digital infrastructure for hospitality &amp; retail
+                {/* ---------------- HERO (full viewport) ---------------- */}
+                <section className="relative overflow-hidden" aria-label="Intro">
+                    {/* animated aurora backdrop */}
+                    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                        <div className="aurora aurora--tap w-[34rem] h-[34rem] -top-40 -left-32" />
+                        <div className="aurora aurora--brass w-[30rem] h-[30rem] top-24 -right-40" />
+                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-porcelain" />
                     </div>
-                    <h1 className="font-display font-semibold text-[40px] leading-[1.08] sm:text-[52px] md:text-[54px] tracking-[-0.02em] text-ink mb-6">
-                        Digitize your entire business with one tap.
-                    </h1>
-                    <p className="text-[17px] leading-[1.6] text-ink-muted max-w-md mb-9">
-                        Omnitaps replaces the six different logins, vendors, and subscriptions
-                        running your restaurant or store with a single connected platform —
-                        website, menus, reservations, reviews, WiFi, and support.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <a href="#cta" className="btn-primary rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
-                            Get Started
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                        </a>
-                        <a href="#solutions" className="btn-ghost rounded-lg px-6 py-3.5 text-[15px] font-semibold">
-                            View Solutions
-                        </a>
-                    </div>
-                    <div className="mt-10 font-mono text-[12px] tracking-wide text-ink-faint">
-                        BUILT FOR CAFÉS · BOUTIQUE HOTELS · RESTAURANT GROUPS · RETAIL CHAINS
-                    </div>
-                </div>
 
-                {/* Signature tap-ripple visual */}
-                <div className="relative hidden md:flex items-center justify-center h-[26rem]">
-                    <div className="ripple-ring w-40 h-40" />
-                    <div className="ripple-ring delay-1 w-64 h-64" />
-                    <div className="ripple-ring delay-2 w-[22rem] h-[22rem]" />
+                    <div className="relative max-w-6xl mx-auto px-5 sm:px-8 min-h-[calc(100svh-4rem)] flex items-center py-14 md:py-10">
+                        <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-12 md:gap-10 items-center w-full">
+                            <div>
+                                <div className="hero-enter font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5 inline-flex items-center gap-2.5" style={enter(0)}>
+                                    <span className="relative flex h-2 w-2" aria-hidden="true">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tap opacity-60" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-tap" />
+                                    </span>
+                                    Digital infrastructure for hospitality &amp; retail
+                                </div>
+                                <h1
+                                    className="hero-enter font-display font-semibold text-[40px] leading-[1.08] sm:text-[52px] md:text-[56px] tracking-[-0.02em] text-ink mb-6 max-w-xl"
+                                    style={enter(1)}
+                                >
+                                    Digitize your entire business with one tap.
+                                </h1>
+                                <p className="hero-enter text-[17px] leading-[1.6] text-ink-muted max-w-md mb-9" style={enter(2)}>
+                                    Omnitaps replaces the six different logins, vendors, and subscriptions
+                                    running your restaurant or store with a single connected platform —
+                                    website, menus, reservations, reviews, WiFi, and support.
+                                </p>
+                                <div className="hero-enter flex flex-wrap items-center gap-3" style={enter(3)}>
+                                    <a href="#cta" className="btn-primary rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
+                                        Get Started
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                                    </a>
+                                    <a href="#solutions" className="btn-ghost rounded-lg px-6 py-3.5 text-[15px] font-semibold">
+                                        View Solutions
+                                    </a>
+                                </div>
 
-                    <div className="relative z-10 w-56 rounded-3xl bg-ink text-porcelain p-6 shadow-[0_32px_64px_-24px_rgba(18,21,26,0.45)]">
-                        <LogoMark className="w-6 h-6 text-tap mb-6" />
-                        <div className="grid grid-cols-4 gap-1.5 mb-6">
-                            {Array.from({ length: 16 }).map((_, i) => (
-                                <span
-                                    key={i}
-                                    className="aspect-square rounded-[3px]"
-                                    style={{
-                                        background:
-                                            [1, 2, 4, 7, 8, 9, 11, 13, 14].includes(i)
-                                                ? "rgba(255,255,255,0.9)"
-                                                : "rgba(255,255,255,0.14)",
-                                    }}
-                                />
+                                <div className="hero-enter mt-10 flex flex-wrap gap-x-10 gap-y-4" style={enter(4)}>
+                                    {HERO_STATS.map((s) => (
+                                        <div key={s.label}>
+                                            <div className="font-display text-[24px] font-semibold text-ink leading-none">{s.value}</div>
+                                            <div className="mt-1 text-[12.5px] text-ink-faint">{s.label}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Signature tap-ripple visual with the live QR mini-demo */}
+                            <div className={`hero-enter--zoom relative flex items-center justify-center h-80 sm:h-96 md:h-[26rem] ${demoPhase !== "idle" && demoPhase !== "scanning" ? "demo-active" : ""}`} style={enter(2)}>
+                                <div className="absolute inset-6 dot-grid rounded-full" aria-hidden="true" />
+                                <div className="ripple-ring w-40 h-40" />
+                                <div className="ripple-ring delay-1 w-64 h-64" />
+                                <div className="ripple-ring delay-2 w-[22rem] h-[22rem]" />
+
+                                <HeroMenuDemo tenantId="demo" onPhaseChange={setDemoPhase} />
+
+                                <div
+                                    className="float-slow absolute z-10 top-[16%] left-[2%] rounded-full border border-hairline bg-surface/90 backdrop-blur px-3.5 py-1.5 text-[12px] font-medium text-ink shadow-[0_10px_24px_-14px_rgba(18,21,26,0.4)] transition-opacity duration-500 demo-chip"
+                                    style={{ animationDelay: "1.2s" }}
+                                >
+                                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-tap align-middle" aria-hidden="true" />
+                                    Wi‑Fi connected
+                                </div>
+                                <div
+                                    className="float-slow absolute z-10 bottom-[14%] right-[0%] rounded-full border border-hairline bg-surface/90 backdrop-blur px-3.5 py-1.5 text-[12px] font-medium text-ink shadow-[0_10px_24px_-14px_rgba(18,21,26,0.4)] transition-opacity duration-500 demo-chip"
+                                    style={{ animationDelay: "2.4s" }}
+                                >
+                                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brass align-middle" aria-hidden="true" />
+                                    Review received
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ---------------- VERTICALS MARQUEE ---------------- */}
+                <section aria-label="Built for" className="border-y border-hairline bg-surface/60 py-4">
+                    <div className="marquee">
+                        <div className="marquee__track items-center gap-10 pr-10">
+                            {[0, 1].map((copy) => (
+                                <div key={copy} className="flex items-center gap-10" aria-hidden={copy === 1}>
+                                    {MARQUEE_ITEMS.map((item) => (
+                                        <span key={item} className="flex items-center gap-10 whitespace-nowrap font-mono text-[12px] uppercase tracking-[0.18em] text-ink-faint">
+                                            {item}
+                                            <span className="h-1 w-1 rounded-full bg-brass" aria-hidden="true" />
+                                        </span>
+                                    ))}
+                                </div>
                             ))}
                         </div>
-                        <div className="font-mono text-[11px] tracking-widest uppercase text-white/50">
-                            Scan to connect
-                        </div>
                     </div>
-                </div>
                 </section>
 
                 {/* ---------------- SERVICES (bento) ---------------- */}
                 <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28 scroll-mt-20">
-                <div className="max-w-xl mb-12">
+                <div className="reveal max-w-xl mb-12">
                     <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
                         The platform
                     </div>
@@ -271,15 +343,16 @@ export default function Home() {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-6 gap-4">
-                    {SERVICES.map((s) => (
+                <div className="grid md:grid-cols-6 gap-4" onPointerMove={onBentoPointerMove}>
+                    {SERVICES.map((s, i) => (
                         <Link
                             to={`/items/${s.id}`}
                             key={s.id}
-                            className={`bento-card block cursor-pointer ${s.col} rounded-2xl border border-hairline bg-surface p-7`}
+                            className={`reveal-child bento-card block cursor-pointer ${s.col} rounded-2xl border border-hairline bg-surface p-7`}
+                            style={child(i)}
                         >
                             <div className="flex items-center justify-between mb-6">
-                                <div className="w-11 h-11 rounded-xl bg-tap-soft text-tap flex items-center justify-center">
+                                <div className="bento-icon w-11 h-11 rounded-xl bg-tap-soft text-tap flex items-center justify-center">
                                     {icons[s.icon]({ className: "w-5 h-5" })}
                                 </div>
                                 <span className="card-dot w-1.5 h-1.5 rounded-full bg-hairline-strong" />
@@ -288,6 +361,10 @@ export default function Home() {
                                 {s.title}
                             </h3>
                             <p className="text-[14.5px] leading-[1.6] text-ink-muted">{s.desc}</p>
+                            <span className="card-arrow mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-tap" aria-hidden="true">
+                                Explore
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                            </span>
                         </Link>
                     ))}
                 </div>
@@ -296,7 +373,7 @@ export default function Home() {
                 {/* ---------------- HOW IT WORKS ---------------- */}
                 <section id="how-it-works" className="border-y border-hairline bg-surface">
                 <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
-                    <div className="max-w-xl mb-14">
+                    <div className="reveal max-w-xl mb-14">
                         <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-3">
                             How it works
                         </div>
@@ -307,7 +384,7 @@ export default function Home() {
 
                     <div className="grid md:grid-cols-3 gap-10 md:gap-8">
                         {STEPS.map((s, i) => (
-                            <div key={s.n} className="relative">
+                            <div key={s.n} className="reveal-child relative" style={child(i)}>
                                 <div
                                     className="font-display text-[34px] font-semibold mb-4 text-tap-soft"
                                     style={{ WebkitTextStroke: "1.5px var(--color-tap)" }}
@@ -321,7 +398,7 @@ export default function Home() {
                                     {s.desc}
                                 </p>
                                 {i < STEPS.length - 1 && (
-                                    <div className="hidden md:block absolute top-4 right-[-1.1rem] w-4 h-px bg-hairline-strong" />
+                                    <span className="step-line hidden md:block absolute top-4 right-[-1.1rem] w-4 h-px bg-hairline-strong" aria-hidden="true" />
                                 )}
                             </div>
                         ))}
@@ -331,7 +408,7 @@ export default function Home() {
 
                 {/* ---------------- BOTTOM CTA ---------------- */}
                 <section id="cta" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
-                <div className="relative overflow-hidden rounded-3xl bg-ink px-8 py-16 md:px-16 md:py-20 text-center">
+                <div className="reveal--zoom reveal relative overflow-hidden rounded-3xl bg-ink px-8 py-16 md:px-16 md:py-20 text-center">
                     <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-tap opacity-20 blur-2xl" />
                     <div className="pointer-events-none absolute -bottom-24 -left-14 w-72 h-72 rounded-full bg-brass opacity-15 blur-2xl" />
 

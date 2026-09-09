@@ -31,8 +31,28 @@ function omnitapsLocalApiPlugin() {
         })),
       ];
       server.middlewares.use(createViteApiMiddleware(routes));
+      warmDatabasePool();
     },
   };
+}
+
+/**
+ * The remote Supabase pooler needs 3–6s for a cold connection handshake, so
+ * the first /api request after a server start pays the whole cost. Open the
+ * pool while Vite boots instead — non-blocking, failures are non-fatal.
+ */
+function warmDatabasePool() {
+  import("./api/_lib/prisma.js")
+    .then(({ getPrisma }) => {
+      const prisma = getPrisma();
+      if (!prisma) return;
+      const startedAt = Date.now();
+      prisma
+        .$connect()
+        .then(() => console.log(`[omnitaps] database pool warm (${Date.now() - startedAt}ms)`))
+        .catch((error) => console.warn("[omnitaps] database warm-up failed:", error?.message ?? error));
+    })
+    .catch(() => {});
 }
 
 // https://vite.dev/config/

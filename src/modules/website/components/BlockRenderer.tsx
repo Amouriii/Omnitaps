@@ -238,6 +238,12 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
                             </a>
                         ) : null}
                     </div>
+                    <div className="cafe-enter mt-5" style={enterStyle(4)}>
+                        <a href="/demo/qr" className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase text-[#faf4ea]/60 transition-colors hover:text-[#faf4ea]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#c45c26]" aria-hidden="true" />
+                            Or scan the table QR
+                        </a>
+                    </div>
                 </div>
 
                 <div ref={mediaRef} className="cafe-enter--scale cafe-hero-media relative min-w-0" style={enterStyle(2)}>
@@ -266,11 +272,6 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
                             <span className="cafe-hero-art__steam" />
                         </div>
                     )}
-                    <div className="cafe-hero-media__caption">
-                        <span>{block.today?.status || "Open daily"}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{block.today?.hours || "Walk-ins welcome"}</span>
-                    </div>
                     {block.today ? (
                         <a className="cafe-hero-scroll-cue" href="#cafe-today" aria-label="Explore today's café details">
                             <span>Explore the café</span>
@@ -287,10 +288,6 @@ function HeroBlockView({ block }: { block: HeroBlock }) {
 function CafeTodayStrip({ today }: { today: TodayInfo }) {
     return (
         <div id="cafe-today" className="cafe-today-strip cafe-enter" style={{ "--enter-delay": "480ms" } as CSSProperties}>
-            <div>
-                <span className="cafe-today-strip__label">Today</span>
-                <strong>{today.status || "Open today"}</strong>
-            </div>
             <div>
                 <span className="cafe-today-strip__label">Hours</span>
                 <strong>{today.hours || "Walk-ins welcome"}</strong>

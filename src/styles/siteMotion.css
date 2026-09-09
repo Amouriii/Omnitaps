@@ -1,0 +1,439 @@
+/* ------------------------------------------------------------------ */
+/*  Site motion system — scroll reveals, staggered entrances, glow.    */
+/*  Pure CSS + one IntersectionObserver; everything respects           */
+/*  prefers-reduced-motion via the global kill-switch in index.css.    */
+/* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/*  Motion tokens — the single tuning point for every site animation.  */
+/*  Registered on :root so any component (marketing, chrome, console)  */
+/*  can reference them:                                                */
+/*    animation: foo var(--motion-dur-base) var(--motion-ease-out);    */
+/*  Retune the whole site's feel from here.                            */
+/* ------------------------------------------------------------------ */
+:root {
+  /* ---- Durations: micro-interactions ----
+     CINEMATIC TUNE — the default snappy profile lives in git history.
+     Everything breathes ~40–70% longer; hovers stay under half a second. */
+  --motion-dur-instant: 0.26s;  /* QR tile flash, icon nudge          */
+  --motion-dur-snappy: 0.3s;    /* buttons, tabs, chrome hovers       */
+  --motion-dur-quick: 0.38s;    /* arrow nudge, menu rows, links      */
+  --motion-dur-fast: 0.45s;     /* card glow, shadows, underlines     */
+  --motion-dur-hover: 0.5s;     /* card hover lift (café)             */
+  --motion-dur-ripple: 4.6s;    /* tap ripple loop                    */
+
+  /* ---- Durations: entrances & reveals ---- */
+  --motion-dur-route: 0.6s;     /* arrival fade between routes        */
+  --motion-dur-scale-fast: 0.6s; /* chat open, quick scale-ins        */
+  --motion-dur-base: 0.7s;      /* demo face-in, chrome entrances     */
+  --motion-dur-med: 0.8s;       /* café route, mid fades              */
+  --motion-dur-pop: 0.8s;       /* pops, star bursts                  */
+  --motion-dur-slide: 0.9s;     /* chrome bar slide-down              */
+  --motion-dur-reveal: 1s;      /* staggered children                 */
+  --motion-dur-slow: 1.1s;      /* scroll reveals, scale-ins          */
+  --motion-dur-step: 1.2s;      /* step connectors, rise-ins          */
+  --motion-dur-hero: 1.3s;      /* hero rise                          */
+  --motion-dur-fade: 1.4s;      /* slow fades, rule draw-ins          */
+  --motion-dur-zoom: 1.5s;      /* hero zoom (QR card)                */
+  --motion-dur-scan-fast: 1.7s; /* QR scan while fetching the menu    */
+  --motion-dur-fill: 2.1s;      /* café intro cup fill                */
+
+  /* ---- Durations: ambient loops ---- */
+  --motion-dur-steam-intro: 3.4s; /* café intro steam                 */
+  --motion-dur-scan-intro: 4.6s; /* café intro scan line              */
+  --motion-dur-scan: 5.2s;      /* idle QR scan sweep                 */
+  --motion-dur-steam: 5.4s;     /* hero steam rise                    */
+  --motion-dur-glow: 7s;        /* QR glow pulse                      */
+  --motion-dur-float-cafe: 7.6s; /* hero cup float                    */
+  --motion-dur-float: 8.4s;     /* card float                         */
+  --motion-dur-pulse: 11s;      /* café hero glow pulse               */
+  --motion-dur-aurora: 23s;     /* aurora drift (primary)             */
+  --motion-dur-aurora-alt: 27s; /* aurora drift (secondary, reversed) */
+  --motion-dur-marquee: 37s;    /* full marquee loop                  */
+
+  /* ---- Easings ---- */
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);       /* long cinematic decel tail   */
+  --motion-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);    /* sweeping, weighted scans    */
+  --motion-ease: ease;                                    /* soft hovers, glows          */
+  --motion-ease-cafe-out: cubic-bezier(0.22, 1, 0.36, 1); /* café exit — springier       */
+  --motion-ease-cafe-soft: cubic-bezier(0.33, 1, 0.68, 1); /* café soft decel           */
+  --motion-ease-cafe-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* café overshoot      */
+
+  /* ---- Glow & ripple intensity (color layer) ----
+     Alpha steps mixed over the theme's brand hues (--color-tap / --color-brass),
+     so glows re-skin automatically with the theme — e.g. inside .demo-cafe-theme.
+     Usage: color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap) * 100%), transparent) */
+  --motion-glow-tap-wisp: 0.08;  /* bento pointer-tracking glow                  */
+  --motion-glow-tap-faint: 0.22; /* aurora backdrop blobs                        */
+  --motion-glow-tap-halo: 0.14;  /* static status-dot halo rings                 */
+  --motion-glow-tap-soft: 0.35;  /* resting button/card glow, hover lift shadow  */
+  --motion-glow-tap: 0.55;       /* scan-line halo, primary button glow          */
+  --motion-glow-tap-strong: 0.6; /* button focus glow, live ping dot             */
+  --motion-glow-brass: 0.18;     /* secondary (brass) aurora                     */
+  --motion-focus-tint: 0.12;     /* focus-visible outline wash                   */
+  --motion-ripple-peak: 0.55;    /* tap-ripple keyframe starting opacity         */
+  --motion-ripple-mid: 0.12;     /* tap-ripple keyframe 70% opacity              */
+}
+
+/* ---------- Scroll reveal (activated by .is-visible) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity var(--motion-dur-slow) var(--motion-ease-out),
+    transform var(--motion-dur-slow) var(--motion-ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.reveal--left {
+  transform: translateX(-30px);
+}
+.reveal--right {
+  transform: translateX(30px);
+}
+.reveal--zoom {
+  transform: scale(0.94);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Staggered children: each .reveal-child inside a visible container
+   picks up its index-based delay via --child-delay (set inline). */
+.reveal-child {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--motion-dur-reveal) var(--motion-ease-out),
+    transform var(--motion-dur-reveal) var(--motion-ease-out);
+  transition-delay: var(--child-delay, 0ms);
+}
+.reveal-child.is-visible,
+.is-visible .reveal-child {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Chrome entrances (SiteHeader / SiteFooter) ---------- */
+/* The header drops in on load, leading the page's hero entrance so   */
+/* chrome and content assemble together.                              */
+@keyframes chrome-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.site-chrome--top {
+  animation: chrome-drop var(--motion-dur-base) var(--motion-ease-out);
+}
+
+/* The footer rises in the moment it scrolls into view (same observer
+   that drives .reveal, so it stays in sync with the rest of the page
+   and inherits the reduced-motion + no-observer fallbacks). */
+.chrome-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--motion-dur-base) var(--motion-ease-out),
+    transform var(--motion-dur-base) var(--motion-ease-out);
+  will-change: opacity, transform;
+}
+.chrome-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Hero entrance (plays once on load) ---------- */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-enter {
+  opacity: 0;
+  animation: hero-rise var(--motion-dur-hero) var(--motion-ease-out) forwards;
+  animation-delay: var(--enter-delay, 0ms);
+}
+@keyframes hero-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-enter--zoom {
+  opacity: 0;
+  animation: hero-zoom var(--motion-dur-zoom) var(--motion-ease-out) forwards;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* ---------- Hero aurora backdrop ---------- */
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  pointer-events: none;
+  will-change: transform;
+}
+.aurora--tap {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-faint) * 100%), transparent),
+    transparent
+  );
+  animation: aurora-drift var(--motion-dur-aurora) ease-in-out infinite alternate;
+}
+.aurora--brass {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-brass) calc(var(--motion-glow-brass) * 100%), transparent),
+    transparent
+  );
+  animation: aurora-drift var(--motion-dur-aurora-alt) ease-in-out infinite alternate-reverse;
+}
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(-4%, -3%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6%, 5%, 0) scale(1.15);
+  }
+}
+
+/* Subtle dot grid behind the hero visual */
+.dot-grid {
+  background-image: radial-gradient(var(--color-hairline-strong) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(closest-side, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, black 55%, transparent 100%);
+}
+
+/* ---------- QR tile float + scan line ---------- */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.float-slow {
+  animation: float-y var(--motion-dur-float) ease-in-out infinite;
+}
+.scan-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-tap), transparent);
+  opacity: 0.9;
+  animation: scan-y var(--motion-dur-scan) var(--motion-ease-inout) infinite;
+}
+@keyframes scan-y {
+  0%,
+  100% {
+    top: 12%;
+  }
+  50% {
+    top: 86%;
+  }
+}
+
+/* ---------- Marquee ---------- */
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+}
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--motion-dur-marquee) linear infinite;
+}
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- Card hover polish (extends .bento-card) ---------- */
+.bento-card {
+  position: relative;
+}
+.bento-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--motion-dur-fast) var(--motion-ease);
+  background: radial-gradient(
+    340px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-wisp) * 100%), transparent),
+    transparent 65%
+  );
+  pointer-events: none;
+}
+.bento-card:hover::after,
+.bento-card:focus-within::after {
+  opacity: 1;
+}
+.bento-card:hover .bento-icon,
+.bento-card:focus-within .bento-icon {
+  transform: translateY(-2px) scale(1.06);
+}
+.bento-icon {
+  transition: transform var(--motion-dur-fast) var(--motion-ease-out);
+}
+
+/* Arrow nudge on card hover */
+.bento-card .card-arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity var(--motion-dur-quick) var(--motion-ease), transform var(--motion-dur-quick) var(--motion-ease);
+}
+.bento-card:hover .card-arrow,
+.bento-card:focus-within .card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---------- Hero QR mini-demo ---------- */
+.qr-tile {
+  background: rgba(255, 255, 255, 0.14);
+  transition: background var(--motion-dur-instant) var(--motion-ease), transform var(--motion-dur-instant) var(--motion-ease);
+}
+.qr-tile--lit {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.12);
+}
+.qr-card--scanning .scan-line {
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap) * 100%), transparent);
+}
+
+/* While the live menu panel is open the ambient chips step aside */
+.demo-active .demo-chip {
+  opacity: 0;
+  pointer-events: none;
+}
+.scan-line--fast {
+  animation-duration: var(--motion-dur-scan-fast);
+}
+@keyframes demo-face-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.demo-face {
+  animation: demo-face-in var(--motion-dur-base) var(--motion-ease-out);
+}
+@keyframes order-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.order-pop {
+  display: inline-block;
+  animation: order-pop var(--motion-dur-fast) var(--motion-ease-out);
+}
+
+/* ---------- Numbered steps: connector draw-in ---------- */
+.step-line {
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform var(--motion-dur-step) var(--motion-ease-out) 0.35s;
+}
+.is-visible .step-line {
+  transform: scaleX(1);
+}
+
+/* ---------- Route transition (arrival fade) ---------- */
+/* Applied to a wrapper that remounts per location (PageTransition.jsx).
+   Opacity only — a transform here would become the containing block for
+   position: fixed descendants inside pages. */
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.route-fade {
+  animation: route-fade-in var(--motion-dur-route) var(--motion-ease-out) both;
+}
+
+/* ---------- Header elevation on scroll ---------- */
+.site-header {
+  transition: box-shadow var(--motion-dur-fast) var(--motion-ease), background var(--motion-dur-fast) var(--motion-ease);
+}
+.site-header.is-scrolled {
+  box-shadow: 0 10px 30px -18px rgba(18, 21, 26, 0.25);
+}
+
+/* ---------- Reduced motion: everything static & visible ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-child,
+  .chrome-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .hero-enter,
+  .hero-enter--zoom,
+  .site-chrome--top {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .aurora,
+  .float-slow,
+  .marquee__track,
+  .scan-line {
+    animation: none !important;
+  }
+  .demo-face,
+  .order-pop,
+  .route-fade {
+    animation: none !important;
+  }
+  .scan-line {
+    display: none;
+  }
+  .step-line {
+    transform: none;
+    transition: none;
+  }
+}
