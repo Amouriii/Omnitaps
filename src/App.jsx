@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
@@ -154,6 +155,7 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
       <DevBadge />
+      <Analytics />
     </AuthProvider>
   );
 }
