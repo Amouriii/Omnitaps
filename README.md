@@ -71,6 +71,7 @@ npm run db:seed-enterprise # enterprise nav/captive/QR-menu seed via Supabase RE
 - Stripe webhooks (captive checkout) should point at `/api/v1/captive/checkout`.
 - Apply `supabase/migrations/009_apple_wallet_memberships.sql` before enabling the `apple_wallet` module. Configure Apple Wallet signing credentials server-side; the production download endpoint returns an error rather than an unsigned pass when they are absent.
 - Apply `supabase/migrations/010_loyalty_program.sql` before enabling the `loyalty` module. The migration includes tenant-scoped programs, rewards, members, an auditable point ledger, RLS, and atomic server-side earn/redeem functions.
+- Merge gate: GitHub branch protection on `main` should require the `vercel-preview-guard / verify-preview` check (from `.github/workflows/vercel-preview-guard.yml`) plus the existing CI checks. Install the Vercel GitHub app and enable Preview Deployments for pull requests so the check can pass on real preview URLs; until then the check prints a warning and does not block PRs.
 
 ## Docker
 
