@@ -41,4 +41,18 @@ export const items = [
         desc: "Guests join your network with one scan — no passwords, no front-desk calls — while you capture a verified contact.",
         col: "md:col-span-3",
     },
+    {
+        id: "apple-wallet",
+        icon: "wallet",
+        title: "Apple Wallet Memberships",
+        desc: "Issue branded QR and bar-code membership cards for rewards programs, gyms, and clubs — with live status control from one dashboard.",
+        col: "md:col-span-6",
+    },
+    {
+        id: "loyalty",
+        icon: "rewards",
+        title: "Modern Loyalty Programs",
+        desc: "Turn visits, spend, referrals, and attendance into a live points program with tiers, rewards, Wallet updates, and measurable retention.",
+        col: "md:col-span-6",
+    },
 ];

@@ -22,7 +22,7 @@ npm run setup
 ```
 This installs deps, pushes the schema, and seeds the `demo` tenant (menu, reviews, Wi‑Fi, site, chatbot) + admin user.
 
-Env names only (never put secrets in `VITE_*`): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SEED_ADMIN_*`, `SEED_TENANT_*`. Captive Wi‑Fi also needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Captive OTP delivery uses `RESEND_API_KEY` + `RESEND_EMAIL_FROM` (email codes) and `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_PHONE_NUMBER` (SMS codes); set `CAPTIVE_OTP_ECHO=1` to echo codes in dev/demo without a provider. The marketing contact form (`POST /api/contact`) persists to the `ContactMessage` table (migration `008_contact_messages.sql`) and notifies the team inbox via Resend when `RESEND_API_KEY` + `RESEND_EMAIL_FROM` are set — the destination defaults to `CONTACT_NOTIFY_EMAIL` if provided, otherwise the sender address.
+Env names only (never put secrets in `VITE_*`): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SEED_ADMIN_*`, `SEED_TENANT_*`. Captive Wi‑Fi also needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Apple Wallet membership passes use server-only `APPLE_WALLET_PASS_TYPE_ID`, `APPLE_WALLET_TEAM_ID`, `APPLE_WALLET_SIGNER_P12_BASE64`, `APPLE_WALLET_CERTIFICATE_PASSWORD`, and `APPLE_WALLET_WWDR_PEM`; do not put these in `VITE_*` variables. Pass downloads fail closed in production when signing credentials are missing. Captive OTP delivery uses `RESEND_API_KEY` + `RESEND_EMAIL_FROM` (email codes) and `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_PHONE_NUMBER` (SMS codes); set `CAPTIVE_OTP_ECHO=1` to echo codes in dev/demo without a provider. The marketing contact form (`POST /api/contact`) persists to the `ContactMessage` table (migration `008_contact_messages.sql`) and notifies the team inbox via Resend when `RESEND_API_KEY` + `RESEND_EMAIL_FROM` are set — the destination defaults to `CONTACT_NOTIFY_EMAIL` if provided, otherwise the sender address.
 
 ### 3. Go live
 ```bash
@@ -35,6 +35,8 @@ Builds, syncs env to Vercel, deploys production.
 Guest Demo Café (theme scoped by `CafeThemeGate`; chrome is portaled and fixed):
 
 - `/demo` — hub  
+- `/demo/wallet` — interactive Apple Wallet membership pass builder
+- `/demo/loyalty` — interactive loyalty program demo with points, tiers, rewards, and redemption
 - `/s/demo` — website + chatbot  
 - `/menu/demo` — public menu  
 - `/r/demo/review` · `/r/demo/wifi`  
@@ -43,6 +45,9 @@ Operator:
 
 - `/demo/dashboard` — enterprise console demo  
 - `/login` · `/admin`  
+- `/enterprise/wallet` — Apple Wallet membership operator module
+- `/enterprise/loyalty` — enterprise loyalty settings, reward catalog, members, and point activity
+- `/wallet/membership?token=…` — member-facing card landing page
 
 If Prisma is down or the demo tenant is missing, guest café APIs fall back to `api/_lib/demoCafe.js`. `/admin` still needs a real `DATABASE_URL`.
 
@@ -64,6 +69,8 @@ npm run db:seed-enterprise # enterprise nav/captive/QR-menu seed via Supabase RE
 - Guest routes stay public; `/admin` requires the seeded Supabase login **and** a working Prisma `DATABASE_URL`.
 - After changing any `VITE_*` value, run `npm run launch` (or redeploy) so the client bundle picks them up. A Docker image also needs a **rebuild** with matching `--build-arg` values.
 - Stripe webhooks (captive checkout) should point at `/api/v1/captive/checkout`.
+- Apply `supabase/migrations/009_apple_wallet_memberships.sql` before enabling the `apple_wallet` module. Configure Apple Wallet signing credentials server-side; the production download endpoint returns an error rather than an unsigned pass when they are absent.
+- Apply `supabase/migrations/010_loyalty_program.sql` before enabling the `loyalty` module. The migration includes tenant-scoped programs, rewards, members, an auditable point ledger, RLS, and atomic server-side earn/redeem functions.
 
 ## Docker
 

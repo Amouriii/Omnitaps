@@ -16,7 +16,7 @@
 | App style | React 19 + Vite 8 SPA; one Vercel Serverless Function `api/[...path].js`; Tailwind 4 |
 | Primary auth | Supabase Auth (email) |
 | Data (core product) | Postgres via **Prisma** (`prisma/schema.prisma`) — tenants, menu, reviews, wifi, website, chatbot |
-| Data (enterprise nav / captive) | **Supabase** SQL migrations under `supabase/migrations/` — enterprises, profiles, menu_items, enterprise_modules, Wi‑Fi captive tables |
+| Data (enterprise nav / captive) | **Supabase** SQL migrations under `supabase/migrations/` — enterprises, profiles, menu_items, enterprise_modules, Wi‑Fi captive tables, Apple Wallet membership tables, loyalty tables |
 | Demo tenant slug | `demo` (Prisma guest) |
 | Enterprise console slug | `demo-enterprise` |
 | Guest QR enterprise slug | `demo` (after `seed_enterprise_nav.sql`) |
@@ -47,6 +47,7 @@ Required env families:
 - `SEED_ADMIN_*`, `SEED_TENANT_*`
 - Captive Wi‑Fi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (+ per-enterprise `gateway_hmac_secret` in Supabase `enterprises`)
 - Captive OTP delivery: `RESEND_API_KEY`, `RESEND_EMAIL_FROM` (email) + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (SMS); dev/demo echo via `CAPTIVE_OTP_ECHO=1`
+- Apple Wallet signing: `APPLE_WALLET_PASS_TYPE_ID`, `APPLE_WALLET_TEAM_ID`, `APPLE_WALLET_SIGNER_P12_BASE64`, `APPLE_WALLET_CERTIFICATE_PASSWORD`, `APPLE_WALLET_WWDR_PEM`, optional `APPLE_WALLET_WEB_SERVICE_URL`
 - Contact form (`POST /api/contact`): persists to `ContactMessage` (Prisma model + migration `008_contact_messages.sql`) and notifies the team inbox via Resend — needs `RESEND_API_KEY` + `RESEND_EMAIL_FROM`, with `CONTACT_NOTIFY_EMAIL` (optional) as the destination
 - Chatbot LLM: `GROQ_API_KEY` (Groq open-source models) + optional `CHATBOT_MODEL` (default `llama-3.3-70b-versatile`); falls back to the keyword matcher when unset or failing
 - Docker **build-time** (baked into the SPA): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`--build-arg`; rebuild to change)
@@ -85,6 +86,8 @@ Required env families:
 | `/about` · `/contact` · `/careers` | Marketing pages (About / Contact / Careers) |
 | `/privacy-policy` · `/terms-of-service` | Legal pages (draft copy) |
 | `/demo` | Demo Café guest hub (menu, reviews, Wi‑Fi, website) |
+| `/demo/wallet` | Public interactive Apple Wallet membership pass builder |
+| `/demo/loyalty` | Public interactive loyalty program demo |
 | `/items/:id` | Product/module detail |
 | `/changelog` | Changelog |
 | `/menu/:tenantId` | Public QR menu (Supabase enterprise; Prisma café fallback if resolve fails — `/menu/demo` is Demo Café) |
@@ -102,6 +105,9 @@ Required env families:
 | `/wifi-guest` | Captive portal landing (public) |
 | `/wifi-guest/session` | Guest session / usage (public) |
 | `/wifi-guest/checkout` | Paid upgrade checkout (public) |
+| `/enterprise/wallet` | Apple Wallet membership program and member management (gated by `apple_wallet`) |
+| `/enterprise/loyalty` | Loyalty program settings, rewards, members, and point activity (gated by `loyalty`) |
+| `/wallet/membership?token=…` | Member-facing Apple Wallet download landing page |
 
 ### Captive / admin APIs
 
@@ -113,6 +119,9 @@ Required env families:
 | `/api/v1/admin/wifi/telemetry` | GET | Bearer + `profiles` |
 | `/api/v1/admin/insights` | GET | Bearer + `profiles`; owner monitor — Wi‑Fi connections (Supabase), live Stripe payments, orders (plan subscriptions + Prisma menu scans) |
 | `/api/v1/admin/wifi/settings` | GET, PATCH, POST, DELETE | Bearer + admin `profiles` role |
+| `/api/wallet/membership` | GET, POST, PATCH, DELETE | Bearer + enterprise profile; program/member management |
+| `/api/wallet/membership/:token` | GET | Public hash-token lookup; returns a signed `.pkpass` only when the member is active |
+| `/api/loyalty/program` | GET, POST, PATCH | Bearer + enterprise profile; loyalty program, reward, member, earn, and redemption actions |
 
 Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src/lib/auth.jsx` on session change).
 
@@ -126,7 +135,9 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 - **Wi‑Fi (captive / enterprise)** — HMAC auth, quotas, telemetry, Stripe checkout; migration `005_wifi_captive_portal.sql`; Path A adapters above
 - **Website** — pages/blocks/assets (Prisma) via `/s/:tenantId`
 - **Chatbot** — bots, knowledge, conversations (Prisma + `api/_lib/handlers/chatbotMessage.js`); guest widget is grounded in seeded HOURS/MENU/WIFI/FAQ knowledge via an open-source LLM (Groq `llama-3.3-70b-versatile`) with a keyword-matcher fallback and a generic handover. File map below.
-- **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, demo HMAC secret, sample plans, menu links)
+- **Enterprise nav** — `enterprises`, `profiles`, `enterprise_modules`, RLS via `get_user_enterprise_id()`; seed `supabase/seed_enterprise_nav.sql` (enables `wifi`, `apple_wallet`, demo HMAC secret, sample plans, menu links)
+- **Apple Wallet memberships** — migration `009_apple_wallet_memberships.sql`; tenant-scoped store/gym/club/rewards programs, member lifecycle, secure tokenized downloads, branded QR/PDF417/Code 128/Aztec barcodes, and server-side Apple signing. Public interactive demo: `/demo/wallet`.
+- **Loyalty** — migration `010_loyalty_program.sql`; tenant-scoped points programs, tiers, rewards catalog, enrolled members, auditable transactions, idempotent atomic earn/redeem RPCs, gated enterprise panel, and public demo at `/demo/loyalty`.
 
 ---
 
@@ -140,6 +151,8 @@ Admin Wi‑Fi UI reads `localStorage.omnitaps_access_token` (persisted from `src
 6. `006_qr_menu_items.sql` — QR menu items additions
 7. `007_wifi_network_otp.sql` — `wifi_devices` email / phone_number / identity_verified_at + `wifi_otp_challenges` (hashed 6‑digit codes; guest identity before free session)
 8. `008_contact_messages.sql` — `ContactMessage` for the marketing contact form (`POST /api/contact`; Prisma writes, no RLS)
+9. `009_apple_wallet_memberships.sql` — Apple Wallet programs and members
+10. `010_loyalty_program.sql` — loyalty programs, rewards, members, transactions, and atomic point functions
 
 Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavailable) or `npm run db:seed-enterprise` (`scripts/seed-enterprise.mjs`, PostgREST/Auth-Admin mirror of the same seed — no psql needed). Apply **005 before** seed if using captive plans/HMAC columns. Apply **006** before seed if you want `qr_menu_items` for `/menu/demo`. The seed upserts enterprise slug `demo` (Demo Café) plus `demo-enterprise` (console), and fills `qr_menu_items` for both when the table exists.
 
@@ -167,8 +180,9 @@ Seed: `supabase/seed_enterprise_nav.sql` (run with service role if `psql` unavai
 | Chatbot (API) | `api/_lib/handlers/chatbotMessage.js`, `api/_lib/chatbot/` (match, knowledge, prompts, future AI SDK) |
 | Auth (admin SPA / Prisma session) | `src/lib/auth.jsx` → `/api/admin/session` |
 | Auth (enterprise / profiles) | `src/context/AuthContext.tsx`, `src/services/supabaseClient.ts` |
-| Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx` |
+| Enterprise UI | `src/pages/EnterpriseConsole.tsx`, `EnterpriseWifi*.tsx`, `src/pages/LoyaltyProgram.tsx`, `src/components/console/LoyaltyProgramPanel.tsx` |
 | Guest Wi‑Fi UI | `src/pages/WifiGuest*.tsx` → `app/(portal)/wifi-guest/*`, `components/wifi/portal/*` |
+| Loyalty API | `api/_lib/handlers/loyaltyProgram.js` → `/api/loyalty/program` |
 | Module gate | `src/components/auth/ModuleGuard.tsx`, `src/components/WifiModuleGate.jsx` |
 | Menu realtime | `src/hooks/useRealtimeMenu.ts`, `src/components/menu/*` |
 | Captive route logic | `app/api/v1/captive/*`, `app/api/v1/admin/wifi/*` |
@@ -236,6 +250,13 @@ Runtime today: LLM via Groq (open-source `llama-3.3-70b-versatile`, grounded in 
 - Added `docs/QR_ORDERING_PLATFORM_PLAN.md`, a staged implementation plan for table-aware QR ordering that preserves the existing QR menu, enterprise dashboard, captive Wi-Fi, and Wi-Fi Stripe surfaces. It defines the ordering data model, RLS/security boundaries, guest pay-at-counter flow, staff queue, provider-agnostic food payments, loyalty, chatbot cart actions, mocked Wi-Fi adapter, four-developer ownership boundaries, and verification criteria; ordering remains a plan and is not yet implemented.
 - Added `pitch.md`, a Cairo-specific F&B positioning document connecting Omnitaps' owned websites, QR menus, chatbot, review funnel, Wi-Fi capture, and operator console to local discovery, platform-dependence, capability, and margin problems.
 - Updated `README.md` to document the marketing contact endpoint, `ContactMessage` persistence, Resend notification configuration, and `CONTACT_NOTIFY_EMAIL`.
+
+### 2026-09-08
+
+- Added the public interactive Wallet demo at `/demo/wallet`: visitors can switch between rewards, gym, and sports-club presets, personalize member data, change scan format, flip the pass, copy the member number, and simulate the Apple Wallet handoff. It is frontend-only and does not require auth, a live member record, or Apple signing credentials.
+- Added the modern Loyalty module: public `/demo/loyalty` demo with café, fitness, and club presets; Supabase migration `010_loyalty_program.sql` with RLS, reward/member/transaction tables, and atomic idempotent earn/redeem functions; `/api/loyalty/program`; enterprise console Loyalty tab/panel; and seed support for the `loyalty` module plus Harbor Lane rewards.
+
+- Added the Apple Wallet membership module: Supabase migration `009_apple_wallet_memberships.sql`, `apple_wallet` enterprise module seed, secure operator API at `/api/wallet/membership`, server-side `.pkpass` packaging/signing with QR/PDF417/Code 128/Aztec barcode support, and the `/enterprise/wallet` management UI plus member landing route `/wallet/membership?token=…`. Production pass downloads fail closed until Apple signing credentials are configured; member token hashes are stored instead of raw tokens.
 
 ### 2026-09-07
 

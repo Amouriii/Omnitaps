@@ -81,16 +81,41 @@ BEGIN
     (
       v_enterprise_id, NULL, 'Wi-Fi Plans', '/enterprise/wifi/plans', 'CreditCard', 6, TRUE,
       ARRAY['super_admin','enterprise_admin']::public.user_role[]
+    ),
+    (
+      v_enterprise_id, NULL, 'Apple Wallet', '/enterprise', 'CreditCard', 7, TRUE,
+      ARRAY['super_admin','enterprise_admin']::public.user_role[]
+    ),
+    (
+      v_enterprise_id, NULL, 'Loyalty', '/enterprise/loyalty', 'Gift', 8, TRUE,
+      ARRAY['super_admin','enterprise_admin']::public.user_role[]
     );
 
   INSERT INTO public.enterprise_modules (enterprise_id, module_key, is_enabled, settings)
   VALUES
     (v_enterprise_id, 'nav_console', TRUE, '{"label":"Enterprise Nav Console"}'::jsonb),
-    (v_enterprise_id, 'wifi', TRUE, '{"label":"Captive Wi-Fi Portal"}'::jsonb)
+    (v_enterprise_id, 'wifi', TRUE, '{"label":"Captive Wi-Fi Portal"}'::jsonb),
+    (v_enterprise_id, 'apple_wallet', TRUE, '{"label":"Apple Wallet Membership"}'::jsonb),
+    (v_enterprise_id, 'loyalty', TRUE, '{"label":"Loyalty Program"}'::jsonb)
   ON CONFLICT (enterprise_id, module_key) DO UPDATE
     SET is_enabled = EXCLUDED.is_enabled,
         settings = EXCLUDED.settings,
         updated_at = NOW();
+
+  INSERT INTO public.loyalty_programs (enterprise_id, name, points_name, earn_rate, welcome_points, primary_color)
+  VALUES (v_enterprise_id, 'Harbor Lane Rewards', 'beans', 1.00, 500, '#c45c26')
+  ON CONFLICT (enterprise_id) DO UPDATE SET name = EXCLUDED.name, points_name = EXCLUDED.points_name, earn_rate = EXCLUDED.earn_rate, welcome_points = EXCLUDED.welcome_points, primary_color = EXCLUDED.primary_color, updated_at = NOW();
+
+  INSERT INTO public.loyalty_rewards (program_id, name, description, value_text, points_cost, sort_order)
+  SELECT lp.id, r.name, r.description, r.value_text, r.points_cost, r.sort_order
+  FROM public.loyalty_programs lp
+  CROSS JOIN (VALUES
+    ('Free pastry', 'Any pastry from the counter', 'A little something sweet', 1200, 0),
+    ('$5 off', 'Your next visit', 'Save on your next order', 2000, 1),
+    ('Secret menu', 'Unlock a seasonal drink', 'For members only', 3000, 2)
+  ) AS r(name, description, value_text, points_cost, sort_order)
+  WHERE lp.enterprise_id = v_enterprise_id
+    AND NOT EXISTS (SELECT 1 FROM public.loyalty_rewards existing WHERE existing.program_id = lp.id AND existing.name = r.name);
 
   -- Captive portal demo secret (override in production)
   UPDATE public.enterprises

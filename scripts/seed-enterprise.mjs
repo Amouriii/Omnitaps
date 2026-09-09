@@ -82,6 +82,8 @@ const NAV_ITEMS = [
   ["Wi-Fi Captive", "/enterprise/wifi", "Wifi", 4],
   ["Wi-Fi Settings", "/enterprise/wifi/settings", "Settings", 5],
   ["Wi-Fi Plans", "/enterprise/wifi/plans", "CreditCard", 6],
+  ["Apple Wallet", "/enterprise", "CreditCard", 7],
+  ["Loyalty", "/enterprise/loyalty", "Gift", 8],
 ].map(([label, urlPath, iconName, sortOrder]) => ({
   label,
   url_path: urlPath,
@@ -183,10 +185,12 @@ async function main() {
     })),
   });
 
-  // Modules: nav_console + wifi.
+  // Modules: nav_console + wifi + wallet + loyalty.
   for (const [moduleKey, label] of [
     ["nav_console", "Enterprise Nav Console"],
     ["wifi", "Captive Wi-Fi Portal"],
+    ["apple_wallet", "Apple Wallet Membership"],
+    ["loyalty", "Loyalty Program"],
   ]) {
     await rest("POST", "enterprise_modules", {
       query: `?on_conflict=enterprise_id,module_key`,
@@ -197,6 +201,22 @@ async function main() {
         settings: { label },
       },
     });
+  }
+
+  const loyaltyProgram = await rest("POST", "loyalty_programs", {
+    query: `?on_conflict=enterprise_id`,
+    body: { enterprise_id: enterpriseId, name: "Harbor Lane Rewards", points_name: "beans", earn_rate: 1, welcome_points: 500, primary_color: "#c45c26", is_active: true },
+  });
+  const loyaltyProgramId = loyaltyProgram?.[0]?.id;
+  if (loyaltyProgramId) {
+    const existingRewards = await rest("GET", "loyalty_rewards", { query: `?program_id=eq.${loyaltyProgramId}&select=name` });
+    const rewardNames = new Set((existingRewards || []).map((reward) => reward.name));
+    const defaultRewards = [
+      { name: "Free pastry", description: "Any pastry from the counter", value_text: "A little something sweet", points_cost: 1200, sort_order: 0 },
+      { name: "$5 off", description: "Your next visit", value_text: "Save on your next order", points_cost: 2000, sort_order: 1 },
+      { name: "Secret menu", description: "Unlock a seasonal drink", value_text: "For members only", points_cost: 3000, sort_order: 2 },
+    ].filter((reward) => !rewardNames.has(reward.name));
+    if (defaultRewards.length) await rest("POST", "loyalty_rewards", { body: defaultRewards.map((reward) => ({ program_id: loyaltyProgramId, ...reward, is_active: true })) });
   }
 
   // Captive defaults. Only set a demo HMAC secret when none exists, so a

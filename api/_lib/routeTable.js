@@ -16,6 +16,9 @@ export function createJsRoutes() {
     { pattern: "/api/chatbot/message", load: () => import("./handlers/chatbotMessage.js") },
     { pattern: "/api/admin/session", load: () => import("./handlers/adminSession.js") },
     { pattern: "/api/admin/overview", load: () => import("./handlers/adminOverview.js") },
+    { pattern: "/api/wallet/membership/:token", load: () => import("./handlers/appleWalletMembership.js") },
+    { pattern: "/api/wallet/membership", load: () => import("./handlers/appleWalletMembership.js") },
+    { pattern: "/api/loyalty/program", load: () => import("./handlers/loyaltyProgram.js") },
   ];
 }
 

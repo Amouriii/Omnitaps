@@ -12,6 +12,8 @@ import { DynamicMenu } from "../components/menu/DynamicMenu";
 import { MenuEditor } from "../components/menu/MenuEditor";
 import { ModuleGuard } from "../components/auth/ModuleGuard";
 import OwnerInsights from "../components/console/OwnerInsights";
+import WalletMembershipPanel from "../components/console/WalletMembershipPanel";
+import LoyaltyProgramPanel from "../components/console/LoyaltyProgramPanel";
 import { fetchMenuItems } from "../services/menuService";
 import {
   getSupabaseClient,
@@ -19,11 +21,13 @@ import {
 } from "../services/supabaseClient";
 import type { EnterpriseModule, Profile, UserRole } from "../types";
 
-type ConsoleTab = "overview" | "menu" | "modules" | "insights";
+type ConsoleTab = "overview" | "menu" | "modules" | "insights" | "wallet" | "loyalty";
 
 const MODULE_LABELS: Record<string, string> = {
   nav_console: "Dashboard",
   wifi: "Wi‑Fi",
+  apple_wallet: "Apple Wallet",
+  loyalty: "Loyalty",
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -284,6 +288,8 @@ export default function EnterpriseConsole() {
     { id: "menu", label: "Menu" },
     { id: "modules", label: "Modules" },
     { id: "insights", label: "Insights" },
+    { id: "wallet", label: "Wallet" },
+    { id: "loyalty", label: "Loyalty" },
   ];
 
   const greeting = profile.first_name
@@ -367,6 +373,20 @@ export default function EnterpriseConsole() {
               >
                 Insights
               </button>
+              <button
+                type="button"
+                onClick={() => setTab("wallet")}
+                className="rounded-xl px-3 py-2 text-left text-[13px] font-medium text-ink-muted hover:bg-porcelain hover:text-ink"
+              >
+                Apple Wallet
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("loyalty")}
+                className="rounded-xl px-3 py-2 text-left text-[13px] font-medium text-ink-muted hover:bg-porcelain hover:text-ink"
+              >
+                Loyalty
+              </button>
             </div>
           </aside>
 
@@ -434,6 +454,13 @@ export default function EnterpriseConsole() {
                       >
                         Open Demo Café
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => setTab("loyalty")}
+                        className="rounded-xl border border-hairline bg-porcelain px-5 py-2.5 text-[14px] font-semibold hover:border-hairline-strong"
+                      >
+                        Open Loyalty
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -538,6 +565,34 @@ export default function EnterpriseConsole() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {tab === "wallet" && (
+              <ModuleGuard
+                moduleKey="apple_wallet"
+                enterpriseId={profile.enterprise_id}
+                fallback={
+                  <ConsoleStatusCard eyebrow="Unavailable" title="Apple Wallet isn’t turned on">
+                    <p>An enterprise admin needs to enable the Apple Wallet module before membership cards can be issued.</p>
+                  </ConsoleStatusCard>
+                }
+              >
+                <WalletMembershipPanel enterpriseId={profile.enterprise_id} role={profile.role} />
+              </ModuleGuard>
+            )}
+
+            {tab === "loyalty" && (
+              <ModuleGuard
+                moduleKey="loyalty"
+                enterpriseId={profile.enterprise_id}
+                fallback={
+                  <ConsoleStatusCard eyebrow="Unavailable" title="Loyalty isn’t turned on">
+                    <p>An enterprise admin needs to enable the Loyalty module before rewards can be configured.</p>
+                  </ConsoleStatusCard>
+                }
+              >
+                <LoyaltyProgramPanel enterpriseId={profile.enterprise_id} role={profile.role} />
+              </ModuleGuard>
             )}
 
             {tab === "insights" && (

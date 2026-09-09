@@ -65,6 +65,19 @@ const icons = {
             <rect x="16.5" y="3.5" width="4.2" height="4.2" rx="0.7" strokeWidth="1.2" />
         </svg>
     ),
+    wallet: (p) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+            <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H19a1 1 0 0 1 1 1v13H6.5A2.5 2.5 0 0 1 4 16.5z" />
+            <path d="M4 8h14a2 2 0 0 1 2 2v6H6.5A2.5 2.5 0 0 0 4 18.5" />
+            <circle cx="16.5" cy="12" r="1" fill="currentColor" stroke="none" />
+        </svg>
+    ),
+    rewards: (p) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+            <path d="M8 4h8v4H8zM6 8h12v4a6 6 0 0 1-12 0z" />
+            <path d="M12 18v3M9 21h6M6 10H4a2 2 0 0 0 0 4h2M18 10h2a2 2 0 0 1 0 4h-2" />
+        </svg>
+    ),
 };
 
 /* ================================================================== */

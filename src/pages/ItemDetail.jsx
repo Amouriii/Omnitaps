@@ -29,6 +29,16 @@ const MODULE_DEMOS = {
     label: "Open Wi‑Fi QR demo",
     blurb: "Preview instant QR Wi‑Fi join for the demo tenant.",
   },
+  "apple-wallet": {
+    href: "/demo/wallet",
+    label: "Open Wallet demo",
+    blurb: "Build a live membership pass preview for a rewards program, gym, or sports club.",
+  },
+  loyalty: {
+    href: "/demo/loyalty",
+    label: "Open loyalty demo",
+    blurb: "Explore points, tiers, rewards, member activity, and a simulated redemption flow.",
+  },
 };
 
 export default function ItemDetail() {

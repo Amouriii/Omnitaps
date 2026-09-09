@@ -10,6 +10,20 @@ const CARDS = [
     body: "The scan → live menu → order-tally loop your guests trigger from the table sticker — now on its own page.",
   },
   {
+    to: "/demo/wallet",
+    label: "Wallet membership",
+    eyebrow: "Apple Wallet",
+    title: "Membership pass builder",
+    body: "Switch between rewards, gym, and sports-club cards, personalize the member, and preview the scan experience live.",
+  },
+  {
+    to: "/demo/loyalty",
+    label: "Loyalty program",
+    eyebrow: "Retention",
+    title: "Points & rewards engine",
+    body: "Add a visit, move toward the next tier, browse rewards, and simulate redemption across café, gym, and club presets.",
+  },
+  {
     to: "/menu/demo",
     label: "Menu",
     eyebrow: "QR menu",

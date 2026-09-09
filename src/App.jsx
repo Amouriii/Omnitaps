@@ -6,6 +6,7 @@ import RequireAuth from "./components/RequireAuth";
 import CafeThemeGate from "./components/demo/CafeThemeGate";
 import { AuthProvider } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
+import DevBadge from "./components/DevBadge";
 import PageTransition from "./components/PageTransition";
 import "./App.css";
 
@@ -26,26 +27,50 @@ const WifiGuestCheckout = lazy(() => import("./pages/WifiGuestCheckout"));
 const EnterpriseWifiDashboard = lazy(() => import("./pages/EnterpriseWifiDashboard"));
 const EnterpriseWifiSettings = lazy(() => import("./pages/EnterpriseWifiSettings"));
 const EnterpriseWifiPlans = lazy(() => import("./pages/EnterpriseWifiPlans"));
+const WalletMembership = lazy(() => import("./pages/WalletMembership"));
+const WalletMember = lazy(() => import("./pages/WalletMember"));
+const WalletDemo = lazy(() => import("./pages/WalletDemo"));
+const LoyaltyDemo = lazy(() => import("./pages/LoyaltyDemo"));
+const LoyaltyProgram = lazy(() => import("./pages/LoyaltyProgram"));
 const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
 const DemoHub = lazy(() => import("./pages/DemoHub"));
 const QrDemo = lazy(() => import("./pages/QrDemo"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Careers = lazy(() => import("./pages/Careers"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 function ScrollManager() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+
   useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) {
+        el.scrollIntoView({ behavior: "instant" });
+        return;
+      }
+    }
     window.scrollTo(0, 0);
-  }, [pathname]);
+  }, [location]);
+
   return null;
+}
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-porcelain text-ink-muted" role="status">
+      Loading…
+    </div>
+  );
 }
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Suspense>
+        <Suspense fallback={<RouteFallback />}>
           <CafeThemeGate>
             <ScrollManager />
             <ErrorBoundary>
@@ -60,10 +85,55 @@ export default function App() {
             <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
             <Route path="/demo" element={<DemoHub />} />
             <Route path="/demo/qr" element={<QrDemo />} />
+            <Route path="/demo/wallet" element={<WalletDemo />} />
+            <Route path="/demo/loyalty" element={<LoyaltyDemo />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<Careers />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/s/:tenantId" element={<WebsitePreview />} />
             <Route path="/login" element={<Login />} />
+            {/* Captive portal (public guest) */}
+            <Route path="/wifi-guest" element={<WifiGuestLanding />} />
+            <Route path="/wifi-guest/session" element={<WifiGuestSession />} />
+            <Route path="/wifi-guest/checkout" element={<WifiGuestCheckout />} />
+            <Route path="/wallet/membership" element={<WalletMember />} />
+            {/* Enterprise dashboard demo */}
+            <Route path="/demo/dashboard" element={<EnterpriseConsole />} />
+            <Route path="/enterprise" element={<Navigate to="/demo/dashboard" replace />} />
+            <Route
+              path="/enterprise/wifi"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiDashboard />
+                </WifiModuleGate>
+              }
+            />
+            <Route
+              path="/enterprise/wifi/settings"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiSettings />
+                </WifiModuleGate>
+              }
+            />
+            <Route
+              path="/enterprise/wifi/plans"
+              element={
+                <WifiModuleGate>
+                  <EnterpriseWifiPlans />
+                </WifiModuleGate>
+              }
+            />
+            <Route
+              path="/enterprise/wallet"
+              element={<WalletMembership />}
+            />
+            <Route
+              path="/enterprise/loyalty"
+              element={<LoyaltyProgram />}
+            />
             <Route
               path="/admin"
               element={
@@ -72,6 +142,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="/admin/menu" element={<AdminMenuPage />} />
             <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
@@ -80,6 +151,7 @@ export default function App() {
           </CafeThemeGate>
         </Suspense>
       </BrowserRouter>
+      <DevBadge />
     </AuthProvider>
   );
 }
