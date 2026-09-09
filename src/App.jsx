@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/RequireAuth";
 import CafeThemeGate from "./components/demo/CafeThemeGate";
+import FaviconManager from "./components/FaviconManager";
 import { AuthProvider } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DevBadge from "./components/DevBadge";
@@ -73,6 +74,7 @@ export default function App() {
         <Suspense fallback={<RouteFallback />}>
           <CafeThemeGate>
             <ScrollManager />
+            <FaviconManager />
             <ErrorBoundary>
               <PageTransition>
               <Routes>

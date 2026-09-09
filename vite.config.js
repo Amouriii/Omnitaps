@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createViteApiMiddleware } from "./api/_lib/viteAdapter.js";
+import { pwaIconsPlugin } from "./scripts/pwaIconsPlugin.mjs";
 import { wrapWebHandlers } from "./api/_lib/webHandlerAdapter.js";
 import { createJsRoutes, V1_SPECS } from "./api/_lib/routeTable.js";
 
@@ -57,5 +58,5 @@ function warmDatabasePool() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), omnitapsLocalApiPlugin()],
+  plugins: [react(), tailwindcss(), omnitapsLocalApiPlugin(), pwaIconsPlugin()],
 });

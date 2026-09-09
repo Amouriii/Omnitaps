@@ -13,3 +13,10 @@ dist
 .obsidian/
 .claude/
 test-results/
+
+# PWA icons are generated from src/brand/logoMark.ts at dev/build time
+# (scripts/pwaIconsPlugin.mjs) — commit source, not artifacts.
+public/favicon*.svg
+public/*.png
+public/*.ico
+.icon-gen-stamp.json
