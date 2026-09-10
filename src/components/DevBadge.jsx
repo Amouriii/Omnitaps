@@ -1,6 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 
 const REFRESH_MS = 500;
+const TOGGLE_KEY = "devbadge-visible";
+
+function isDev() {
+  return import.meta.env.DEV;
+}
+
+function readStoredPrefs() {
+  if (!isDev()) return { visible: false };
+  try {
+    const raw = window.localStorage.getItem("devbadge-prefs");
+    if (!raw) return { visible: false };
+    const parsed = JSON.parse(raw);
+    return { visible: Boolean(parsed.visible) };
+  } catch {
+    return { visible: false };
+  }
+}
+
+function writePrefs(prefs) {
+  if (!isDev()) return;
+  try {
+    window.localStorage.setItem("devbadge-prefs", JSON.stringify(prefs));
+  } catch {
+    /* noop */
+  }
+}
 
 /**
  * Dev-only HUD badge showing whether the page is actually rendering frames
@@ -8,14 +34,16 @@ const REFRESH_MS = 500;
  * BeginFrames when the Preview tab is occluded, which freezes every
  * frame-gated API (rAF, scroll events, IntersectionObserver) and makes
  * screenshots stale — this badge makes that state visible at a glance
- * instead of forcing a probe. No-ops outside `import.meta.env.DEV`.
+ * instead of forcing a probe. Hidden by default; toggle with Ctrl/Cmd+Shift+D
+ * or the badge itself. Persists choice in localStorage. No-ops outside dev.
  */
 export default function DevBadge() {
   const [state, setState] = useState({ fps: null, visibility: null, hasFocus: null });
+  const [visible, setVisible] = useState(() => readStoredPrefs().visible);
   const frames = useRef(0);
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return undefined;
+    if (!isDev()) return undefined;
 
     let raf = 0;
     let warmup = true;
@@ -37,8 +65,6 @@ export default function DevBadge() {
 
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        // Leaving occlusion restarts BeginFrames; drop the first partial
-        // window so the rate shown isn't a transient low sample.
         warmup = true;
         frames.current = 0;
       }
@@ -54,10 +80,32 @@ export default function DevBadge() {
     };
   }, []);
 
-  if (!import.meta.env.DEV) return null;
+  useEffect(() => {
+    if (!isDev()) return undefined;
+
+    const handleKey = (event) => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.shiftKey &&
+        (event.key === "d" || event.key === "D")
+      ) {
+        event.preventDefault();
+        setVisible((v) => {
+          const next = !v;
+          writePrefs({ visible: next });
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  if (!isDev() || !visible) return null;
 
   const { fps, visibility, hasFocus } = state;
-  const occluded = fps !== null && fps < 5; // hidden pages get 0 BeginFrames
+  const occluded = fps !== null && fps < 5;
   const tone = visibility === "hidden" || occluded ? "bg-red-600" : "bg-emerald-600";
   const fpsText =
     fps === null ? "…" : occluded ? "0 (occluded)" : String(fps);
@@ -65,9 +113,10 @@ export default function DevBadge() {
   return (
     <div
       data-devbadge="1"
-      title="Dev badge: page visibility + rAF rate. 0 fps = preview occluded (frame-gated APIs frozen)."
+      title="Dev badge: page visibility + rAF rate. 0 fps = preview occluded. Toggle: Ctrl/Cmd+Shift+D"
       className={`fixed bottom-2 left-2 z-[9999] flex items-center gap-x-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] leading-none text-white shadow-lg ${tone}`}
-      style={{ pointerEvents: "none" }}
+      style={{ pointerEvents: "auto" }}
+      onClick={() => setVisible(false)}
     >
       <span aria-hidden="true">◉</span>
       <span>{fpsText} fps</span>

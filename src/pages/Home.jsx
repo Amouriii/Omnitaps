@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { items as SERVICES } from "../data/items";
 import LogoMark from "../components/LogoMark";
+import ThemeToggle from "../components/ThemeToggle";
 import SiteFooter from "../components/SiteFooter";
 import useScrollReveal, { useBentoPointerGlow } from "../hooks/useScrollReveal";
 import HeroMenuDemo from "../components/home/HeroMenuDemo";
+import HeroCommerceVisual from "../components/home/HeroCommerceVisual";
+import OmnitapsIntro from "../components/home/OmnitapsIntro";
 
 /* ================================================================== */
 /*  Logo                                                               */
@@ -158,7 +161,9 @@ export default function Home() {
     const child = (i) => ({ "--child-delay": `${i * 90}ms` });
 
     return (
-        <div id="top" ref={rootRef} className="min-h-screen w-full bg-porcelain text-ink font-body">
+        <>
+            <OmnitapsIntro />
+            <div id="top" ref={rootRef} className="min-h-screen w-full bg-porcelain text-ink font-body">
             <a href="#main" className="sr-only focus:not-sr-only absolute left-4 top-4 z-50 bg-surface/95 text-sm rounded-md px-3 py-2">Skip to content</a>
             {/* ---------------- NAV ---------------- */}
             <header className={`site-chrome--top site-header sticky top-0 z-40 border-b border-hairline bg-porcelain/85 backdrop-blur ${scrolled ? "is-scrolled" : ""}`}>
@@ -177,6 +182,7 @@ export default function Home() {
                     </nav>
 
                     <div className="hidden md:flex items-center gap-4">
+                        <ThemeToggle />
                         <Link to="/login" className="nav-link text-[15px]">
                             Admin
                         </Link>
@@ -206,6 +212,9 @@ export default function Home() {
 
                 {mobileOpen && (
                     <div id="mobile-menu" className="md:hidden border-t border-hairline bg-porcelain px-5 pb-6 pt-2">
+                        <div className="flex items-center justify-between mb-4">
+                            <ThemeToggle />
+                        </div>
                         <nav aria-label="Primary" className="flex flex-col gap-1">
                             {NAV_LINKS.map((l, idx) => (
                                 <a
@@ -295,29 +304,11 @@ export default function Home() {
                                 </div>
                             </div>
 
-                            {/* Signature tap-ripple visual with the live QR mini-demo */}
-                            <div className={`hero-enter--zoom relative flex items-center justify-center h-80 sm:h-96 md:h-[26rem] ${demoPhase !== "idle" && demoPhase !== "scanning" ? "demo-active" : ""}`} style={enter(2)}>
-                                <div className="absolute inset-6 dot-grid rounded-full" aria-hidden="true" />
-                                <div className="ripple-ring w-40 h-40" />
-                                <div className="ripple-ring delay-1 w-64 h-64" />
-                                <div className="ripple-ring delay-2 w-[22rem] h-[22rem]" />
-
-                                <HeroMenuDemo tenantId="demo" onPhaseChange={setDemoPhase} />
-
-                                <div
-                                    className="float-slow absolute z-10 top-[16%] left-[2%] rounded-full border border-hairline bg-surface/90 backdrop-blur px-3.5 py-1.5 text-[12px] font-medium text-ink shadow-[0_10px_24px_-14px_rgba(18,21,26,0.4)] transition-opacity duration-500 demo-chip"
-                                    style={{ animationDelay: "1.2s" }}
-                                >
-                                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-tap align-middle" aria-hidden="true" />
-                                    Wi‑Fi connected
-                                </div>
-                                <div
-                                    className="float-slow absolute z-10 bottom-[14%] right-[0%] rounded-full border border-hairline bg-surface/90 backdrop-blur px-3.5 py-1.5 text-[12px] font-medium text-ink shadow-[0_10px_24px_-14px_rgba(18,21,26,0.4)] transition-opacity duration-500 demo-chip"
-                                    style={{ animationDelay: "2.4s" }}
-                                >
-                                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brass align-middle" aria-hidden="true" />
-                                    Review received
-                                </div>
+                            {/* Connected-commerce visual with the live QR menu mini-demo */}
+                            <div className="hero-enter--zoom relative h-[26rem] sm:h-96 md:h-[26rem]" style={enter(2)}>
+                                <HeroCommerceVisual phase={demoPhase}>
+                                    <HeroMenuDemo tenantId="demo" onPhaseChange={setDemoPhase} />
+                                </HeroCommerceVisual>
                             </div>
                         </div>
                     </div>
@@ -456,6 +447,7 @@ export default function Home() {
             </main>
 
             <SiteFooter />
-        </div>
+            </div>
+        </>
     );
 }
