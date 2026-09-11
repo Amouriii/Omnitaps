@@ -28,7 +28,7 @@ html.cafe-intro-active {
   background-color: var(--color-porcelain);
   color: var(--color-ink);
   font-family: var(--font-body);
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 .demo-cafe-theme ::selection {
@@ -69,20 +69,9 @@ html.cafe-intro-active {
   right: 0 !important;
   width: 100% !important;
   z-index: 70;
-  background: #f3eadc;
-  border-bottom: 1px solid #e4d4c0;
+  background: var(--color-porcelain);
+  border-bottom: 1px solid var(--color-hairline);
   padding-top: env(safe-area-inset-top, 0px);
-}
-
-.demo-chrome-bar::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: 100vh;
-  background: #f3eadc;
-  pointer-events: none;
 }
 
 .cafe-hero-panel {
@@ -760,11 +749,20 @@ html.cafe-intro-active {
   background: #c4a35a;
 }
 
-.cafe-intro__cup-wrap {
+.cafe-intro__pour-scene {
   position: relative;
+  width: 15rem;
+  height: 11rem;
+  margin-top: 0.75rem;
+}
+
+.cafe-intro__cup-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
   width: 8rem;
   height: 8.4rem;
-  margin-top: 1rem;
+  transform: translateX(-50%);
 }
 
 .cafe-intro__cup {
@@ -787,11 +785,28 @@ html.cafe-intro-active {
   height: 0;
   background: linear-gradient(180deg, #c45c26, #9a3f16);
   border-radius: 0.6rem 0.6rem 0 0;
-  animation: cafe-intro-fill var(--motion-dur-fill) var(--motion-dur-snappy) var(--motion-ease-cafe-out) forwards;
+  animation: cafe-intro-fill var(--motion-dur-fill) 0.55s var(--motion-ease-cafe-out) forwards;
 }
 
 @keyframes cafe-intro-fill {
   to { height: 76%; }
+}
+
+.cafe-intro__cup-foam {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: 66%;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #f2d7b3;
+  opacity: 0;
+  transform: scaleX(0.4);
+  animation: cafe-intro-foam 0.9s 2.8s var(--motion-ease-cafe-spring) forwards;
+}
+
+@keyframes cafe-intro-foam {
+  to { opacity: 0.9; transform: scaleX(1); }
 }
 
 .cafe-intro__cup-handle {
@@ -805,6 +820,78 @@ html.cafe-intro-active {
   border-radius: 0 1.3rem 1.3rem 0;
 }
 
+.cafe-intro__pitcher {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.35rem;
+  width: 4.7rem;
+  height: 5.4rem;
+  transform: rotate(16deg) translateY(-0.5rem);
+  transform-origin: 72% 84%;
+  animation: cafe-intro-pitcher-pour 2.5s 1.8s var(--motion-ease-cafe-out) forwards;
+  z-index: 2;
+}
+
+.cafe-intro__pitcher-body {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0;
+  width: 3.55rem;
+  height: 4.35rem;
+  border: 2px solid rgba(250, 244, 234, 0.82);
+  border-radius: 0.55rem 0.55rem 1.35rem 1.35rem;
+  background: linear-gradient(145deg, rgba(250, 244, 234, 0.17), rgba(196, 163, 90, 0.26));
+  box-shadow: inset 0 -0.7rem 0 rgba(196, 92, 38, 0.18);
+}
+
+.cafe-intro__pitcher-handle {
+  position: absolute;
+  right: -0.85rem;
+  top: 0.75rem;
+  width: 1.55rem;
+  height: 2.4rem;
+  border: 2px solid rgba(250, 244, 234, 0.7);
+  border-left: 0;
+  border-radius: 0 1.1rem 1.1rem 0;
+}
+
+.cafe-intro__pitcher-spout {
+  position: absolute;
+  left: -1.05rem;
+  bottom: 3.45rem;
+  width: 1.65rem;
+  height: 0.75rem;
+  border-top: 2px solid rgba(250, 244, 234, 0.82);
+  transform: rotate(-27deg);
+  transform-origin: right center;
+}
+
+@keyframes cafe-intro-pitcher-pour {
+  0%, 25% { transform: rotate(16deg) translateY(-0.5rem); }
+  42%, 78% { transform: rotate(42deg) translate(-1.5rem, 1.25rem); }
+  100% { transform: rotate(16deg) translateY(-0.5rem); }
+}
+
+.cafe-intro__milk-stream {
+  position: absolute;
+  top: 4.1rem;
+  left: calc(50% + 0.35rem);
+  width: 0.24rem;
+  height: 0;
+  border-radius: 999px;
+  background: #f7ead8;
+  box-shadow: 0 0 0 0.14rem rgba(250, 244, 234, 0.08);
+  transform-origin: top center;
+  animation: cafe-intro-milk-pour 2.5s 2.85s ease-in-out forwards;
+  z-index: 1;
+}
+
+@keyframes cafe-intro-milk-pour {
+  0%, 15% { height: 0; opacity: 0; }
+  25%, 78% { height: 4.3rem; opacity: 0.92; }
+  100% { height: 0; opacity: 0; }
+}
+
 .cafe-intro__steam {
   position: absolute;
   bottom: 6.4rem;
@@ -813,11 +900,12 @@ html.cafe-intro-active {
   border-radius: 999px;
   background: rgba(250, 244, 234, 0.5);
   animation: cafe-intro-steam var(--motion-dur-steam-intro) ease-out infinite;
+  z-index: 3;
 }
 
-.cafe-intro__steam:nth-child(1) { left: 38%; animation-delay: 0.2s; }
-.cafe-intro__steam:nth-child(2) { left: 50%; animation-delay: 0.9s; }
-.cafe-intro__steam:nth-child(3) { left: 62%; animation-delay: 1.6s; }
+.cafe-intro__steam--one { left: 38%; animation-delay: 0.2s; }
+.cafe-intro__steam--two { left: 50%; animation-delay: 0.9s; }
+.cafe-intro__steam--three { left: 62%; animation-delay: 1.6s; }
 
 @keyframes cafe-intro-steam {
   0% { opacity: 0; transform: translateY(10px) scaleY(0.8); }
@@ -916,6 +1004,9 @@ html.cafe-intro-active {
 @media (prefers-reduced-motion: reduce) {
   .cafe-intro::after,
   .cafe-intro__cup-fill,
+  .cafe-intro__cup-foam,
+  .cafe-intro__pitcher,
+  .cafe-intro__milk-stream,
   .cafe-intro__inner,
   .cafe-intro__letter,
   .cafe-intro__rule,
@@ -933,6 +1024,16 @@ html.cafe-intro-active {
 
   .cafe-intro__cup-fill {
     height: 76%;
+  }
+
+  .cafe-intro__cup-foam {
+    opacity: 0.9;
+    transform: scaleX(1);
+  }
+
+  .cafe-intro__pitcher,
+  .cafe-intro__milk-stream {
+    animation: none !important;
   }
 
   .cafe-reveal,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LogoMark from "./LogoMark";
+import ThemeToggle from "./ThemeToggle";
 
 /**
  * @param {object} props
@@ -36,6 +37,7 @@ export default function SiteHeader({ ctaHref = null, showTryDemos = true }) {
                             Try demos
                         </Link>
                     )}
+                    <ThemeToggle />
                     {ctaHref ? (
                         <a
                             href={ctaHref}

@@ -79,9 +79,10 @@ export default function PrismaPublicMenu({ data, loading, error }) {
             {category.items.map((item, itemIndex) => {
               const soldOut = item.isAvailable === false;
               return (
-                <li
+                <CafeReveal
+                  as="li"
                   key={item.id}
-                  style={{ "--reveal-delay": `${Math.min(itemIndex * 60, 360)}ms` }}
+                  delay={Math.min(itemIndex * 60, 360)}
                   className={`cafe-menu-row -mx-2 border-b border-hairline px-2 pb-5 last:border-b-0 last:pb-0 ${soldOut ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -111,7 +112,7 @@ export default function PrismaPublicMenu({ data, loading, error }) {
                       {item.price}
                     </span>
                   </div>
-                </li>
+                </CafeReveal>
               );
             })}
           </ul>

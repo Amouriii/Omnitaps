@@ -1,0 +1,148 @@
+/* ------------------------------------------------------------------ */
+/*  Dark mode — overrides for Omnitaps marketing/product pages only.  */
+/*  Demo Café guest routes keep their own scoped brand (demoCafe.css) */
+/*  and are not restyled by this layer.                               */
+/* ------------------------------------------------------------------ */
+
+/* Dark mode color tokens — inverted porcelain/surface/ink palette
+   that keeps the same indigo tap + brass accents so brand identity
+   stays coherent. */
+[data-theme="dark"] {
+  --color-porcelain: #0f1115;
+  --color-surface: #181b21;
+  --color-ink: #f1f3f6;
+  --color-ink-muted: #9ca3af;
+  --color-ink-faint: #6b7280;
+
+  --color-tap: #3b82f6;
+  --color-tap-dark: #60a5fa;
+  --color-tap-soft: #1e293b;
+
+  --color-brass: #d4a857;
+  --color-brass-dark: #f0c063;
+  --color-brass-soft: #2a2520;
+
+  --color-hairline: #2a2e38;
+  --color-hairline-strong: #3a3f4a;
+}
+
+/* Apply dark mode to the document when the data attribute is present */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Backdrop blurs on floating chrome need a darker base so the
+   porcelain/85 tint reads correctly in dark mode. */
+[data-theme="dark"] .site-header,
+[data-theme="dark"] .site-footer {
+  background-color: color-mix(in srgb, var(--color-porcelain) 85%, transparent);
+}
+
+/* Glass / surface-tinted panels used across the site */
+[data-theme="dark"] .bg-surface,
+[data-theme="dark"] .bg-surface\/60,
+[data-theme="dark"] .bg-surface\/90,
+[data-theme="dark"] .bg-surface\/95 {
+  background-color: var(--color-surface) !important;
+}
+
+/* Transparent hairline borders on surface cards */
+[data-theme="dark"] .border-hairline {
+  border-color: var(--color-hairline);
+}
+
+/* Nav link underline color follows the theme accent */
+[data-theme="dark"] .nav-link::after {
+  background: var(--color-tap);
+}
+
+/* Buttons: ghost variant uses hairline-strong border in dark mode too */
+[data-theme="dark"] .btn-ghost {
+  border-color: var(--color-hairline-strong);
+}
+
+/* Selection color stays on the tap accent but with a light contrast */
+[data-theme="dark"] ::selection {
+  background: var(--color-tap);
+  color: #fff;
+}
+
+/* Focus-visible outline tints to the dark theme accent */
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--color-tap);
+}
+
+/* Aurora backdrop blobs need a dark base to glow against */
+[data-theme="dark"] .aurora--tap {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-tap) calc(var(--motion-glow-tap-faint) * 100%), var(--color-porcelain)),
+    var(--color-porcelain)
+  );
+}
+[data-theme="dark"] .aurora--brass {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-brass) calc(var(--motion-glow-brass) * 100%), var(--color-porcelain)),
+    var(--color-porcelain)
+  );
+}
+
+/* Dot grid behind the hero visual: subtle in dark mode */
+[data-theme="dark"] .dot-grid {
+  background-image: radial-gradient(var(--color-hairline) 1.1px, transparent 1.1px);
+}
+
+/* QR tile: lighter fill for dark mode so the lit state reads */
+[data-theme="dark"] .qr-tile {
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .qr-tile--lit {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Demo café theme is intentionally NOT restyled by dark mode — it has
+   its own scoped brand. */
+.demo-cafe-theme {
+  /* no dark mode overrides here */
+}
+
+/* Marquee divider: invert hairline for dark mode */
+[data-theme="dark"] .border-y {
+  border-color: var(--color-hairline);
+}
+
+/* Skip-to-content link: ensuring visibility in dark mode */
+[data-theme="dark"] a[href="#main"].sr-only:focus {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline-strong);
+}
+
+/* Site footer border + text */
+[data-theme="dark"] footer {
+  border-top-color: var(--color-hairline);
+}
+[data-theme="dark"] .text-ink-faint {
+  color: var(--color-ink-faint);
+}
+
+/* CTA section: dark background stays dark, but text adjustments */
+[data-theme="dark"] .bg-ink {
+  background: #0a0c10;
+}
+[data-theme="dark"] .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6);
+}
+[data-theme="dark"] .text-white\/55 {
+  color: rgba(255, 255, 255, 0.55);
+}
+[data-theme="dark"] .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide the theme toggle on demo café guest routes — those pages have
+   their own chrome and should not show the product theme switcher. */
+.demo-cafe-theme .theme-toggle {
+  display: none !important;
+}

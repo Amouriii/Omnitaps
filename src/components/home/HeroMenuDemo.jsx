@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import LogoMark from "../LogoMark";
+import { items as PRODUCT_ITEMS } from "../../data/items";
 import { motionMs } from "../../lib/motion.js";
 
 /**
- * Live hero mini-demo: the "Scan to connect" QR card is a real phone-scan
- * simulation wired to the public /api/tenants/:tenant/menu payload.
+ * Live hero mini-demo: the QR card is a real phone-scan simulation.
  *
- * idle → scanning (QR tiles light up, scan line sweeps) → menu (real Demo
- * Café categories + items, tap-to-add order tally) → back to idle.
+ * The marketing homepage opens a categorized menu of Omnitaps product modules;
+ * the café website demo keeps using the public tenant menu with its order tally.
+ * idle → scanning (QR tiles light up, scan line sweeps) → menu → back to idle.
  *
  * The payload is fetched once and cached at module level so replays are
  * instant; failures degrade to an offline state that still links to the
@@ -28,6 +29,34 @@ const SCAN_STEP_MS = 85;
 // menu never opens before the sweep completes, through any CSS retune.
 const SCAN_MIN_TOKEN = "--motion-dur-scan-fast";
 const SCAN_MIN_FALLBACK_MS = 1150;
+
+const PRODUCT_PRESENTATION = {
+    website: { name: "Websites", summary: "Get found with an on-brand site." },
+    "qr-menus": { name: "QR Menus", summary: "Update menus instantly — no reprints." },
+    "ai-chatbots": { name: "AI Chat", summary: "Answer guest questions 24/7." },
+    reservations: { name: "Reservations", summary: "Fill bookings and waitlists automatically." },
+    reviews: { name: "Reviews", summary: "Turn happy visits into stronger ratings." },
+    wifi: { name: "Wi-Fi Access", summary: "Connect guests and capture contacts." },
+    "apple-wallet": { name: "Wallet Memberships", summary: "Issue branded cards with live status." },
+    loyalty: { name: "Loyalty Programs", summary: "Turn visits into measurable retention." },
+};
+
+const PRODUCT_CATEGORIES = [
+    { title: "Customer", ids: ["website", "qr-menus", "ai-chatbots", "reservations"] },
+    { title: "Growth", ids: ["reviews", "wifi"] },
+    { title: "Loyalty", ids: ["apple-wallet", "loyalty"] },
+].map((category) => ({
+    title: category.title,
+    items: category.ids
+        .map((id) => PRODUCT_ITEMS.find((item) => item.id === id))
+        .filter(Boolean)
+        .map((item) => ({
+            id: item.id,
+            name: PRODUCT_PRESENTATION[item.id]?.name ?? item.title,
+            summary: PRODUCT_PRESENTATION[item.id]?.summary ?? item.desc,
+            product: true,
+        })),
+}));
 
 let menuCache = null;
 
@@ -65,6 +94,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
     }, [phase, onPhaseChange]);
 
     const fetchMenu = useCallback(async () => {
+        if (!isCafe) return PRODUCT_CATEGORIES;
         if (menuCache) return menuCache;
         const load = async () => {
             const response = await fetch(`/api/tenants/${encodeURIComponent(tenantId)}/menu`);
@@ -86,7 +116,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             menuCache = categories;
             return categories;
         }
-    }, [tenantId]);
+    }, [isCafe, tenantId]);
 
     const startScan = useCallback(() => {
         // Only an idle card may begin a scan — a stray timer firing while the
@@ -179,7 +209,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
     }, [prefersReducedMotion, startScan]);
 
     const addItem = (item) => {
-        if (item.isAvailable === false) return;
+        if (item.isAvailable === false || item.product) return;
         setOrder((current) => [...current, { name: item.name, priceCents: item.priceCents ?? 0 }]);
     };
 
@@ -198,7 +228,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                     ? "Scanning the table QR — opening today's menu"
                     : isCafe
                         ? "Scan the table QR to preview today's menu"
-                        : "Try the live QR menu demo — scan now"
+                        : "Scan to explore Omnitaps modules"
             }
             className={`qr-card press-scale group relative z-10 w-52 sm:w-56 rounded-3xl bg-ink text-porcelain p-6 shadow-[0_32px_64px_-24px_rgba(18,21,26,0.45)] text-left ${
                 phase === "scanning" ? "qr-card--scanning cursor-wait" : "cursor-pointer"
@@ -228,10 +258,10 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                 })}
             </div>
             <div className="font-mono text-[11px] tracking-widest uppercase text-white/50">
-                {phase === "scanning" ? (isCafe ? "Opening today's menu…" : "Scanning…") : isCafe ? "Scan the table QR" : "Scan to connect"}
+                {phase === "scanning" ? (isCafe ? "Opening today's menu…" : "Loading modules…") : isCafe ? "Scan the table QR" : "Scan to explore"}
             </div>
             <div className="mt-2 text-[12px] font-medium text-tap opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
-                {phase === "scanning" ? "Live demo in progress" : isCafe ? "Tap to preview →" : "Tap to try it live →"}
+                {phase === "scanning" ? "Live demo in progress" : isCafe ? "Tap to preview →" : "Tap to browse modules →"}
             </div>
         </button>
     );
@@ -242,10 +272,10 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             ref={panelRef}
             tabIndex={-1}
             role="group"
-            aria-label="Live QR menu demo"
-            className="demo-face relative z-10 w-64 sm:w-[19.5rem] rounded-3xl border border-hairline bg-surface text-ink shadow-[0_32px_64px_-24px_rgba(18,21,26,0.35)] overflow-hidden outline-none"
+            aria-label={isCafe ? "Live QR menu demo" : "Categorized Omnitaps module menu"}
+            className={`demo-face relative z-10 w-72 sm:w-[22rem] rounded-3xl border border-hairline bg-surface text-ink shadow-[0_32px_64px_-24px_rgba(18,21,26,0.35)] overflow-hidden outline-none ${isCafe ? "demo-face--cafe" : "demo-face--modules"}`}
         >
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-hairline">
+            <div className="demo-menu-header flex items-center justify-between px-4 pt-4 pb-3 border-b border-hairline">
                 <div className="flex items-center gap-2 min-w-0">
                     {isCafe ? (
                         <span className="h-2 w-2 shrink-0 rounded-full bg-tap" aria-hidden="true" />
@@ -253,7 +283,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                         <LogoMark className="w-4.5 h-4.5 text-tap shrink-0" />
                     )}
                     <span className="font-display text-[13.5px] font-semibold">
-                        {isCafe ? "Today's menu" : "Live menu"}
+                        {isCafe ? "Today's menu" : "Omnitaps modules"}
                     </span>
                 </div>
                 <button
@@ -265,42 +295,71 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                 </button>
             </div>
 
-            <div className="flex min-h-0 flex-1">
+            <div className={`demo-menu-body flex min-h-0 flex-1 ${isCafe ? "demo-menu-body--cafe" : "demo-menu-body--modules"}`}>
                 <div
-                    className="flex w-16 sm:w-[4.75rem] shrink-0 flex-col gap-1.5 border-r border-hairline px-2 pt-3"
+                    className="demo-category-tabs flex w-16 sm:w-[4.75rem] shrink-0 flex-col gap-1.5 border-r border-hairline px-2 pt-3"
                     role="tablist"
-                    aria-label="Menu categories"
+                    aria-label={isCafe ? "Menu categories" : "Product module categories"}
                     aria-orientation="vertical"
                 >
                     {categories.map((category, index) => (
                         <button
+                            id={`demo-category-tab-${index}`}
                             key={category.title ?? index}
                             type="button"
                             role="tab"
                             aria-selected={index === activeCat}
                             onClick={() => setActiveCat(index)}
-                            className={`w-full rounded-lg px-2 py-1.5 text-left text-[11.5px] font-semibold transition-colors ${
+                            className={`demo-category-tab w-full rounded-lg px-2 py-1.5 text-left text-[11.5px] font-semibold transition-colors ${
                                 index === activeCat
                                     ? "bg-tap text-white"
                                     : "bg-tap-soft text-tap hover:bg-tap hover:text-white"
                             }`}
+                            aria-controls="demo-category-panel"
                         >
-                            {category.title}
+                            <span>{category.title}</span>
+                            {!isCafe ? <span className="demo-category-count" aria-hidden="true">{category.items.length}</span> : null}
                         </button>
                     ))}
                 </div>
 
-                <ul className="min-w-0 flex-1 px-2.5 py-2 max-h-56 overflow-y-auto" aria-live="polite">
+                <div className="demo-module-content min-w-0 flex-1">
+                    {!isCafe ? (
+                        <div className="demo-module-meta flex items-center justify-between gap-2 px-3 pt-3">
+                            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-faint">Browse modules</span>
+                            <span className="text-[10px] font-medium text-tap">{activeCategory?.items.length ?? 0} to explore</span>
+                        </div>
+                    ) : null}
+                    <ul
+                        key={activeCat}
+                        id="demo-category-panel"
+                        role="tabpanel"
+                        aria-labelledby={`demo-category-tab-${activeCat}`}
+                        className="demo-module-list min-w-0 px-2.5 py-2 max-h-56 overflow-y-auto"
+                        aria-live="polite"
+                    >
                 {(activeCategory?.items ?? []).map((item, index) => {
                     const soldOut = item.isAvailable === false;
                     return (
                         <li
                             key={item.id ?? `${item.name}-${index}`}
-                            className="flex items-center gap-2 rounded-xl px-2 py-2 hover:bg-tap-soft/60 transition-colors"
+                            className={`demo-module-item flex items-center gap-2 rounded-xl px-2 py-2 hover:bg-tap-soft/60 transition-colors ${item.product ? "demo-module-item--product" : ""}`}
                         >
+                            {item.product ? (
+                                <span className="demo-module-icon" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                            ) : null}
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[12.5px] font-medium truncate">{item.name}</span>
+                                    {item.product ? (
+                                        <Link
+                                            to={`/items/${item.id}`}
+                                            className="demo-module-link text-[12.5px] font-medium leading-4 hover:text-tap"
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-[12.5px] font-medium truncate">{item.name}</span>
+                                    )}
                                     {item.badge && !soldOut ? (
                                         <span className="shrink-0 rounded-full bg-brass-soft px-1.5 py-0.5 text-[9.5px] font-semibold text-brass-dark">
                                             {item.badge}
@@ -312,36 +371,55 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
                                         </span>
                                     ) : null}
                                 </div>
-                                <div className="text-[11px] text-ink-faint">{item.price}</div>
+                                {item.product ? (
+                                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-ink-faint">{item.summary}</p>
+                                ) : (
+                                    <div className="text-[11px] text-ink-faint">{item.price}</div>
+                                )}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => addItem(item)}
-                                disabled={soldOut}
-                                aria-label={`Add ${item.name} to demo order`}
-                                className={`shrink-0 h-6 w-6 rounded-full text-[13px] leading-none font-semibold transition ${
-                                    soldOut
-                                        ? "bg-hairline text-ink-faint cursor-not-allowed"
-                                        : "bg-tap text-white hover:bg-tap-dark active:scale-90"
-                                }`}
-                            >
-                                +
-                            </button>
+                            {item.product ? (
+                                <Link
+                                    to={`/items/${item.id}`}
+                                    aria-label={`Explore ${item.name}`}
+                                    className="demo-module-arrow shrink-0 text-[16px] font-semibold leading-none text-tap hover:text-tap-dark"
+                                >
+                                    →
+                                </Link>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => addItem(item)}
+                                    disabled={soldOut}
+                                    aria-label={`Add ${item.name} to demo order`}
+                                    className={`shrink-0 h-6 w-6 rounded-full text-[13px] leading-none font-semibold transition ${
+                                        soldOut
+                                            ? "bg-hairline text-ink-faint cursor-not-allowed"
+                                            : "bg-tap text-white hover:bg-tap-dark active:scale-90"
+                                    }`}
+                                >
+                                    +
+                                </button>
+                            )}
                         </li>
                     );
                 })}
-                </ul>
+                    </ul>
+                </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-hairline px-4 py-3 bg-porcelain">
+            <div className={`demo-menu-footer flex items-center justify-between gap-2 border-t border-hairline px-4 py-3 bg-porcelain ${isCafe ? "demo-menu-footer--cafe" : "demo-menu-footer--modules"}`}>
                 <span key={order.length} className="order-pop text-[12px] font-semibold text-ink">
-                    {order.length ? `${order.length} item${order.length > 1 ? "s" : ""} · ${formatCents(orderCents)}` : "Tap + to order"}
+                    {isCafe
+                        ? order.length
+                            ? `${order.length} item${order.length > 1 ? "s" : ""} · ${formatCents(orderCents)}`
+                            : "Tap + to order"
+                        : "Select a module to explore"}
                 </span>
                 <Link
-                    to="/menu/demo"
+                    to={isCafe ? "/menu/demo" : "/#solutions"}
                     className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-ink-muted transition-colors"
                 >
-                    Full menu
+                    {isCafe ? "Full menu" : "View all"}
                 </Link>
             </div>
         </div>
@@ -365,16 +443,16 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             ) : (
                 <LogoMark className="w-6 h-6 text-tap mb-4" />
             )}
-            <p className="text-[13.5px] font-semibold">Demo kitchen is offline</p>
+            <p className="text-[13.5px] font-semibold">{isCafe ? "Demo kitchen is offline" : "Module menu unavailable"}</p>
             <p className="mt-1.5 text-[12.5px] leading-5 text-ink-muted">
-                The live menu couldn't be reached right now — the real thing is one tap away.
+                {isCafe ? "The live menu couldn't be reached right now — the real thing is one tap away." : "The module menu is ready to browse from the homepage."}
             </p>
             <div className="mt-4 flex items-center gap-2">
                 <Link
-                    to="/menu/demo"
+                    to={isCafe ? "/menu/demo" : "/#solutions"}
                     className="rounded-full bg-ink px-3.5 py-2 text-[12px] font-semibold text-white hover:bg-ink-muted transition-colors"
                 >
-                    Open the menu
+                    {isCafe ? "Open the menu" : "View modules"}
                 </Link>
                 <button
                     type="button"
@@ -392,7 +470,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             {phase === "menu" ? menuFace : phase === "error" ? errorFace : qrFace}
             <span className="sr-only" role="status">
                 {phase === "menu"
-                    ? `Live menu loaded — ${categories.reduce((n, c) => n + (c.items?.length ?? 0), 0)} items`
+                    ? `${isCafe ? "Live menu loaded" : "Omnitaps module menu loaded"} — ${categories.reduce((n, c) => n + (c.items?.length ?? 0), 0)} ${isCafe ? "items" : "modules"}`
                     : ""}
             </span>
         </>

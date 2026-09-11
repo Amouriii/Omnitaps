@@ -118,6 +118,63 @@ test.describe("route transitions", () => {
     });
 });
 
+test.describe("homepage connected-commerce hero", () => {
+    test("keeps the live QR menu at the center of the payment story", async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem("omnitaps-theme", "light"));
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+
+        await expect(page.locator(".hero-visual-shell")).toBeVisible();
+        await expect(page.locator(".hero-visual-hud")).toContainText("Connected commerce");
+        await expect(page.locator(".hero-payment-rail")).toContainText("Payment methods");
+        await expect(page.locator(".hero-payment-rail__methods span")).toHaveCount(3);
+        await expect(page.locator(".qr-card")).toBeVisible();
+    });
+});
+
+test.describe("homepage intro theme integration", () => {
+    test("uses the light product tokens while the intro is visible", async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem("omnitaps-theme", "light"));
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+
+        const intro = page.locator(".omnitaps-intro");
+        await expect(intro).toBeVisible();
+        const colors = await intro.evaluate((element) => ({
+            theme: document.documentElement.getAttribute("data-theme"),
+            background: getComputedStyle(element).backgroundColor,
+            heading: getComputedStyle(element.querySelector("h1")).color,
+            link: getComputedStyle(element.querySelector("line")).stroke,
+        }));
+
+        expect(colors).toEqual({
+            theme: "light",
+            background: "rgb(250, 249, 247)",
+            heading: "rgb(18, 21, 26)",
+            link: "rgb(21, 94, 239)",
+        });
+    });
+
+    test("uses the dark product tokens before the intro paints", async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem("omnitaps-theme", "dark"));
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+
+        const intro = page.locator(".omnitaps-intro");
+        await expect(intro).toBeVisible();
+        const colors = await intro.evaluate((element) => ({
+            theme: document.documentElement.getAttribute("data-theme"),
+            background: getComputedStyle(element).backgroundColor,
+            heading: getComputedStyle(element.querySelector("h1")).color,
+            link: getComputedStyle(element.querySelector("line")).stroke,
+        }));
+
+        expect(colors).toEqual({
+            theme: "dark",
+            background: "rgb(15, 17, 21)",
+            heading: "rgb(241, 243, 246)",
+            link: "rgb(59, 130, 246)",
+        });
+    });
+});
+
 test.describe("prefers-reduced-motion", () => {
     test.use({ reducedMotion: "reduce" });
 
