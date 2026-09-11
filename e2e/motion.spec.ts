@@ -129,7 +129,116 @@ test.describe("homepage connected-commerce hero", () => {
         await expect(page.locator(".hero-payment-rail__methods span")).toHaveCount(3);
         await expect(page.locator(".qr-card")).toBeVisible();
     });
+
+    test("pushes the product menu below the copy on a narrow screen", async ({ page }) => {
+        await page.setViewportSize({ width: 471, height: 668 });
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+
+        const qrCard = page.locator(".qr-card");
+        await expect(qrCard).toBeVisible();
+        await qrCard.click();
+
+        const menu = page.locator(".demo-face--modules");
+        await expect(menu).toBeVisible();
+        await expect(menu).toHaveAttribute("data-module-count", "8");
+        const geometry = await page.evaluate(() => {
+            const copy = document.querySelector('main section[aria-label="Intro"] .grid > div:first-child');
+            const visual = document.querySelector('main section[aria-label="Intro"] .hero-enter--zoom');
+            const menu = document.querySelector('.demo-face--modules');
+            const tabs = document.querySelector('.demo-face--modules .demo-category-tabs');
+            const copyBox = copy.getBoundingClientRect();
+            const visualBox = visual.getBoundingClientRect();
+            const menuBox = menu.getBoundingClientRect();
+            const railBox = document.querySelector('.hero-payment-rail').getBoundingClientRect();
+            const tabsBox = tabs.getBoundingClientRect();
+            return {
+                copyBottom: Math.round(copyBox.bottom),
+                visualTop: Math.round(visualBox.top),
+                menuTop: Math.round(menuBox.top),
+                menuBottom: Math.round(menuBox.bottom),
+                railTop: Math.round(railBox.top),
+                railBottom: Math.round(railBox.bottom),
+                visualBottom: Math.round(visualBox.bottom),
+                menuWidth: Math.round(menuBox.width),
+                tabsWidth: Math.round(tabsBox.width),
+                tabsOverflow: tabs.scrollWidth > tabs.clientWidth,
+                tabDirection: getComputedStyle(tabs).flexDirection,
+            };
+        });
+
+        expect(geometry.visualTop).toBeGreaterThan(geometry.copyBottom);
+        expect(geometry.menuTop).toBeGreaterThan(geometry.copyBottom);
+        expect(geometry.menuBottom).toBeLessThanOrEqual(geometry.visualBottom + 1);
+        expect(geometry.railTop).toBeGreaterThanOrEqual(geometry.menuBottom - 1);
+        expect(geometry.railBottom).toBeLessThanOrEqual(geometry.visualBottom + 1);
+        expect(geometry.tabsWidth).toBeLessThanOrEqual(geometry.menuWidth);
+        expect(geometry.tabsOverflow).toBe(false);
+        expect(geometry.tabDirection).toBe("row");
+    });
+
+    test("keeps the product menu horizontal and below the copy on a wide screen", async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+
+        await page.locator(".qr-card").click();
+        const layout = await page.evaluate(() => {
+            const copy = document.querySelector('main section[aria-label="Intro"] .grid > div:first-child');
+            const menu = document.querySelector('.demo-face--modules');
+            const tabs = document.querySelector('.demo-face--modules .demo-category-tabs');
+            const copyBox = copy.getBoundingClientRect();
+            const menuBox = menu.getBoundingClientRect();
+            const railBox = document.querySelector('.hero-payment-rail').getBoundingClientRect();
+            return {
+                copyBottom: Math.round(copyBox.bottom),
+                menuTop: Math.round(menuBox.top),
+                railTop: Math.round(railBox.top),
+                railBottom: Math.round(railBox.bottom),
+                visualBottom: Math.round(document.querySelector('main section[aria-label="Intro"] .hero-enter--zoom').getBoundingClientRect().bottom),
+                direction: getComputedStyle(tabs).flexDirection,
+                tabsWidth: tabs.getBoundingClientRect().width,
+                menuWidth: menuBox.width,
+                tabsOverflow: tabs.scrollWidth > tabs.clientWidth,
+            };
+        });
+
+        expect(layout.menuTop).toBeGreaterThan(layout.copyBottom);
+        expect(layout.railTop).toBeGreaterThanOrEqual(layout.menuTop);
+        expect(layout.railBottom).toBeGreaterThan(layout.railTop);
+        expect(layout.railBottom).toBeLessThanOrEqual(layout.visualBottom + 1);
+        expect(layout.direction).toBe("row");
+        expect(layout.tabsWidth).toBeLessThanOrEqual(layout.menuWidth);
+        expect(layout.tabsOverflow).toBe(false);
+    });
 });
+
+test.describe("café intro isolation", () => {
+    test("isolates the website page while the intro is open", async ({ page }) => {
+        await page.goto("/s/demo", { waitUntil: "domcontentloaded" });
+
+        const intro = page.locator(".cafe-intro");
+        await expect(intro).toBeVisible();
+        await expect(intro).toHaveAttribute("aria-modal", "true");
+        const isolation = await page.evaluate(() => ({
+            rootInert: document.getElementById("root")?.inert,
+            rootHidden: document.getElementById("root")?.getAttribute("aria-hidden"),
+            introInert: document.querySelector(".cafe-intro")?.inert,
+            chromeInert: document.querySelector(".demo-chrome-bar")?.inert,
+        }));
+        expect(isolation).toEqual({
+            rootInert: true,
+            rootHidden: "true",
+            introInert: false,
+            chromeInert: true,
+        });
+
+        await intro.getByRole("button", { name: "Skip intro" }).click();
+        await expect(intro).toBeHidden({ timeout: 2_000 });
+        await expect(page.locator("#root")).not.toHaveAttribute("aria-hidden", "true");
+    });
+});
+
 
 test.describe("homepage intro theme integration", () => {
     test("uses the light product tokens while the intro is visible", async ({ page }) => {
