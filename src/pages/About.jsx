@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import { items as SERVICES } from "../data/items";
+import { PRODUCT_MODULE_COUNT } from "../data/productModules";
 import useScrollReveal, { useBentoPointerGlow } from "../hooks/useScrollReveal";
 
 const VALUES = [
     {
         title: "One platform, one customer record",
-        desc: "A WiFi login, a booking, and a review all build the same picture of who walked in — no syncing between six different tools.",
+        desc: "A WiFi login, a booking, and a review all build the same picture of who walked in — no syncing between separate tools.",
     },
     {
         title: "Live in an afternoon",
@@ -98,7 +99,7 @@ export default function About() {
                         Products &amp; services
                     </div>
                     <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink mb-4">
-                        Six tools your team already needs. One place to run them.
+                        {PRODUCT_MODULE_COUNT} tools your team already needs. One place to run them.
                     </h2>
                     <p className="text-[16px] leading-[1.6] text-ink-muted">
                         Here is what we build — and what each module does for your business.

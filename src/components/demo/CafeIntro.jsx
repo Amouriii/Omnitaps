@@ -47,6 +47,9 @@ export default function CafeIntro({ tenantName = TITLE }) {
   const [leaving, setLeaving] = useState(false);
   const hideTimer = useRef(null);
   const autoTimer = useRef(null);
+  const pageRef = useRef(null);
+  const introRef = useRef(null);
+  const inertNodesRef = useRef([]);
   const enterButtonRef = useRef(null);
 
   const dismiss = useCallback(() => {
@@ -60,6 +63,21 @@ export default function CafeIntro({ tenantName = TITLE }) {
     if (!visible) return undefined;
 
     document.documentElement.classList.add("cafe-intro-active");
+    const page = document.getElementById("root");
+    pageRef.current = page;
+    const intro = introRef.current;
+    const inertNodes = [...document.body.children]
+      .filter((node) => node !== intro)
+      .map((node) => ({
+        node,
+        ariaHidden: node.getAttribute("aria-hidden"),
+        inert: node.inert,
+      }));
+    inertNodesRef.current = inertNodes;
+    for (const { node } of inertNodes) {
+      node.setAttribute("aria-hidden", "true");
+      node.inert = true;
+    }
     enterButtonRef.current?.focus();
     autoTimer.current = window.setTimeout(
       dismiss,
@@ -75,6 +93,14 @@ export default function CafeIntro({ tenantName = TITLE }) {
       window.clearTimeout(autoTimer.current);
       window.removeEventListener("keydown", onKeyDown);
       document.documentElement.classList.remove("cafe-intro-active");
+      for (const { node, ariaHidden, inert } of inertNodesRef.current) {
+        if (ariaHidden === null) node.removeAttribute("aria-hidden");
+        else node.setAttribute("aria-hidden", ariaHidden);
+        node.inert = inert;
+      }
+      inertNodesRef.current = [];
+      pageRef.current = null;
+      introRef.current = null;
     };
   }, [visible, dismiss]);
 
@@ -92,6 +118,7 @@ export default function CafeIntro({ tenantName = TITLE }) {
 
   return (
     <div
+      ref={introRef}
       className={`cafe-intro ${leaving ? "is-leaving" : ""}`.trim()}
       role="dialog"
       aria-modal="true"
