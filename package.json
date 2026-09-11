@@ -32,6 +32,8 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@supabase/supabase-js": "^2.112.3",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^1.28.0",
     "prisma": "^6.19.3",
     "qrcode.react": "^4.2.0",
