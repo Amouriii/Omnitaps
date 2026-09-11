@@ -716,12 +716,22 @@
 
 .hero-visual-frame {
   position: absolute;
-  inset: 4% 0;
+  inset: 2% 1%;
+  max-width: 94%;
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid var(--hero-visual-border);
   border-radius: 2rem;
   background: color-mix(in srgb, var(--color-surface) 35%, transparent);
   pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .hero-visual-frame {
+    inset: 1% 0;
+    max-width: 96%;
+    height: 97%;
+  }
 }
 
 .hero-visual-frame__grid {
@@ -919,12 +929,13 @@
 }
 
 @media (max-width: 767px) {
-  .hero-visual-frame { inset: 3% -2% 6%; border-radius: 1.5rem; }
-  .hero-visual-hud { top: 7%; left: 2%; right: 2%; }
-  .hero-visual-node { transform: scale(0.86); transform-origin: center; }
-  .hero-visual-node--left { left: -2%; }
-  .hero-visual-node--right { right: -2%; }
-  .hero-payment-rail { right: 6%; bottom: 4%; width: min(88%, 18rem); }
+  .hero-visual-frame { inset: 2% -2% 10%; border-radius: 1.5rem; height: auto; }
+  .hero-visual-hud { top: 6%; left: 2%; right: 2%; }
+  .hero-visual-center { place-self: end center; padding-bottom: 18%; }
+  .hero-visual-node { transform: scale(0.84); transform-origin: center; }
+  .hero-visual-node--left { left: -2%; top: 26%; }
+  .hero-visual-node--right { right: -2%; bottom: 26%; }
+  .hero-payment-rail { right: 6%; bottom: 8%; width: min(90%, 18rem); }
 }
 
 /* ---------- Omnitaps network intro ---------- */
