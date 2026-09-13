@@ -1,0 +1,352 @@
+@import "lenis/dist/lenis.css";
+
+/* Koffee Kulture is a self-contained visual surface. Its tokens are scoped to
+ * the route so the host application's palette remains unchanged elsewhere. */
+html.kk-demo-active {
+  scroll-behavior: auto;
+  scroll-padding-top: 4.5rem;
+}
+
+.kk-demo-route {
+  --sage: oklch(0.79 0.049 137);
+  --beige: oklch(0.93 0.031 89);
+  --wood: oklch(0.66 0.075 62);
+  --ink: oklch(0.26 0.011 63);
+  --cream: oklch(0.96 0.014 91);
+
+  --background: var(--cream);
+  --foreground: var(--ink);
+  --card: oklch(0.985 0.008 91);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.985 0.008 91);
+  --popover-foreground: var(--ink);
+  --primary: var(--sage);
+  --primary-foreground: oklch(0.24 0.012 63);
+  --secondary: var(--beige);
+  --secondary-foreground: var(--ink);
+  --muted: var(--beige);
+  --muted-foreground: oklch(0.5 0.018 66);
+  --accent: var(--wood);
+  --accent-foreground: oklch(0.98 0.01 90);
+  --destructive: oklch(0.55 0.19 27);
+  --destructive-foreground: oklch(0.98 0.01 90);
+  --border: oklch(0.87 0.024 88);
+  --input: oklch(0.87 0.024 88);
+  --ring: var(--sage);
+  /* Match the attached app's Tailwind token aliases without exporting them
+   * into the host document. Some generated utilities resolve these
+   * `--color-*` names rather than the semantic variables above. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-sage: var(--sage);
+  --color-beige: var(--beige);
+  --color-wood: var(--wood);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+
+  --font-display: "Bricolage Grotesque", "Inter", sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+  --radius: 0.875rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color: var(--foreground);
+  background: var(--background);
+  color-scheme: light;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: auto;
+}
+
+/* These three base rules are intentionally local. The original KK stylesheet
+ * applies them globally; scoping them here preserves its type rhythm and
+ * border color without changing Omnitaps pages. */
+.kk-demo-route * {
+  border-color: var(--color-border);
+}
+.kk-demo-route h1,
+.kk-demo-route h2,
+.kk-demo-route h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.kk-demo-route [id] { scroll-margin-top: 4.5rem; }
+
+/* Tailwind v4 scans the copied KK components, but the source project's
+ * @theme block cannot be imported globally without changing Omnitaps. These
+ * route-local utility aliases provide the same original KK token mapping. */
+.kk-demo-route .bg-background { background-color: var(--background); }
+.kk-demo-route .bg-card { background-color: var(--card); }
+.kk-demo-route .bg-primary { background-color: var(--primary); }
+.kk-demo-route .bg-secondary { background-color: var(--secondary); }
+.kk-demo-route .bg-accent { background-color: var(--accent); }
+.kk-demo-route .bg-cream { background-color: var(--cream); }
+.kk-demo-route .bg-ink { background-color: var(--ink); }
+.kk-demo-route .bg-destructive { background-color: var(--destructive); }
+.kk-demo-route .text-foreground { color: var(--foreground); }
+.kk-demo-route .text-destructive-foreground { color: var(--destructive-foreground); }
+
+.kk-demo-route .text-card-foreground { color: var(--card-foreground); }
+.kk-demo-route .text-primary { color: var(--primary); }
+.kk-demo-route .text-primary-foreground { color: var(--primary-foreground); }
+.kk-demo-route .text-secondary { color: var(--secondary); }
+.kk-demo-route .text-secondary-foreground { color: var(--secondary-foreground); }
+.kk-demo-route .text-muted-foreground { color: var(--muted-foreground); }
+.kk-demo-route .text-accent { color: var(--accent); }
+.kk-demo-route .text-accent-foreground { color: var(--accent-foreground); }
+.kk-demo-route .text-cream { color: var(--cream); }
+.kk-demo-route .text-ink { color: var(--ink); }
+.kk-demo-route .text-destructive { color: var(--destructive); }
+.kk-demo-route .text-wood { color: var(--wood); }
+.kk-demo-route .border-border { border-color: var(--border); }
+.kk-demo-route .border-input { border-color: var(--input); }
+.kk-demo-route .border-primary { border-color: var(--primary); }
+.kk-demo-route .border-destructive { border-color: var(--destructive); }
+.kk-demo-route .border-accent { border-color: var(--accent); }
+.kk-demo-route .font-display { font-family: var(--font-display); }
+.kk-demo-route .font-body,
+.kk-demo-route .font-sans { font-family: var(--font-sans); }
+.kk-demo-route .fill-accent { fill: var(--accent); }
+.kk-demo-route [class~="placeholder:text-muted-foreground"]::placeholder {
+  color: var(--muted-foreground);
+}
+.kk-demo-route .border-border\/50 { border-color: color-mix(in srgb, var(--border) 50%, transparent); }
+.kk-demo-route .border-primary\/50 { border-color: color-mix(in srgb, var(--primary) 50%, transparent); }
+.kk-demo-route .border-destructive\/50 { border-color: color-mix(in srgb, var(--destructive) 50%, transparent); }
+
+
+.kk-demo-route .bg-primary\/30 { background-color: color-mix(in oklab, var(--primary) 30%, transparent); }
+.kk-demo-route .bg-primary\/60 { background-color: color-mix(in oklab, var(--primary) 60%, transparent); }
+.kk-demo-route .bg-background\/85 { background-color: color-mix(in srgb, var(--background) 85%, transparent); }
+.kk-demo-route .bg-background\/95 { background-color: color-mix(in srgb, var(--background) 95%, transparent); }
+.kk-demo-route .bg-background\/70 { background-color: color-mix(in srgb, var(--background) 70%, transparent); }
+.kk-demo-route .bg-cream\/20 { background-color: color-mix(in oklab, var(--cream) 20%, transparent); }
+.kk-demo-route .bg-destructive\/20 { background-color: color-mix(in oklab, var(--destructive) 20%, transparent); }
+.kk-demo-route .bg-accent\/85 { background-color: color-mix(in srgb, var(--accent) 85%, transparent); }
+.kk-demo-route .text-foreground\/70 { color: color-mix(in srgb, var(--foreground) 70%, transparent); }
+.kk-demo-route .text-ink\/10 { color: color-mix(in srgb, var(--ink) 10%, transparent); }
+.kk-demo-route .text-wood\/15 { color: color-mix(in srgb, var(--wood) 15%, transparent); }
+.kk-demo-route .text-cream\/70 { color: color-mix(in srgb, var(--cream) 70%, transparent); }
+.kk-demo-route .text-accent\/50 { color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.kk-demo-route .border-border\/70 { border-color: color-mix(in srgb, var(--border) 70%, transparent); }
+
+.kk-demo-route [class~="hover:bg-primary"]:hover { background-color: var(--primary); }
+.kk-demo-route [class~="hover:bg-primary/90"]:hover { background-color: color-mix(in oklab, var(--primary) 90%, transparent); }
+.kk-demo-route [class~="hover:bg-destructive/90"]:hover { background-color: color-mix(in oklab, var(--destructive) 90%, transparent); }
+.kk-demo-route [class~="hover:bg-secondary/80"]:hover { background-color: color-mix(in oklab, var(--secondary) 80%, transparent); }
+.kk-demo-route [class~="hover:bg-accent"]:hover { background-color: var(--accent); }
+.kk-demo-route [class~="hover:text-accent-foreground"]:hover { color: var(--accent-foreground); }
+.kk-demo-route [class~="hover:text-destructive"]:hover { color: var(--destructive); }
+.kk-demo-route [class~="hover:text-foreground"]:hover { color: var(--foreground); }
+.kk-demo-route [class~="hover:text-primary-foreground"]:hover { color: var(--primary-foreground); }
+.kk-demo-route [class~="focus-visible:ring-1"]:focus-visible { box-shadow: 0 0 0 1px var(--ring); }
+.kk-demo-route [class~="focus-visible:ring-ring"]:focus-visible { --tw-ring-color: var(--ring); }
+
+.kk-demo-route .shadow-ink\/10 { --tw-shadow-color: color-mix(in srgb, var(--ink) 10%, transparent); }
+.kk-demo-route .shadow-ink\/30 { --tw-shadow-color: color-mix(in srgb, var(--ink) 30%, transparent); }
+
+.kk-toast {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1rem 2rem color-mix(in oklab, var(--ink) 16%, transparent);
+  font-family: var(--font-sans);
+}
+.kk-toast__title { color: var(--foreground); font-weight: 700; }
+.kk-toast__description { color: var(--muted-foreground); }
+
+
+.kk-demo-route .kk-button {
+  position: relative;
+  isolation: isolate;
+  transform: translateZ(0);
+  transition: transform 260ms var(--motion-ease);
+  will-change: transform;
+}
+.kk-demo-route .kk-button::after {
+  position: absolute;
+  z-index: -1;
+  inset: -0.35rem;
+  border-radius: inherit;
+  content: "";
+  background: color-mix(in oklab, var(--primary) 48%, transparent);
+  filter: blur(0.9rem);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms var(--motion-ease);
+}
+.kk-demo-route .kk-button:hover:not(:disabled) { transform: translateZ(0) scale(1.03); }
+.kk-demo-route .kk-button:hover:not(:disabled)::after,
+.kk-demo-route .kk-button:focus-visible::after { opacity: 0.4; }
+.kk-demo-route .kk-button:active:not(:disabled) { transform: translateZ(0) scale(0.97); }
+.kk-demo-route .kk-card {
+  position: relative;
+  isolation: isolate;
+  transform: translateZ(0);
+  transition: transform 320ms var(--motion-ease);
+  will-change: transform;
+}
+.kk-demo-route .kk-card::before,
+.kk-demo-route .kk-card::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms var(--motion-ease);
+}
+.kk-demo-route .kk-card::before {
+  inset: -1px;
+  border: 1px solid color-mix(in oklab, var(--accent) 72%, transparent);
+  border-radius: inherit;
+}
+.kk-demo-route .kk-card::after {
+  inset: 0.5rem;
+  border-radius: inherit;
+  background: var(--ink);
+  filter: blur(1.15rem);
+}
+.kk-demo-route .kk-card:hover { transform: translate3d(0, -4px, 0); }
+.kk-demo-route .kk-card:hover::before { opacity: 0.9; }
+.kk-demo-route .kk-card:hover::after { opacity: 0.16; }
+.kk-demo-route .kk-nav-link { position: relative; transition: color 220ms var(--motion-ease); }
+.kk-demo-route .kk-nav-link::after {
+  position: absolute;
+  bottom: -0.25rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  content: "";
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 260ms var(--motion-ease);
+}
+.kk-demo-route .kk-nav-link:hover::after,
+.kk-demo-route .kk-nav-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.kk-demo-route .label-mono {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+}
+.kk-demo-route .marquee-track {
+  display: inline-flex;
+  min-width: 200%;
+  animation: kk-marquee 26s linear infinite;
+}
+@keyframes kk-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.kk-demo-route .terrazzo {
+  background-color: var(--beige);
+  background-image:
+    radial-gradient(circle at 12% 22%, var(--sage) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 68% 12%, var(--wood) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 42% 68%, var(--ink) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 86% 76%, var(--sage) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 28% 88%, var(--wood) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 58% 42%, var(--sage) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 92% 34%, var(--ink) 0 1.5px, transparent 2px);
+  background-size: 190px 190px;
+}
+.kk-demo-route .terrazzo-soft { position: relative; isolation: isolate; }
+.kk-demo-route .terrazzo-soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.4;
+  background-image:
+    radial-gradient(circle at 12% 22%, var(--sage) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 68% 12%, var(--wood) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 42% 68%, var(--ink) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 86% 76%, var(--sage) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 28% 88%, var(--wood) 0 2px, transparent 2.5px);
+  background-size: 220px 220px;
+}
+.kk-demo-route .float-kan { animation: kk-float 7s ease-in-out infinite; }
+@keyframes kk-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+
+.kk-demo-route .pour-section {
+  isolation: isolate;
+  background-image: radial-gradient(circle at 20% 50%, color-mix(in oklab, var(--wood) 34%, transparent), transparent 35%);
+}
+.kk-demo-route .pour-section__watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: max-content;
+  margin: 0;
+  color: rgb(255 255 255 / 0.04);
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 15vw, 13rem);
+  font-weight: 800;
+  letter-spacing: -0.08em;
+  line-height: 0.8;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  white-space: nowrap;
+}
+.kk-demo-route .cup-container { width: min(200px, 70vw); }
+.kk-demo-route .cup-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.kk-demo-route .cup-glass { fill: rgb(255 255 255 / 0.2); }
+.kk-demo-route .cup-straw { fill: #e9dcc4; stroke: rgb(245 242 234 / 0.9); }
+.kk-demo-route .path-fill { fill: url(#coffee-gradient); opacity: 0.96; will-change: transform; }
+.kk-demo-route .cup-outline { fill: none; stroke: rgb(245 242 234 / 0.95); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; will-change: stroke-dashoffset; }
+.kk-demo-route .pour-section__progress { transform: scaleX(0); transform-origin: left center; will-change: transform; }
+.kk-demo-route .no-scroll-animation .path-fill { transform: none !important; }
+.kk-demo-route .no-scroll-animation .cup-outline { stroke-dashoffset: 0 !important; }
+.kk-demo-route .no-scroll-animation .pour-section__progress { transform: scaleX(1); }
+.kk-demo-route .no-scroll-animation [data-pour-complete] { opacity: 1 !important; transform: none !important; visibility: visible !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kk-demo-route .marquee-track,
+  .kk-demo-route .float-kan { animation: none; }
+  .kk-demo-route *,
+  .kk-demo-route *::before,
+  .kk-demo-route *::after { transition-duration: 0.01ms !important; }
+}
+
+@media (max-width: 767px) {
+  .kk-demo-route .pour-section__watermark { font-size: clamp(3rem, 16vw, 7rem); }
+}
+
+/* Lenis owns interpolation; native smooth scrolling would double-ease anchors. */
+.kk-demo-route { scroll-behavior: auto; }

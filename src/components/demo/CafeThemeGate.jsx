@@ -37,8 +37,13 @@ export default function CafeThemeGate({ children }) {
 
   return (
     <>
-      {mounted ? createPortal(<DemoChrome />, document.body) : null}
-      {isDemoCafeWebsitePath(pathname) ? <CafeIntro tenantName="Demo Café" /> : null}
+      {mounted ? createPortal(
+        <>
+          <DemoChrome />
+          {isDemoCafeWebsitePath(pathname) ? <CafeIntro tenantName="Demo Café" /> : null}
+        </>,
+        document.body,
+      ) : null}
       <div className="demo-cafe-theme min-h-screen pt-[var(--demo-chrome-h,3.5rem)]">
         <div key={pathname} className="demo-cafe-route">
           {children}

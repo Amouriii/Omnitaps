@@ -40,6 +40,7 @@ const QrDemo = lazy(() => import("./pages/QrDemo"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Careers = lazy(() => import("./pages/Careers"));
+const KoffeeKultureDemo = lazy(() => import("./pages/KoffeeKultureDemo"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<Careers />} />
+            <Route path="/demo/koffee-kulture" element={<KoffeeKultureDemo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/s/:tenantId" element={<WebsitePreview />} />

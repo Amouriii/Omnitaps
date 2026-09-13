@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import LogoMark from "../LogoMark";
-import { items as PRODUCT_ITEMS } from "../../data/items";
+import { productCategories as PRODUCT_CATEGORIES } from "../../data/productModules";
 import { motionMs } from "../../lib/motion.js";
 
 /**
@@ -29,36 +29,9 @@ const SCAN_STEP_MS = 85;
 // menu never opens before the sweep completes, through any CSS retune.
 const SCAN_MIN_TOKEN = "--motion-dur-scan-fast";
 const SCAN_MIN_FALLBACK_MS = 1150;
+const PRODUCT_SCAN_MS = 720;
 
-const PRODUCT_PRESENTATION = {
-    website: { name: "Websites", summary: "Get found with an on-brand site." },
-    "qr-menus": { name: "QR Menus", summary: "Update menus instantly — no reprints." },
-    "ai-chatbots": { name: "AI Chat", summary: "Answer guest questions 24/7." },
-    reservations: { name: "Reservations", summary: "Fill bookings and waitlists automatically." },
-    reviews: { name: "Reviews", summary: "Turn happy visits into stronger ratings." },
-    wifi: { name: "Wi-Fi Access", summary: "Connect guests and capture contacts." },
-    "apple-wallet": { name: "Wallet Memberships", summary: "Issue branded cards with live status." },
-    loyalty: { name: "Loyalty Programs", summary: "Turn visits into measurable retention." },
-};
-
-const PRODUCT_CATEGORIES = [
-    { title: "Customer", ids: ["website", "qr-menus", "ai-chatbots", "reservations"] },
-    { title: "Growth", ids: ["reviews", "wifi"] },
-    { title: "Loyalty", ids: ["apple-wallet", "loyalty"] },
-].map((category) => ({
-    title: category.title,
-    items: category.ids
-        .map((id) => PRODUCT_ITEMS.find((item) => item.id === id))
-        .filter(Boolean)
-        .map((item) => ({
-            id: item.id,
-            name: PRODUCT_PRESENTATION[item.id]?.name ?? item.title,
-            summary: PRODUCT_PRESENTATION[item.id]?.summary ?? item.desc,
-            product: true,
-        })),
-}));
-
-let menuCache = null;
+const menuCache = new Map();
 
 function formatCents(cents) {
     return `$${(cents / 100).toFixed(2)}`;
@@ -72,6 +45,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
     const [activeCat, setActiveCat] = useState(0);
     const [order, setOrder] = useState([]);
     const timersRef = useRef([]);
+    const scanRunRef = useRef(0);
     const panelRef = useRef(null);
 
     const prefersReducedMotion = useCallback(
@@ -87,7 +61,10 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
         timersRef.current = [];
     }, []);
 
-    useEffect(() => clearTimers, [clearTimers]);
+    useEffect(() => () => {
+        scanRunRef.current += 1;
+        clearTimers();
+    }, [clearTimers]);
 
     useEffect(() => {
         onPhaseChange?.(phase);
@@ -95,7 +72,8 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
 
     const fetchMenu = useCallback(async () => {
         if (!isCafe) return PRODUCT_CATEGORIES;
-        if (menuCache) return menuCache;
+        const cachedMenu = menuCache.get(tenantId);
+        if (cachedMenu) return cachedMenu;
         const load = async () => {
             const response = await fetch(`/api/tenants/${encodeURIComponent(tenantId)}/menu`);
             if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
@@ -108,12 +86,12 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
         // doesn't flash its error face on a momentary failure.
         try {
             const categories = await load();
-            menuCache = categories;
+            menuCache.set(tenantId, categories);
             return categories;
         } catch {
             await new Promise((resolve) => setTimeout(resolve, 400));
             const categories = await load();
-            menuCache = categories;
+            menuCache.set(tenantId, categories);
             return categories;
         }
     }, [isCafe, tenantId]);
@@ -123,6 +101,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
         // menu is open must never wipe it back to the QR face.
         if (phase !== "idle") return;
         clearTimers();
+        const runId = ++scanRunRef.current;
         setOrder([]);
         setActiveCat(0);
 
@@ -134,11 +113,14 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             // No theatrics: resolve as soon as the data is (or was) available.
             fetchPromise
                 .then((categories) => {
+                    if (runId !== scanRunRef.current) return;
                     setMenu(categories);
                     setPhase("menu");
                     requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
                 })
-                .catch(() => setPhase("error"));
+                .catch(() => {
+                    if (runId === scanRunRef.current) setPhase("error");
+                });
             return;
         }
 
@@ -159,21 +141,21 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
         const scanDelay = new Promise((resolve) => {
             const t = window.setTimeout(
                 resolve,
-                motionMs(SCAN_MIN_TOKEN, SCAN_MIN_FALLBACK_MS)
+                isCafe ? motionMs(SCAN_MIN_TOKEN, SCAN_MIN_FALLBACK_MS) : PRODUCT_SCAN_MS
             );
             timersRef.current.push(t);
         });
 
         Promise.all([fetchPromise, scanDelay])
             .then(([categories]) => {
-                if (finished) return;
+                if (finished || runId !== scanRunRef.current) return;
                 finished = true;
                 setMenu(categories);
                 setPhase("menu");
                 requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
             })
             .catch(() => {
-                if (finished) return;
+                if (finished || runId !== scanRunRef.current) return;
                 finished = true;
                 setPhase("error");
             });
@@ -181,6 +163,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
 
     const reset = useCallback(() => {
         clearTimers();
+        scanRunRef.current += 1;
         setPhase("idle");
         setOrder([]);
         setLitCount(SCAN_STEPS);
@@ -216,22 +199,22 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
     const orderCents = order.reduce((sum, entry) => sum + entry.priceCents, 0);
     const categories = menu ?? [];
     const activeCategory = categories[activeCat] ?? categories[0];
+    const moduleCount = categories.reduce((count, category) => count + (category.items?.length ?? 0), 0);
 
     /* ---------------- idle / scanning: the QR card ---------------- */
     const qrFace = (
         <button
             type="button"
-            onClick={startScan}
-            disabled={phase === "scanning"}
+            onClick={phase === "scanning" ? reset : startScan}
             aria-label={
                 phase === "scanning"
-                    ? "Scanning the table QR — opening today's menu"
+                    ? "Cancel scanning and keep the menu closed"
                     : isCafe
                         ? "Scan the table QR to preview today's menu"
                         : "Scan to explore Omnitaps modules"
             }
             className={`qr-card press-scale group relative z-10 w-52 sm:w-56 rounded-3xl bg-ink text-porcelain p-6 shadow-[0_32px_64px_-24px_rgba(18,21,26,0.45)] text-left ${
-                phase === "scanning" ? "qr-card--scanning cursor-wait" : "cursor-pointer"
+                phase === "scanning" ? "qr-card--scanning cursor-pointer" : "cursor-pointer"
             }`}
         >
             <span className={`scan-line ${phase === "scanning" ? "scan-line--fast" : ""}`} aria-hidden="true" />
@@ -274,6 +257,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             role="group"
             aria-label={isCafe ? "Live QR menu demo" : "Categorized Omnitaps module menu"}
             className={`demo-face relative z-10 w-72 sm:w-[22rem] rounded-3xl border border-hairline bg-surface text-ink shadow-[0_32px_64px_-24px_rgba(18,21,26,0.35)] overflow-hidden outline-none ${isCafe ? "demo-face--cafe" : "demo-face--modules"}`}
+            data-module-count={isCafe ? undefined : moduleCount}
         >
             <div className="demo-menu-header flex items-center justify-between px-4 pt-4 pb-3 border-b border-hairline">
                 <div className="flex items-center gap-2 min-w-0">
@@ -470,7 +454,7 @@ export default function HeroMenuDemo({ tenantId = "demo", onPhaseChange = undefi
             {phase === "menu" ? menuFace : phase === "error" ? errorFace : qrFace}
             <span className="sr-only" role="status">
                 {phase === "menu"
-                    ? `${isCafe ? "Live menu loaded" : "Omnitaps module menu loaded"} — ${categories.reduce((n, c) => n + (c.items?.length ?? 0), 0)} ${isCafe ? "items" : "modules"}`
+                    ? `${isCafe ? "Live menu loaded" : "Omnitaps module menu loaded"} — ${moduleCount} ${isCafe ? "items" : "modules"}`
                     : ""}
             </span>
         </>

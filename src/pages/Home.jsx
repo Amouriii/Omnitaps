@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { items as SERVICES } from "../data/items";
+import { PRODUCT_MODULE_COUNT } from "../data/productModules";
 import LogoMark from "../components/LogoMark";
 import ThemeToggle from "../components/ThemeToggle";
 import SiteFooter from "../components/SiteFooter";
@@ -120,7 +121,7 @@ const MARQUEE_ITEMS = [
 ];
 
 const HERO_STATS = [
-    { value: "6", label: "modules, one platform" },
+    { value: String(PRODUCT_MODULE_COUNT), label: "modules, one platform" },
     { value: "1", label: "scan to connect" },
     { value: "1", label: "customer record" },
 ];
@@ -264,7 +265,7 @@ export default function Home() {
                     </div>
 
                     <div className="relative max-w-6xl mx-auto px-5 sm:px-8 min-h-[calc(100svh-4rem)] flex items-center py-14 md:py-10">
-                        <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-12 md:gap-10 items-center w-full">
+                        <div className="grid grid-cols-1 gap-12 items-center w-full">
                             <div>
                                 <div className="hero-enter font-mono text-[12px] tracking-[0.14em] uppercase text-tap mb-5 inline-flex items-center gap-2.5" style={enter(0)}>
                                     <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -282,6 +283,7 @@ export default function Home() {
                                 <p className="hero-enter text-[17px] leading-[1.6] text-ink-muted max-w-md mb-9" style={enter(2)}>
                                     Omnitaps replaces the six different logins, vendors, and subscriptions
                                     running your restaurant or store with a single connected platform —
+
                                     website, menus, reservations, reviews, WiFi, and support.
                                 </p>
                                 <div className="hero-enter flex flex-wrap items-center gap-3" style={enter(3)}>
@@ -305,7 +307,9 @@ export default function Home() {
                             </div>
 
                             {/* Connected-commerce visual with the live QR menu mini-demo */}
-                            <div className="hero-enter--zoom relative h-[26rem] sm:h-96 md:h-[26rem]" style={enter(2)}>
+                            <div className={`hero-enter--zoom relative min-h-[26rem] sm:min-h-96 ${
+                                demoPhase === "menu" || demoPhase === "error" ? "min-h-[41rem]" : ""
+                            }`} style={enter(2)}>
                                 <HeroCommerceVisual phase={demoPhase}>
                                     <HeroMenuDemo tenantId="demo" onPhaseChange={setDemoPhase} />
                                 </HeroCommerceVisual>
@@ -339,7 +343,7 @@ export default function Home() {
                         The platform
                     </div>
                     <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink mb-4">
-                        Six tools your team already needs. One place to run them.
+                        {PRODUCT_MODULE_COUNT} tools your team already needs. One place to run them.
                     </h2>
                     <p className="text-[16px] leading-[1.6] text-ink-muted">
                         Every Omnitaps module shares the same customer record, so a WiFi login,

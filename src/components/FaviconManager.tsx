@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { isDemoCafePath } from "./demo/CafeThemeGate";
 
+function isKoffeeKulturePath(pathname: string): boolean {
+  const p = String(pathname || "").replace(/\/$/, "") || "/";
+  return p === "/demo/koffee-kulture";
+}
+
 /**
  * Keeps the tab favicon and browser-chrome color in sync with the active
  * surface: the indigo Omnitaps mark on product routes, the terracotta Demo
@@ -35,6 +40,14 @@ const BRAND_DARK: Surface = {
   png16: "/favicon-16.png?v=3",
   ico: "/favicon.ico?v=3",
   themeColor: "#0f1115", // --color-porcelain (product, dark)
+};
+
+const KK: Surface = {
+  svg: "/favicon-kk.svg",
+  png32: "/favicon-kk.svg",
+  png16: "/favicon-kk.svg",
+  ico: "/favicon-kk.svg",
+  themeColor: "#5c4429", // --wood (KK design token)
 };
 
 const CAFE: Surface = {
@@ -79,6 +92,12 @@ export default function FaviconManager() {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // Koffee Kulture demo route uses the KK surface
+    if (isKoffeeKulturePath(pathname)) {
+      applySurface(KK);
+      return;
+    }
+
     // Demo café routes always use the café surface regardless of theme
     if (isDemoCafePath(pathname)) {
       applySurface(CAFE);
@@ -94,7 +113,7 @@ export default function FaviconManager() {
     if (typeof document === "undefined") return;
 
     const observer = new MutationObserver(() => {
-      if (isDemoCafePath(pathname)) return; // café routes keep their own theme color
+      if (isDemoCafePath(pathname) || isKoffeeKulturePath(pathname)) return;
       applySurface(getThemeMode() === "dark" ? BRAND_DARK : BRAND);
     });
 

@@ -51,6 +51,13 @@ const CARDS = [
     title: "Café website",
     body: "Hours, map, menu embed, and a chatbot that answers café questions from seeded knowledge.",
   },
+  {
+    to: "/demo/koffee-kulture",
+    label: "Koffee Kulture",
+    eyebrow: "Brand demo",
+    title: "Koffee Kulture",
+    body: "The original Koffee Kulture site from the attached project — sage, beige, wood and terrazzo, with its branded Koffee Kan hero, scroll-to-pour section, menu board, direct ordering, reservations, locations, and GSAP motion.",
+  },
 ];
 
 export default function DemoHub() {

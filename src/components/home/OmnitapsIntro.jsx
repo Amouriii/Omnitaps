@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import LogoMark from "../LogoMark";
 import { motionMs } from "../../lib/motion.js";
+import { PRODUCT_MODULE_COUNT } from "../../data/productModules";
 
 const INTRO_DURATION_TOKEN = "--motion-dur-product-intro";
 const INTRO_EXIT_TOKEN = "--motion-dur-product-intro-exit";
@@ -9,16 +10,18 @@ const EXIT_FALLBACK_MS = 650;
 
 const MODULES = [
     { label: "Websites", x: 50, y: 8 },
-    { label: "QR menus", x: 88, y: 28 },
-    { label: "Support", x: 88, y: 76 },
+    { label: "QR menus", x: 85, y: 20 },
+    { label: "AI Chat", x: 93, y: 50 },
+    { label: "Loyalty", x: 85, y: 80 },
     { label: "Reservations", x: 50, y: 92 },
-    { label: "Reviews", x: 12, y: 76 },
-    { label: "WiFi", x: 12, y: 28 },
+    { label: "Wallet", x: 15, y: 80 },
+    { label: "Reviews", x: 7, y: 50 },
+    { label: "WiFi", x: 15, y: 20 },
 ];
 
 /**
  * A short product-led boot sequence for the Omnitaps marketing homepage.
- * The six orbiting nodes mirror the platform modules resolving into one
+ * The orbiting nodes mirror the platform modules resolving into one
  * connected customer experience. It is intentionally local to Home rather
  * than the app shell, so product routes remain quick and distraction-free.
  */
@@ -95,7 +98,7 @@ export default function OmnitapsIntro() {
                 <div className="omnitaps-intro__status">
                     <span className="omnitaps-intro__status-dot" aria-hidden="true" />
                     <span>Omnitaps / Network boot</span>
-                    <span className="omnitaps-intro__status-code">01—06</span>
+                    <span className="omnitaps-intro__status-code">01—{String(PRODUCT_MODULE_COUNT).padStart(2, "0")}</span>
                 </div>
 
                 <div className="omnitaps-intro__network" aria-hidden="true">
