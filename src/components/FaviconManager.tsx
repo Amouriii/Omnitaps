@@ -7,6 +7,11 @@ function isKoffeeKulturePath(pathname: string): boolean {
   return p === "/demo/koffee-kulture";
 }
 
+function isPabloAndAbdoPath(pathname: string): boolean {
+  const p = String(pathname || "").replace(/\/$/, "") || "/";
+  return p === "/demo/pablo-and-abdo";
+}
+
 /**
  * Keeps the tab favicon and browser-chrome color in sync with the active
  * surface: the indigo Omnitaps mark on product routes, the terracotta Demo
@@ -58,12 +63,26 @@ const CAFE: Surface = {
   themeColor: "#f3eadc", // --color-porcelain (café theme, demoCafe.css)
 };
 
+const PA: Surface = {
+  svg: "/favicon-pa.svg?v=2",
+  png32: "/favicon-pa.svg?v=2",
+  png16: "/favicon-pa.svg?v=2",
+  ico: "/favicon-pa.svg?v=2",
+  themeColor: "#232323",
+};
+
 const ICON_SELECTORS: Array<[string, keyof Omit<Surface, "themeColor">]> = [
-  ['link[rel="icon"][type="image/svg+xml"]', "svg"],
-  ['link[rel="icon"][type="image/png"][sizes="32x32"]', "png32"],
-  ['link[rel="icon"][type="image/png"][sizes="16x16"]', "png16"],
+  ['link[rel="icon"]:not([sizes])', "svg"],
+  ['link[rel="icon"][sizes="32x32"]', "png32"],
+  ['link[rel="icon"][sizes="16x16"]', "png16"],
   ['link[rel="shortcut icon"]', "ico"],
 ];
+
+function iconMimeType(href: string): string {
+  if (href.includes(".svg")) return "image/svg+xml";
+  if (href.includes(".png")) return "image/png";
+  return "image/x-icon";
+}
 
 function applySurface(surface: Surface) {
   for (const [selector, key] of ICON_SELECTORS) {
@@ -71,6 +90,9 @@ function applySurface(surface: Surface) {
     const href = surface[key];
     if (link && link.getAttribute("href") !== href) {
       link.setAttribute("href", href);
+    }
+    if (link) {
+      link.setAttribute("type", iconMimeType(href));
     }
   }
 
@@ -92,6 +114,11 @@ export default function FaviconManager() {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    if (isPabloAndAbdoPath(pathname)) {
+      applySurface(PA);
+      return;
+    }
+
     // Koffee Kulture demo route uses the KK surface
     if (isKoffeeKulturePath(pathname)) {
       applySurface(KK);
@@ -113,7 +140,7 @@ export default function FaviconManager() {
     if (typeof document === "undefined") return;
 
     const observer = new MutationObserver(() => {
-      if (isDemoCafePath(pathname) || isKoffeeKulturePath(pathname)) return;
+      if (isDemoCafePath(pathname) || isKoffeeKulturePath(pathname) || isPabloAndAbdoPath(pathname)) return;
       applySurface(getThemeMode() === "dark" ? BRAND_DARK : BRAND);
     });
 

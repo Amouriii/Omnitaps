@@ -1,0 +1,241 @@
+@import url("https://fonts.googleapis.com/css2?family=Bungee&family=Cairo:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+
+/* Pablo & Abdo is an intentionally self-contained visual surface. These
+   tokens and base rules are scoped to the route so Omnitaps and the other
+   demos keep their own typography, palette, and browser chrome. */
+html.pa-demo-active {
+  scroll-behavior: auto;
+  color-scheme: dark;
+}
+
+.pa-demo-route {
+  --pa-pink: #f2597f;
+  --pa-blue: #29d9ff;
+  --pa-graphite: #232323;
+  --pa-chrome: #c4c8cc;
+  --pa-card: #2a2a2a;
+  --pa-secondary: #2e2e2e;
+  --pa-muted: #a9adb2;
+  --pa-border: rgb(255 255 255 / 0.14);
+  --pa-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --background: var(--pa-graphite);
+  --foreground: #fff;
+  --primary: var(--pa-pink);
+  --primary-foreground: var(--pa-graphite);
+  --accent: var(--pa-blue);
+  --accent-foreground: var(--pa-graphite);
+  --border: var(--pa-border);
+  --input: rgb(255 255 255 / 0.2);
+  --ring: var(--pa-blue);
+  color: var(--foreground);
+  background: var(--background);
+  color-scheme: dark;
+  font-family: "Poppins", "Cairo", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.pa-demo-route *,
+.pa-demo-route *::before,
+.pa-demo-route *::after {
+  border-color: var(--pa-border);
+}
+
+.pa-demo-route h1,
+.pa-demo-route h2,
+.pa-demo-route h3,
+.pa-demo-route .font-display {
+  font-family: "Bungee", "Cairo", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.pa-demo-route .font-body,
+.pa-demo-route .font-sans {
+  font-family: "Poppins", "Cairo", system-ui, sans-serif;
+}
+
+.pa-demo-route .font-mono,
+.pa-demo-route .label-mono {
+  font-family: "Space Mono", ui-monospace, monospace;
+}
+
+.pa-demo-route .label-mono {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.pa-demo-route section[id],
+.pa-demo-route footer[id] {
+  scroll-margin-top: 5rem;
+}
+
+/* Token aliases used by the copied shadcn primitives. */
+.pa-demo-route .bg-background { background-color: var(--background); }
+.pa-demo-route .bg-card { background-color: var(--pa-card); }
+.pa-demo-route .bg-primary { background-color: var(--primary); }
+.pa-demo-route .bg-secondary { background-color: var(--pa-secondary); }
+.pa-demo-route .bg-accent { background-color: var(--accent); }
+.pa-demo-route .text-foreground { color: var(--foreground); }
+.pa-demo-route .text-primary { color: var(--primary); }
+.pa-demo-route .text-primary-foreground { color: var(--primary-foreground); }
+.pa-demo-route .text-accent { color: var(--accent); }
+.pa-demo-route .text-accent-foreground { color: var(--accent-foreground); }
+.pa-demo-route .text-muted-foreground { color: var(--pa-muted); }
+.pa-demo-route .border-border,
+.pa-demo-route .border-input { border-color: var(--pa-border); }
+.pa-demo-route [class~="placeholder:text-muted-foreground"]::placeholder { color: var(--pa-muted); }
+.pa-demo-route [class~="hover:bg-primary"]:hover { background-color: var(--primary); }
+.pa-demo-route [class~="hover:bg-primary/90"]:hover { background-color: color-mix(in srgb, var(--primary) 90%, transparent); }
+.pa-demo-route [class~="hover:bg-accent"]:hover { background-color: var(--accent); }
+.pa-demo-route [class~="hover:text-accent-foreground"]:hover { color: var(--accent-foreground); }
+.pa-demo-route [class~="focus-visible:ring-ring"]:focus-visible { --tw-ring-color: var(--ring); }
+
+/* Neon tube signage, diner cards, and tactile controls. */
+.pa-demo-route .pa-signage {
+  color: var(--sign-color, var(--pa-pink));
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--sign-color, var(--pa-pink)) 85%, transparent),
+    0 0 26px color-mix(in srgb, var(--sign-color, var(--pa-pink)) 55%, transparent),
+    0 0 72px color-mix(in srgb, var(--sign-color, var(--pa-pink)) 30%, transparent);
+}
+.pa-demo-route .pa-signage--logo { --sign-color: var(--pa-pink); }
+.pa-demo-route .pa-cta {
+  background: var(--pa-pink);
+  color: var(--pa-graphite);
+  font-family: "Bungee", "Cairo", sans-serif;
+  letter-spacing: 0.04em;
+  transition: box-shadow 260ms var(--pa-ease), transform 260ms var(--pa-ease), background 180ms ease;
+}
+.pa-demo-route .pa-cta:hover:not(:disabled) {
+  background: var(--pa-pink);
+  box-shadow: 0 0 22px rgb(242 89 127 / 0.55), 0 0 60px rgb(242 89 127 / 0.25);
+  transform: translateY(-1px);
+}
+.pa-demo-route .pa-cta:active:not(:disabled) { transform: scale(0.97); }
+.pa-demo-route .pa-nav-link { position: relative; transition: color 220ms var(--pa-ease); }
+.pa-demo-route .pa-nav-link::after {
+  position: absolute;
+  right: 100%;
+  bottom: -0.25rem;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: var(--pa-blue);
+  box-shadow: 0 0 10px var(--pa-blue);
+  transition: right 260ms var(--pa-ease);
+}
+.pa-demo-route .pa-nav-link:hover::after,
+.pa-demo-route .pa-nav-link:focus-visible::after { right: 0; }
+.pa-demo-route .pa-card {
+  position: relative;
+  isolation: isolate;
+  transition: transform 320ms var(--pa-ease), border-color 320ms var(--pa-ease), box-shadow 320ms var(--pa-ease);
+}
+.pa-demo-route .pa-card:hover {
+  border-color: color-mix(in srgb, var(--pa-blue) 45%, transparent);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.45);
+  transform: translate3d(0, -4px, 0);
+}
+.pa-demo-route .pa-price-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 9999px;
+  background: rgb(0 0 0 / 0.25);
+  padding: 0.375rem 0.75rem;
+  color: var(--pa-blue);
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 200ms var(--pa-ease), color 200ms var(--pa-ease), box-shadow 200ms var(--pa-ease);
+}
+.pa-demo-route .pa-price-pill:hover {
+  background: var(--pa-blue);
+  box-shadow: 0 0 18px rgb(41 217 255 / 0.6);
+  color: var(--pa-graphite);
+}
+.pa-demo-route .pa-input { background: rgb(0 0 0 / 0.3); color: #fff; }
+.pa-demo-route .pa-input::placeholder { color: rgb(255 255 255 / 0.3); }
+.pa-demo-route .pa-neon-frame {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgb(196 200 204 / 0.35);
+  border-radius: 1rem;
+  background: rgb(0 0 0 / 0.25);
+  box-shadow: inset 0 0 0 1px rgb(35 35 35 / 0.9), 0 0 0 1px rgb(35 35 35 / 0.9);
+  transition: box-shadow 320ms var(--pa-ease), border-color 320ms var(--pa-ease), transform 320ms var(--pa-ease);
+}
+.pa-demo-route .pa-neon-frame:hover {
+  border-color: color-mix(in srgb, var(--pa-pink) 65%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(35 35 35 / 0.9), 0 0 24px rgb(242 89 127 / 0.38), 0 18px 44px rgb(0 0 0 / 0.5);
+}
+.pa-demo-route .pa-neon-frame img { transition: transform 420ms var(--pa-ease); }
+.pa-demo-route .pa-neon-frame:hover img { transform: scale(1.04); }
+.pa-demo-route .pa-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* The floor is a core part of the supplied identity. */
+.pa-demo-route .pa-checkerboard {
+  background-image: conic-gradient(#fff 25%, #161616 0 50%, #fff 0 75%, #161616 0);
+  background-size: 28px 28px;
+}
+.pa-demo-route .pa-checkerboard-edge { position: relative; }
+.pa-demo-route .pa-checkerboard-edge::before,
+.pa-demo-route .pa-checkerboard-edge::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: 10px;
+  content: "";
+  pointer-events: none;
+  background-image: conic-gradient(#fff 25%, #161616 0 50%, #fff 0 75%, #161616 0);
+  background-size: 20px 20px;
+  opacity: 0.85;
+}
+.pa-demo-route .pa-checkerboard-edge::before { top: 0; }
+.pa-demo-route .pa-checkerboard-edge::after { bottom: 0; }
+
+.pa-demo-route .marquee-track {
+  display: inline-flex;
+  min-width: 200%;
+  animation: pa-marquee 26s linear infinite;
+}
+.pa-demo-route .pa-flicker { animation: pa-flicker 6s linear infinite; }
+.pa-demo-route .wa-fab { position: relative; }
+.pa-demo-route .pa-toast {
+  border: 1px solid var(--pa-border);
+  background: var(--pa-card);
+  color: #fff;
+  font-family: "Poppins", "Cairo", system-ui, sans-serif;
+}
+.pa-demo-route .pa-toast__title { color: #fff; font-weight: 700; }
+.pa-demo-route .pa-toast__description { color: var(--pa-muted); }
+
+@keyframes pa-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes pa-flicker {
+  0%, 100% { opacity: 1; }
+  41% { opacity: 1; }
+  42% { opacity: 0.55; }
+  43% { opacity: 1; }
+  74% { opacity: 1; }
+  75% { opacity: 0.75; }
+  76% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-demo-route .marquee-track,
+  .pa-demo-route .pa-flicker { animation: none; }
+  .pa-demo-route *,
+  .pa-demo-route *::before,
+  .pa-demo-route *::after { transition-duration: 0.01ms !important; }
+}

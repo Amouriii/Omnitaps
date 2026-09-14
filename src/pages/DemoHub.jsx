@@ -52,6 +52,13 @@ const CARDS = [
     body: "Hours, map, menu embed, and a chatbot that answers café questions from seeded knowledge.",
   },
   {
+    to: "/demo/pablo-and-abdo",
+    label: "Pablo & Abdo",
+    eyebrow: "Brand demo",
+    title: "Pablo & Abdo",
+    body: "The American/Egyptian diner experience from Heliopolis — neon signage, Cairo-fused comfort food, direct ordering, table reservations, and a live WhatsApp tray.",
+  },
+  {
     to: "/demo/koffee-kulture",
     label: "Koffee Kulture",
     eyebrow: "Brand demo",
