@@ -48,11 +48,11 @@ const BRAND_DARK: Surface = {
 };
 
 const KK: Surface = {
-  svg: "/favicon-kk.svg",
-  png32: "/favicon-kk.svg",
-  png16: "/favicon-kk.svg",
-  ico: "/favicon-kk.svg",
-  themeColor: "#5c4429", // --wood (KK design token)
+  svg: "/koffee-kulture-favicon.svg?v=1",
+  png32: "/koffee-kulture-favicon.svg?v=1",
+  png16: "/koffee-kulture-favicon.svg?v=1",
+  ico: "/koffee-kulture-favicon.svg?v=1",
+  themeColor: "#adc2a8",
 };
 
 const CAFE: Surface = {
