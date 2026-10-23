@@ -149,8 +149,22 @@ export default function App() {
                 </RequireAuth>
               }
             />
-            <Route path="/admin/menu" element={<AdminMenuPage />} />
-            <Route path="/admin/menu/:restaurantId" element={<AdminMenuPage />} />
+            <Route
+              path="/admin/menu"
+              element={
+                <RequireAuth>
+                  <AdminMenuPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/menu/:restaurantId"
+              element={
+                <RequireAuth>
+                  <AdminMenuPage />
+                </RequireAuth>
+              }
+            />
             <Route path="*" element={<NotFound />} />
               </Routes>
               </PageTransition>
