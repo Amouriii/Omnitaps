@@ -20,3 +20,4 @@ public/favicon*.svg
 public/*.png
 public/*.ico
 .icon-gen-stamp.json
+/freebuff-sites-build/

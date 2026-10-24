@@ -10,7 +10,7 @@ import { defineConfig } from "@playwright/test";
  */
 const chromiumPath =
     process.env.PLAYWRIGHT_CHROMIUM_PATH ||
-    `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1234/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+    `/Users/ONouh/Library/Caches/ms-playwright/chromium-1248/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
 
 const WEB_PORT = Number(process.env.E2E_PORT || 5173);
 
