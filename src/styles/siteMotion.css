@@ -1318,7 +1318,9 @@ html.omnitaps-intro-active {
   animation: omnitaps-copy-in 0.7s var(--motion-ease-out) 1.35s both;
 }
 
-.omnitaps-intro__copy h1 {
+/* The intro is a decorative reveal: it carries the headline styling but not
+   an <h1>, so the home page exposes exactly one top-level heading. */
+.omnitaps-intro__headline {
   margin: 0;
   color: var(--intro-ink);
   font-family: var(--font-display);
@@ -1455,7 +1457,7 @@ html.omnitaps-intro-active {
   .omnitaps-intro__core-ring,
   .omnitaps-intro__core-mark,
   .omnitaps-intro__eyebrow,
-  .omnitaps-intro__copy h1,
+  .omnitaps-intro__headline,
   .omnitaps-intro__subcopy,
   .omnitaps-intro__progress,
   .omnitaps-intro__progress-fill,
@@ -1469,7 +1471,7 @@ html.omnitaps-intro-active {
   .omnitaps-intro__core-ring,
   .omnitaps-intro__core-mark,
   .omnitaps-intro__eyebrow,
-  .omnitaps-intro__copy h1,
+  .omnitaps-intro__headline,
   .omnitaps-intro__subcopy,
   .omnitaps-intro__progress {
     opacity: 1 !important;
