@@ -60,8 +60,7 @@ function buildMenuTree(items: MenuItem[], role: UserRole | null): MenuTreeNode[]
 
   const sortRecursive = (nodes: MenuTreeNode[]): MenuTreeNode[] =>
     nodes
-      .slice()
-      .sort((a, b) => a.sort_order - b.sort_order)
+      .toSorted((a, b) => a.sort_order - b.sort_order)
       .map((node) => ({
         ...node,
         children: sortRecursive(node.children),
