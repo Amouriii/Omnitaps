@@ -32,7 +32,14 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
 }
 
 /* Dark mode tokens — applied when <html> has data-theme="dark" */
