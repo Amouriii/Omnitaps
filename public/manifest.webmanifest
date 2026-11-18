@@ -1,7 +1,7 @@
 {
   "name": "Omnitaps",
   "short_name": "Omnitaps",
-  "description": "Digital infrastructure for hospitality: websites, QR menus, AI chatbots, review management, and guest Wi-Fi.",
+  "description": "One packaged system for hospitality and retail: websites, QR menus, ordering, reservations, reviews, loyalty, and guest Wi-Fi.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

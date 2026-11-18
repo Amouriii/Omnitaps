@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { items as SERVICES } from "../data/items";
 import { PRODUCT_MODULE_COUNT } from "../data/productModules";
 import LogoMark from "../components/LogoMark";
@@ -88,9 +89,9 @@ const icons = {
 /*  Content                                                            */
 /* ================================================================== */
 const NAV_LINKS = [
-    { label: "Solutions", href: "#solutions" },
-    { label: "How it works", href: "#how-it-works" },
-    { label: "Contact", href: "#cta" },
+    { label: "Solutions", to: "/#solutions" },
+    { label: "How it works", to: "/#how-it-works" },
+    { label: "Contact", to: "/contact" },
 ];
 
 const STEPS = [
@@ -121,9 +122,35 @@ const MARQUEE_ITEMS = [
 ];
 
 const HERO_STATS = [
-    { value: String(PRODUCT_MODULE_COUNT), label: "modules, one platform" },
-    { value: "1", label: "scan to connect" },
+    { value: String(PRODUCT_MODULE_COUNT), label: "modules in one package" },
+    { value: "1", label: "company to deal with" },
     { value: "1", label: "customer record" },
+];
+
+/* Direct ways to reach the people who build and run Omnitaps. */
+const CONTACT_CHANNELS = [
+    {
+        label: "Email",
+        value: "mosameh15@outlook.com",
+        hint: "Replies within one business day",
+        href: "mailto:mosameh15@outlook.com",
+        icon: Mail,
+    },
+    {
+        label: "Call",
+        value: "+20 10 1564 5898",
+        hint: "Mon–Fri · 9:00–18:00 PT",
+        href: "tel:+201015645898",
+        icon: Phone,
+    },
+    {
+        label: "WhatsApp",
+        value: "+20 10 1564 5898",
+        hint: "Fastest for quick questions",
+        href: "https://wa.me/201015645898",
+        icon: MessageCircle,
+        external: true,
+    },
 ];
 
 /* ================================================================== */
@@ -173,9 +200,9 @@ export default function Home() {
 
                     <nav aria-label="Primary" className="hidden md:flex items-center gap-8">
                         {NAV_LINKS.map((l) => (
-                            <a key={l.label} href={l.href} className="nav-link text-[15px]">
+                            <Link key={l.label} to={l.to} className="nav-link text-[15px]">
                                 {l.label}
-                            </a>
+                            </Link>
                         ))}
                         <Link to="/demo" className="nav-link text-[15px]">
                             Try demos
@@ -187,12 +214,12 @@ export default function Home() {
                         <Link to="/login" className="nav-link text-[15px]">
                             Admin
                         </Link>
-                        <a
-                            href="#cta"
+                        <Link
+                            to="/contact"
                             className="btn-primary rounded-lg px-4.5 py-2.5 text-[14px] font-semibold px-5"
                         >
                             Book a Demo
-                        </a>
+                        </Link>
                     </div>
 
                     <button
@@ -218,15 +245,15 @@ export default function Home() {
                         </div>
                         <nav aria-label="Primary" className="flex flex-col gap-1">
                             {NAV_LINKS.map((l, idx) => (
-                                <a
+                                <Link
                                     key={l.label}
-                                    href={l.href}
+                                    to={l.to}
                                     onClick={() => setMobileOpen(false)}
                                     ref={idx === 0 ? firstMobileLink : null}
                                     className="py-2.5 text-[15px] text-ink-muted"
                                 >
                                     {l.label}
-                                </a>
+                                </Link>
                             ))}
                             <Link
                                 to="/demo"
@@ -243,13 +270,13 @@ export default function Home() {
                             >
                                 Admin
                             </Link>
-                            <a
-                                href="#cta"
+                            <Link
+                                to="/contact"
                                 onClick={() => setMobileOpen(false)}
                                 className="btn-primary mt-3 block text-center rounded-lg px-5 py-3 text-[14px] font-semibold"
                             >
                                 Book a Demo
-                            </a>
+                            </Link>
                     </div>
                 )}
             </header>
@@ -272,27 +299,26 @@ export default function Home() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tap opacity-60" />
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-tap" />
                                     </span>
-                                    Digital infrastructure for hospitality &amp; retail
+                                    Omnitaps · All-in-one system for hospitality &amp; retail
                                 </div>
                                 <h1
                                     className="hero-enter font-display font-semibold text-[40px] leading-[1.08] sm:text-[52px] md:text-[56px] tracking-[-0.02em] text-ink mb-6 max-w-xl"
                                     style={enter(1)}
                                 >
-                                    Digitize your entire business with one tap.
+                                    One company. One system. Every part of your business.
                                 </h1>
                                 <p className="hero-enter text-[17px] leading-[1.6] text-ink-muted max-w-md mb-9" style={enter(2)}>
-                                    Omnitaps replaces the six different logins, vendors, and subscriptions
-                                    running your restaurant or store with a single connected platform —
-
-                                    website, menus, reservations, reviews, WiFi, and support.
+                                    Omnitaps is one company offering one packaged system — website, QR menus,
+                                    ordering, reservations, reviews, Wi-Fi, loyalty, and support — all running on
+                                    a single customer record instead of six separate vendors.
                                 </p>
                                 <div className="hero-enter flex flex-wrap items-center gap-3" style={enter(3)}>
-                                    <a href="#cta" className="btn-primary press-scale rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
+                                    <Link to="/contact" className="btn-primary press-scale rounded-lg px-6 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2">
                                         Get Started
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                                    </a>
+                                    </Link>
                                     <a href="#solutions" className="btn-ghost press-scale rounded-lg px-6 py-3.5 text-[15px] font-semibold">
-                                        View Solutions
+                                        See what's included
                                     </a>
                                 </div>
 
@@ -336,42 +362,55 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* ---------------- SERVICES (bento) ---------------- */}
+                {/* ---------------- SOLUTIONS ---------------- */}
                 <section id="solutions" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28 scroll-mt-20">
-                <div className="reveal max-w-xl mb-12">
-                    <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
-                        The platform
+                <div className="reveal flex flex-col gap-7 md:flex-row md:items-end md:justify-between mb-12">
+                    <div className="max-w-xl">
+                        <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
+                            What's in the package
+                        </div>
+                        <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink mb-4">
+                            {PRODUCT_MODULE_COUNT} modules. One packaged system. Nothing to integrate.
+                        </h2>
+                        <p className="text-[16px] leading-[1.6] text-ink-muted">
+                            Omnitaps sells one system, not a stack of tools. Every module below runs on the
+                            same customer record, so a Wi-Fi login, a booking, and a review all build the same
+                            picture of who walked in — one vendor, one console, one setup.
+                        </p>
                     </div>
-                    <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink mb-4">
-                        {PRODUCT_MODULE_COUNT} tools your team already needs. One place to run them.
-                    </h2>
-                    <p className="text-[16px] leading-[1.6] text-ink-muted">
-                        Every Omnitaps module shares the same customer record, so a WiFi login,
-                        a booking, and a review all build the same picture of who walked in.
-                    </p>
+                    <div className="flex flex-wrap gap-3 shrink-0">
+                        <Link to="/contact" className="btn-primary press-scale rounded-lg px-6 py-3 text-[15px] font-semibold">
+                            Book a demo
+                        </Link>
+                        <Link to="/demo" className="btn-ghost press-scale rounded-lg px-6 py-3 text-[15px] font-semibold">
+                            Try demos
+                        </Link>
+                    </div>
                 </div>
 
-                <div className="grid md:grid-cols-6 gap-4" onPointerMove={onBentoPointerMove}>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" onPointerMove={onBentoPointerMove}>
                     {SERVICES.map((s, i) => (
                         <Link
                             to={`/items/${s.id}`}
                             key={s.id}
-                            className={`reveal-child bento-card block cursor-pointer ${s.col} rounded-2xl border border-hairline bg-surface p-7`}
+                            className="reveal-child bento-card group flex flex-col rounded-2xl border border-hairline bg-surface p-7 transition-colors hover:border-tap/40"
                             style={child(i)}
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="bento-icon w-11 h-11 rounded-xl bg-tap-soft text-tap flex items-center justify-center">
                                     {icons[s.icon]({ className: "w-5 h-5" })}
                                 </div>
-                                <span className="card-dot w-1.5 h-1.5 rounded-full bg-hairline-strong" />
+                                <span className="font-mono text-[11px] tracking-[0.16em] text-ink-faint">
+                                    {String(i + 1).padStart(2, "0")}
+                                </span>
                             </div>
                             <h3 className="font-display font-semibold text-[17px] text-ink mb-2">
                                 {s.title}
                             </h3>
-                            <p className="text-[14.5px] leading-[1.6] text-ink-muted">{s.desc}</p>
-                            <span className="card-arrow mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-tap" aria-hidden="true">
+                            <p className="text-[14.5px] leading-[1.6] text-ink-muted mb-6">{s.desc}</p>
+                            <span className="mt-auto inline-flex w-fit items-center gap-2 rounded-lg border border-hairline px-3.5 py-2 text-[13px] font-semibold text-tap transition-colors group-hover:border-tap/40 group-hover:bg-tap-soft">
                                 Explore
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                             </span>
                         </Link>
                     ))}
@@ -386,7 +425,7 @@ export default function Home() {
                             How it works
                         </div>
                         <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink">
-                            From tool stack to one tap, in three steps.
+                            From six vendors to one packaged system, in three steps.
                         </h2>
                     </div>
 
@@ -414,38 +453,86 @@ export default function Home() {
                 </div>
                 </section>
 
-                {/* ---------------- BOTTOM CTA ---------------- */}
-                <section id="cta" className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
+                {/* ---------------- CONTACT ---------------- */}
+                <section
+                    id="contact"
+                    aria-labelledby="contact-heading"
+                    className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28 scroll-mt-20"
+                >
                 <div className="reveal--zoom reveal relative overflow-hidden rounded-3xl bg-ink px-8 py-16 md:px-16 md:py-20 text-center">
                     <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-tap opacity-20 blur-2xl" />
                     <div className="pointer-events-none absolute -bottom-24 -left-14 w-72 h-72 rounded-full bg-brass opacity-15 blur-2xl" />
 
                     <div className="relative">
-                        <h2 className="font-display font-semibold text-[30px] md:text-[42px] leading-[1.1] tracking-[-0.01em] text-white mb-5 max-w-2xl mx-auto">
-                            Ready to run your business on one tap?
+                        <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-white/45 mb-4">
+                            Contact
+                        </div>
+                        <h2
+                            id="contact-heading"
+                            className="font-display font-semibold text-[30px] md:text-[42px] leading-[1.1] tracking-[-0.01em] text-white mb-5 max-w-2xl mx-auto"
+                        >
+                            Talk to a person, not a ticket queue.
                         </h2>
                         <p className="text-[16px] text-white/60 max-w-md mx-auto mb-10">
-                            Join hospitality and retail teams who replaced their tool stack with
-                            a single connected platform.
+                            Questions, a walkthrough for your team, or a partnership — you reach the
+                            people who build and run Omnitaps. We reply within one business day.
                         </p>
                         <div className="flex flex-wrap justify-center gap-3">
-                            <a href="#top" className="btn-primary rounded-lg px-7 py-3.5 text-[15px] font-semibold">
-                                Get Started
-                            </a>
-                            <a
-                                href="#top"
-                                className="rounded-lg px-7 py-3.5 text-[15px] font-semibold text-white border border-white/20 hover:border-white/40 transition-colors"
+                            <Link
+                                to="/contact#contact-form"
+                                className="btn-primary press-scale rounded-lg px-7 py-3.5 text-[15px] font-semibold inline-flex items-center gap-2"
                             >
-                                Talk to Sales
-                            </a>
-                        </div>
-                        <div className="mt-8 text-[13px] text-white/55">
-                            <Link to="/demo" className="hover:text-white transition-colors">
-                                Demo Café Hub
+                                Send a message
+                                <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+                            </Link>
+                            <Link
+                                to="/demo"
+                                className="btn-ghost press-scale rounded-lg px-7 py-3.5 text-[15px] font-semibold"
+                            >
+                                Try the demos
                             </Link>
                         </div>
+                        <p className="mt-8 text-[13px] text-white/55">
+                            Mon–Fri · 9:00–18:00 Pacific Time
+                        </p>
                     </div>
                 </div>
+
+                <ul
+                    aria-label="Direct contact channels"
+                    className="reveal mt-4 grid gap-4 sm:grid-cols-3"
+                >
+                    {CONTACT_CHANNELS.map((channel) => (
+                        <li key={channel.label}>
+                            <a
+                                href={channel.href}
+                                {...(channel.external
+                                    ? { target: "_blank", rel: "noreferrer noopener" }
+                                    : {})}
+                                className="bento-card group flex h-full flex-col rounded-2xl border border-hairline bg-surface p-6 transition-colors hover:border-tap/40"
+                            >
+                                <div className="mb-5 flex items-center justify-between">
+                                    <span className="bento-icon grid h-11 w-11 place-items-center rounded-xl bg-tap-soft text-tap">
+                                        <channel.icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                                    </span>
+                                    <ArrowRight
+                                        size={16}
+                                        strokeWidth={2}
+                                        aria-hidden="true"
+                                        className="text-ink-faint transition-transform group-hover:translate-x-0.5"
+                                    />
+                                </div>
+                                <div className="font-mono text-[11px] uppercase tracking-widest text-ink-faint">
+                                    {channel.label}
+                                </div>
+                                <div className="mt-1 text-[15px] font-semibold text-ink break-all">
+                                    {channel.value}
+                                </div>
+                                <p className="mt-1 text-[13px] text-ink-muted">{channel.hint}</p>
+                            </a>
+                        </li>
+                    ))}
+                </ul>
                 </section>
 
             </main>
