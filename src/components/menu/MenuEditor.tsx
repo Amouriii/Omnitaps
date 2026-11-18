@@ -62,7 +62,7 @@ export function MenuEditor({ enterpriseId, role, className }: MenuEditorProps) {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const sortedItems = useMemo(
-    () => menuItems.slice().sort((a, b) => a.sort_order - b.sort_order),
+    () => menuItems.toSorted((a, b) => a.sort_order - b.sort_order),
     [menuItems],
   );
 
