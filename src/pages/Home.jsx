@@ -2,6 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { items as SERVICES } from "../data/items";
+import {
+    PRIMARY_CONTACT,
+    formatPhone,
+    mailtoHref,
+    telHref,
+    whatsappHref,
+} from "../data/contact";
 import { PRODUCT_MODULE_COUNT } from "../data/productModules";
 import LogoMark from "../components/LogoMark";
 import ThemeToggle from "../components/ThemeToggle";
@@ -131,23 +138,23 @@ const HERO_STATS = [
 const CONTACT_CHANNELS = [
     {
         label: "Email",
-        value: "mosameh15@outlook.com",
+        value: PRIMARY_CONTACT.email,
         hint: "Replies within one business day",
-        href: "mailto:mosameh15@outlook.com",
+        href: mailtoHref(PRIMARY_CONTACT.email),
         icon: Mail,
     },
     {
         label: "Call",
-        value: "+20 10 1564 5898",
+        value: formatPhone(PRIMARY_CONTACT.phones[0]),
         hint: "Mon–Fri · 9:00–18:00 PT",
-        href: "tel:+201015645898",
+        href: telHref(PRIMARY_CONTACT.phones[0]),
         icon: Phone,
     },
     {
         label: "WhatsApp",
-        value: "+20 10 1564 5898",
+        value: formatPhone(PRIMARY_CONTACT.phones[0]),
         hint: "Fastest for quick questions",
-        href: "https://wa.me/201015645898",
+        href: whatsappHref(PRIMARY_CONTACT.phones[0]),
         icon: MessageCircle,
         external: true,
     },

@@ -4,29 +4,15 @@ import { ArrowRight, Clock, Mail, MapPin, Phone } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import { submitContactMessage } from "../lib/apiClient";
+import {
+  PRIMARY_CONTACT,
+  TEAM,
+  buildEnquiryMailto,
+  formatPhone,
+  mailtoHref,
+  telHref,
+} from "../data/contact";
 import useScrollReveal from "../hooks/useScrollReveal";
-
-/* People you can reach directly */
-const TEAM = [
-  {
-    name: "Mohamed Sameh",
-    role: "Point of contact",
-    email: "mosameh15@outlook.com",
-    phones: ["+201015645898"],
-  },
-  {
-    name: "Omar Nouh",
-    role: "Point of contact",
-    email: "onouh7@gmail.com",
-    phones: ["+201200063055", "+15035065006"],
-  },
-  {
-    name: "Mohamed Atef",
-    role: "Point of contact",
-    email: "mohamedatef5115@gmail.com",
-    phones: ["+201123360043"],
-  },
-];
 
 const OFFICES = [
   {
@@ -50,36 +36,6 @@ const OFFICES = [
 const inputClass =
   "w-full rounded-xl border border-hairline bg-porcelain px-4 py-3 text-[15px] text-ink placeholder:text-ink-faint focus:border-tap focus:outline-none";
 
-/* Where the form hands the message when the server has no delivery channel. */
-const CONTACT_FALLBACK_EMAIL = TEAM[0].email;
-
-/* Compose the same payload the API would have mailed, as a mailto: hand-off. */
-function buildMailtoHref({ name, email, company, message }) {
-  const subject = `Website enquiry from ${name || "a visitor"}`;
-  const body = [
-    `Name: ${name ?? ""}`,
-    `Email: ${email ?? ""}`,
-    company ? `Company: ${company}` : null,
-    "",
-    message ?? "",
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-  return `mailto:${CONTACT_FALLBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
-/* Display phone numbers in international format; the href keeps plain E.164. */
-function formatPhoneIntl(value) {
-  const digits = value.replace(/[^\d+]/g, "");
-  if (/^\+20\d{10}$/.test(digits)) {
-    return `${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 9)} ${digits.slice(9)}`;
-  }
-  if (/^\+1\d{10}$/.test(digits)) {
-    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
-  }
-  return value;
-}
-
 function initials(name) {
   return name
     .split(" ")
@@ -92,7 +48,7 @@ function initials(name) {
 export default function Contact() {
   const [status, setStatus] = useState("idle"); // idle | submitting | success | error
   const [error, setError] = useState("");
-  const [mailtoHref, setMailtoHref] = useState("");
+  const [mailtoLink, setMailtoLink] = useState("");
   const rootRef = useScrollReveal();
   const child = (i) => ({ "--child-delay": `${i * 90}ms` });
 
@@ -108,7 +64,7 @@ export default function Contact() {
     };
     setStatus("submitting");
     setError("");
-    setMailtoHref("");
+    setMailtoLink("");
     try {
       await submitContactMessage(values);
       form.reset();
@@ -119,9 +75,9 @@ export default function Contact() {
       // database and no Resend key). Hand the message to the visitor's mail app
       // so it still reaches the team instead of dead-ending in an error banner.
       if (err?.code === "CONTACT_DELIVERY_UNCONFIGURED") {
-        setMailtoHref(buildMailtoHref(values));
+        setMailtoLink(buildEnquiryMailto(values));
         setError(
-          `We could not send that from the site. Send it from your mail app, or email ${CONTACT_FALLBACK_EMAIL} directly.`,
+          `We could not send that from the site. Send it from your mail app, or email ${PRIMARY_CONTACT.email} directly.`,
         );
         return;
       }
@@ -196,7 +152,7 @@ export default function Contact() {
 
               <div className="mt-auto space-y-2.5">
                 <a
-                  href={`mailto:${person.email}`}
+                  href={mailtoHref(person.email)}
                   className="flex items-center gap-2.5 rounded-lg border border-hairline px-3.5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:border-tap/50 hover:bg-tap-soft hover:text-tap"
                 >
                   <Mail size={15} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-tap" />
@@ -205,11 +161,11 @@ export default function Contact() {
                 {person.phones.map((phone) => (
                   <a
                     key={phone}
-                    href={`tel:${phone.replace(/\s+/g, "")}`}
+                    href={telHref(phone)}
                     className="flex items-center gap-2.5 rounded-lg border border-hairline px-3.5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:border-tap/50 hover:bg-tap-soft hover:text-tap"
                   >
                     <Phone size={15} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-tap" />
-                    <span>{formatPhoneIntl(phone)}</span>
+                    <span>{formatPhone(phone)}</span>
                   </a>
                 ))}
               </div>
@@ -267,10 +223,10 @@ export default function Contact() {
             <p className="text-[14px] leading-[1.6] text-ink-muted">
               Prefer email?{" "}
               <a
-                href={`mailto:${TEAM[0].email}`}
+                href={mailtoHref(PRIMARY_CONTACT.email)}
                 className="font-semibold text-tap hover:underline"
               >
-                {TEAM[0].email}
+                {PRIMARY_CONTACT.email}
               </a>
             </p>
           </div>
@@ -310,9 +266,9 @@ export default function Contact() {
                     role="alert"
                   >
                     <p>{error}</p>
-                    {mailtoHref ? (
+                    {mailtoLink ? (
                       <a
-                        href={mailtoHref}
+                        href={mailtoLink}
                         className="mt-2 inline-block font-semibold underline underline-offset-2"
                       >
                         Open your mail app
