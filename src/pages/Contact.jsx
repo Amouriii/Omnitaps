@@ -50,6 +50,24 @@ const OFFICES = [
 const inputClass =
   "w-full rounded-xl border border-hairline bg-porcelain px-4 py-3 text-[15px] text-ink placeholder:text-ink-faint focus:border-tap focus:outline-none";
 
+/* Where the form hands the message when the server has no delivery channel. */
+const CONTACT_FALLBACK_EMAIL = TEAM[0].email;
+
+/* Compose the same payload the API would have mailed, as a mailto: hand-off. */
+function buildMailtoHref({ name, email, company, message }) {
+  const subject = `Website enquiry from ${name || "a visitor"}`;
+  const body = [
+    `Name: ${name ?? ""}`,
+    `Email: ${email ?? ""}`,
+    company ? `Company: ${company}` : null,
+    "",
+    message ?? "",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+  return `mailto:${CONTACT_FALLBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 /* Display phone numbers in international format; the href keeps plain E.164. */
 function formatPhoneIntl(value) {
   const digits = value.replace(/[^\d+]/g, "");
@@ -74,6 +92,7 @@ function initials(name) {
 export default function Contact() {
   const [status, setStatus] = useState("idle"); // idle | submitting | success | error
   const [error, setError] = useState("");
+  const [mailtoHref, setMailtoHref] = useState("");
   const rootRef = useScrollReveal();
   const child = (i) => ({ "--child-delay": `${i * 90}ms` });
 
@@ -81,19 +100,31 @@ export default function Contact() {
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
+    const values = {
+      name: data.get("name"),
+      email: data.get("email"),
+      company: data.get("company") ?? "",
+      message: data.get("message"),
+    };
     setStatus("submitting");
     setError("");
+    setMailtoHref("");
     try {
-      await submitContactMessage({
-        name: data.get("name"),
-        email: data.get("email"),
-        company: data.get("company") ?? "",
-        message: data.get("message"),
-      });
+      await submitContactMessage(values);
       form.reset();
       setStatus("success");
     } catch (err) {
       setStatus("error");
+      // The server answered 503 because it has no delivery channel (no reachable
+      // database and no Resend key). Hand the message to the visitor's mail app
+      // so it still reaches the team instead of dead-ending in an error banner.
+      if (err?.code === "CONTACT_DELIVERY_UNCONFIGURED") {
+        setMailtoHref(buildMailtoHref(values));
+        setError(
+          `We could not send that from the site. Send it from your mail app, or email ${CONTACT_FALLBACK_EMAIL} directly.`,
+        );
+        return;
+      }
       setError(
         err instanceof Error
           ? err.message
@@ -278,7 +309,15 @@ export default function Contact() {
                     className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-700"
                     role="alert"
                   >
-                    {error}
+                    <p>{error}</p>
+                    {mailtoHref ? (
+                      <a
+                        href={mailtoHref}
+                        className="mt-2 inline-block font-semibold underline underline-offset-2"
+                      >
+                        Open your mail app
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
                 <button
