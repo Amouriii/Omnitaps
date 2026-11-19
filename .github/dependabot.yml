@@ -1,0 +1,39 @@
+# Dependency updates.
+#
+# Grouped weekly npm updates keep the tree current in reviewable chunks. Major
+# bumps are deliberately left out of the groups so they arrive as individual
+# pull requests, where a breaking change gets its own review and CI run.
+#
+# This is also how the dev-only advisories in the `vercel` CLI tree get tracked:
+# `vercel` now lives in devDependencies (package.json), and once a release ships
+# patched `zod`, `tar`, `smol-toml`, `js-yaml` or `minimatch`, the weekly
+# development-dependencies PR will clear them. When that lands, both audit steps
+# (.github/workflows/ci.yml and test-module-template.yml) can drop `--omit=dev`
+# and audit the full tree again.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    labels:
+      - dependencies
+    groups:
+      production-dependencies:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      development-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
