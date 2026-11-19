@@ -21,3 +21,6 @@ public/*.png
 public/*.ico
 .icon-gen-stamp.json
 /freebuff-sites-build/
+
+# Local verification captures from live-preview checks
+screenshots/

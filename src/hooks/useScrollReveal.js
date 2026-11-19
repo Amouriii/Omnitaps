@@ -33,11 +33,38 @@ export default function useScrollReveal() {
             return undefined;
         }
 
+        const reveal = (el) => el.classList.add("is-visible");
+        const inViewport = (el) => {
+            const rect = el.getBoundingClientRect();
+            return rect.top < window.innerHeight && rect.bottom > 0;
+        };
+
+        // Reveal whatever is on screen right now. Without this first pass a
+        // section that is already visible can stay at opacity:0 until a scroll
+        // event nudges the observer — which reads as "my changes did not appear"
+        // after a reload, and hides everything when the tab is in the background
+        // and animations are paused.
+        const revealInView = () => {
+            for (const el of targets) {
+                if (!el.classList.contains("is-visible") && inViewport(el)) {
+                    reveal(el);
+                }
+            }
+        };
+        revealInView();
+
+        // Re-run the pass when the tab regains focus, so a page left open in a
+        // background tab renders its content instead of a half-faded screenshot.
+        const onVisibility = () => {
+            if (document.visibilityState === "visible") revealInView();
+        };
+        document.addEventListener("visibilitychange", onVisibility);
+
         const observer = new IntersectionObserver(
             (entries) => {
                 for (const entry of entries) {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add("is-visible");
+                        reveal(entry.target);
                         observer.unobserve(entry.target);
                     }
                 }
@@ -46,9 +73,12 @@ export default function useScrollReveal() {
         );
 
         for (const el of targets) {
-            observer.observe(el);
+            if (!el.classList.contains("is-visible")) observer.observe(el);
         }
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
     }, []);
 
     return rootRef;

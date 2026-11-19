@@ -142,7 +142,7 @@ export default function OmnitapsIntro() {
 
                 <div className="omnitaps-intro__copy">
                     <p className="omnitaps-intro__eyebrow">One tap. Every touchpoint.</p>
-                    <h1>Connecting your business.</h1>
+                    <p className="omnitaps-intro__headline">Connecting your business.</p>
                     <p className="omnitaps-intro__subcopy">
                         Bringing your website, menu, guests, and team into one system.
                     </p>

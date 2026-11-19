@@ -38,13 +38,13 @@ export default function About() {
                         About Omnitaps
                     </div>
                     <h1 className="reveal font-display font-semibold text-[36px] leading-[1.1] sm:text-[48px] md:text-[52px] tracking-[-0.02em] text-ink mb-6" style={{ "--reveal-delay": "90ms" }}>
-                        Digital infrastructure for hospitality &amp; retail.
+                        One company. One packaged system.
                     </h1>
                     <p className="reveal text-[17px] leading-[1.6] text-ink-muted max-w-xl mb-9" style={{ "--reveal-delay": "180ms" }}>
-                        Omnitaps replaces the six different logins, vendors, and subscriptions running
-                        your restaurant or store with a single connected platform — websites, menus,
-                        reservations, reviews, WiFi, and support. Every module shares the same customer
-                        record, so one tap connects your whole operation.
+                        Omnitaps builds and operates one packaged system for hospitality and retail —
+                        websites, QR menus, ordering, reservations, reviews, Wi-Fi, loyalty, and support.
+                        Every module shares the same customer record, so one tap connects your whole
+                        operation.
                     </p>
                     <div className="reveal flex flex-wrap items-center gap-3" style={{ "--reveal-delay": "270ms" }}>
                         <Link
@@ -96,13 +96,14 @@ export default function About() {
             <section className="max-w-6xl mx-auto px-5 sm:px-8 py-20 md:py-28">
                 <div className="reveal max-w-xl mb-12">
                     <div className="font-mono text-[12px] tracking-[0.14em] uppercase text-brass-dark mb-3">
-                        Products &amp; services
+                        What's in the package
                     </div>
                     <h2 className="font-display font-semibold text-[30px] md:text-[36px] tracking-[-0.01em] text-ink mb-4">
-                        {PRODUCT_MODULE_COUNT} tools your team already needs. One place to run them.
+                        {PRODUCT_MODULE_COUNT} modules, built and run as one system.
                     </h2>
                     <p className="text-[16px] leading-[1.6] text-ink-muted">
-                        Here is what we build — and what each module does for your business.
+                        Every module below is part of the same package and the same customer record —
+                        one vendor, one console, one setup.
                     </p>
                 </div>
 
