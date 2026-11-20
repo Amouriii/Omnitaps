@@ -28,7 +28,8 @@
     "seed": "node --env-file=.env scripts/run-seed.mjs"
   },
   "overrides": {
-    "deepmerge-ts": "8.0.2"
+    "deepmerge-ts": "8.0.2",
+    "effect": "3.22.5"
   },
   "dependencies": {
     "@prisma/client": "^7.10.1",
