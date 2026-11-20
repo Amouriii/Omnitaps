@@ -15,6 +15,16 @@ export default function ThemeToggle() {
     // index.html applies the stored/OS preference before React paints.
     const initial = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
     setTheme(initial);
+
+    const onStorage = (e) => {
+      if (e.key === STORAGE_KEY && (e.newValue === "light" || e.newValue === "dark")) {
+        setTheme(e.newValue);
+        document.documentElement.setAttribute("data-theme", e.newValue);
+        document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", e.newValue);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const toggle = () => {
@@ -22,6 +32,7 @@ export default function ThemeToggle() {
     setTheme(next);
     localStorage.setItem(STORAGE_KEY, next);
     document.documentElement.setAttribute("data-theme", next);
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", next);
   };
 
   if (!mounted) return null;

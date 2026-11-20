@@ -52,17 +52,33 @@ function formatQuota(mb: number | null | undefined): string {
   return `${mb} MB`;
 }
 
+// Polyfill Temporal for browsers without native support (e.g. Safari).
+// Loaded at module scope so formatDuration can use Temporal synchronously during render.
+if (typeof Temporal === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    const polyfill = await import("temporal-polyfill");
+    Object.assign(globalThis, { Temporal: polyfill.Temporal });
+  })();
+}
+
 function formatDuration(minutes: number | null | undefined): string {
   if (minutes === null || minutes === undefined) return "No time limit";
-  if (minutes >= 1440) {
-    const days = minutes / 1440;
-    return `${days % 1 === 0 ? days : days.toFixed(1)} day${days === 1 ? "" : "s"}`;
+  if (typeof Temporal === "undefined") {
+    // Fallback while the polyfill loads (or in unsupported browsers without it).
+    if (minutes >= 1440) {
+      const days = minutes / 1440;
+      return `${days % 1 === 0 ? days : days.toFixed(1)} day${days === 1 ? "" : "s"}`;
+    }
+    if (minutes >= 60) {
+      const hours = minutes / 60;
+      return `${hours % 1 === 0 ? hours : hours.toFixed(1)} hour${hours === 1 ? "" : "s"}`;
+    }
+    return `${minutes} min`;
   }
-  if (minutes >= 60) {
-    const hours = minutes / 60;
-    return `${hours % 1 === 0 ? hours : hours.toFixed(1)} hour${hours === 1 ? "" : "s"}`;
-  }
-  return `${minutes} min`;
+  const duration = Temporal.Duration.from({ minutes });
+  const balanced = duration.round({ largestUnit: "day" });
+  return balanced.toLocaleString(undefined, { style: "narrow" });
 }
 
 function formatSpeed(kbps: number | undefined): string | null {
