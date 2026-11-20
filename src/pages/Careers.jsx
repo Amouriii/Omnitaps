@@ -41,7 +41,7 @@ const ROLES = [
     {
         title: "Growth Marketer",
         location: "Remote · Americas",
-        desc: "Tell the story of one-tap digital infrastructure to hospitality and retail teams.",
+        desc: "Tell the story of one packaged system for hospitality and retail teams.",
     },
 ];
 
@@ -60,9 +60,9 @@ export default function Careers() {
                         Build the platform that runs businesses that never close.
                     </h1>
                     <p className="text-[17px] leading-[1.6] text-ink-muted max-w-xl mb-9">
-                        Omnitaps is a small, senior team building digital infrastructure for
+                        Omnitaps is a small, senior team building one packaged system for
                         hospitality and retail. We ship daily, talk to real customers weekly, and
-                        believe great tools are quiet — they just work.
+                        believe great software is quiet — it just works.
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
                         <a

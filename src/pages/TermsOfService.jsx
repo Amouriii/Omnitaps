@@ -10,7 +10,7 @@ const SECTIONS = [
     },
     {
         heading: "2. The Services",
-        body: "Omnitaps provides digital infrastructure for hospitality and retail, including websites, QR menus, AI chatbots, reservations, review management, and WiFi access. We may add, change, or remove features over time, and will make reasonable efforts to notify you of material changes.",
+        body: "Omnitaps provides one packaged system for hospitality and retail, including websites, QR menus, ordering, AI chatbots, reservations, review management, Wi-Fi access, loyalty, and wallet memberships. We may add, change, or remove features over time, and will make reasonable efforts to notify you of material changes.",
     },
     {
         heading: "3. Accounts & Customer Content",

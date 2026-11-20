@@ -157,6 +157,9 @@ export default async function handler(req, res) {
       );
       deliveredVia.push("console");
     } else {
+      console.error(
+        "[contact-form] No delivery channel configured — set DATABASE_URL, or RESEND_API_KEY + RESEND_EMAIL_FROM (optionally CONTACT_NOTIFY_EMAIL). The browser falls back to a mailto hand-off while this stays unset.",
+      );
       sendJson(res, 503, {
         error: "Contact delivery is not configured.",
         code: "CONTACT_DELIVERY_UNCONFIGURED",

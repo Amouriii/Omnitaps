@@ -28,7 +28,7 @@ export default function SiteFooter() {
                         </span>
                     </Link>
                     <p className="text-[14.5px] leading-[1.6] text-ink-muted mt-4 max-w-[200px]">
-                        Digital infrastructure for hospitality &amp; retail.
+                        One company, one packaged system for hospitality &amp; retail.
                     </p>
                 </div>
 
