@@ -86,6 +86,22 @@ Critique rules:
 - If a reviewer asks for a change, say whether it's a fix (reliability/security/correctness) or a preference (style/scope), and prioritize fixes first.
 - Disagree loudly but briefly when a reviewer's request would break an existing constraint (e.g., function cap, theme scoping, fallback behavior).
 
+## Review loop outcome (commit aefb8cd)
+
+Ran the full 7-role loop (Developer → Tester → User → Tech Specialist → CEO → Financial Investor → Orchestrator) on the `/demo/app` shell + Contact.jsx Zod validation.
+
+**Tester**: PASS after one fix. Found a real bug during self-review: `src/pages/Contact.jsx` used `z` and `parseWithSchema` (lines 39, 73) without importing them — would have crashed the contact form on submit at runtime. The typecheck (`tsc --noEmit`) did not catch it, likely due to the `isolatedModules` + `moduleResolution: "Bundler"` combo with `.jsx` files. Fix: added `import { z } from "zod"` and `import { parseWithSchema } from "../lib/validation/reviewFeedback"`. Re-verified build + typecheck + lint + 86 tests all pass. iPhone 17 Pro simulator loaded `/demo/app` via `http://localhost:3006/demo/app` — phone frame, CAFE tab, hero section render correctly. Tab-switch visual verification not done via CLI (no `simctl tap` support); network IP `192.168.86.246` was not reachable from the simulator in this environment, only `localhost` worked.
+
+**User**: The phone mockup presents the suite as one app with a tab bar, guided tour, and email capture. Friction: the `SUITE` array defines `href` values (e.g. `/menu/demo`, `/demo/wallet`) that are never used — tabs are display-only description cards, not navigation. A prospect tapping a tab expects to see that demo surface. The "Live demo surface — opens the real page inside the suite" pill is somewhat misleading for tabs that don't actually navigate.
+
+**Tech Specialist**: Architecture fit is clean — no new API routes (reuses `/api/contact`), respects the 12-function cap, single `api/[...path].js` discipline, dual data model, demo-theme scoping via `CafeThemeGate`, lazy-loaded chunk (`DemoApp-D_Bft8o9.js`, 17 kB). One dead-data note: `SUITE[].href` is defined but unused.
+
+**CEO**: In scope — demo conversion asset, not product feature. Contact.jsx Zod validation is a genuine reliability fix bundled in, not scope creep.
+
+**Financial Investor**: Zero new infra, zero new secrets, zero new dependencies, negligible runtime cost (one 17 kB chunk). Risk disclosed: the `tsc --noEmit` gap for `.jsx` files means the typecheck alone isn't sufficient — ESLint or a smoke test should cover it.
+
+**Orchestrator**: SHIP. The one bug found was fixed inline. Process improvement noted: add ESLint rule or smoke test to cover the typecheck gap for `.jsx` files.
+
 ## Credential / env expectations for reviewers
 
 | Surface | Needs to feel real | Falls back safely when missing |
