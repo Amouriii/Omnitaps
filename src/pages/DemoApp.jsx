@@ -392,6 +392,7 @@ export default function DemoApp() {
   );
 }
 
+<<<<<<< HEAD
 function HomeScreen({ activeId, setStep, step, screens, tour, setTour }) {
   return (
     <div className="py-3">
@@ -456,8 +457,8 @@ function HomeScreen({ activeId, setStep, step, screens, tour, setTour }) {
   );
 }
 
-function AppScreen({ id, detail, index, total, onPrev, onNext, tour, setTour, step }) {
-  const Icon = SUITE_BY_ID[id]?.icon ?? Coffee;
+function AppScreen({ id, detail, index, total, onPrev, onNext, tour, setTour }) {
+  const href = SUITE_BY_ID[id]?.href;
   return (
     <div className="py-3">
       <div className="flex items-start justify-between">
@@ -492,6 +493,17 @@ function AppScreen({ id, detail, index, total, onPrev, onNext, tour, setTour, st
         <CheckCircle2 size={13} strokeWidth={2} />
         <span>Live demo surface — opens the real page inside the suite.</span>
       </div>
+
+      {!PHONE_HOOKS[id] && href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-2 text-[12px] font-medium text-white hover:bg-white/20"
+        >
+          Open the real {id} demo ↗
+        </a>
+      ) : null}
 
       <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-4 text-[11px] text-white/50">
         <button
