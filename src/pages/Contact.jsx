@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { z } from "zod";
+import { parseWithSchema } from "../lib/validation/reviewFeedback";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock, Mail, MapPin, Phone } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
@@ -36,6 +38,13 @@ const OFFICES = [
 const inputClass =
   "w-full rounded-xl border border-hairline bg-porcelain px-4 py-3 text-[15px] text-ink placeholder:text-ink-faint focus:border-tap focus:outline-none";
 
+const contactFormSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(254),
+  company: z.string().trim().max(200).optional().default(""),
+  message: z.string().trim().min(1).max(4000),
+});
+
 function initials(name) {
   return name
     .split(" ")
@@ -56,12 +65,20 @@ export default function Contact() {
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
-    const values = {
+    const rawValues = {
       name: data.get("name"),
       email: data.get("email"),
       company: data.get("company") ?? "",
       message: data.get("message"),
     };
+    // Client-side Zod validation before sending to server
+    const parsed = parseWithSchema(contactFormSchema, rawValues);
+    if (!parsed.success) {
+      setError(parsed.error || "Please check your inputs and try again.");
+      setStatus("error");
+      return;
+    }
+    const values = parsed.data;
     setStatus("submitting");
     setError("");
     setMailtoLink("");
