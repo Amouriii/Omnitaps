@@ -392,7 +392,6 @@ export default function DemoApp() {
   );
 }
 
-<<<<<<< HEAD
 function HomeScreen({ activeId, setStep, step, screens, tour, setTour }) {
   return (
     <div className="py-3">
