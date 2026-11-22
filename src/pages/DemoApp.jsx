@@ -422,7 +422,7 @@ export default function DemoApp() {
 }
 
 function AppScreen({ id, detail, index, total, onPrev, onNext, tour, setTour }) {
-  const Icon = SUITE_BY_ID[id]?.icon ?? Coffee;
+  const href = SUITE_BY_ID[id]?.href;
   return (
     <div className="py-3">
       <div className="flex items-start justify-between">
@@ -484,6 +484,17 @@ function AppScreen({ id, detail, index, total, onPrev, onNext, tour, setTour }) 
               : "Simulated loyalty → Wallet → counter check-in loop so you can trace one guest visit end to end."}
           </p>
         </div>
+      ) : null}
+
+      {!PHONE_HOOKS[id] && href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-2 text-[12px] font-medium text-white hover:bg-white/20"
+        >
+          Open the real {id} demo ↗
+        </a>
       ) : null}
 
       <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-4 text-[11px] text-white/50">
