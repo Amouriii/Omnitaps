@@ -1,0 +1,221 @@
+/* Scoped presentation polish for the Omnitaps reservations demo. */
+
+.ot-modal-panel {
+  animation: ot-modal-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ot-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ot-ticket {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ot-ticket::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--color-tap) 18%, transparent), transparent 38%),
+    radial-gradient(circle at 92% 100%, color-mix(in srgb, var(--color-brass) 20%, transparent), transparent 42%);
+  opacity: 0.8;
+}
+
+.ot-ticket-notch {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-porcelain);
+  transform: translateY(-50%);
+}
+
+.ot-ticket-notch--left {
+  left: -9px;
+}
+
+.ot-ticket-notch--right {
+  right: -9px;
+}
+
+.ot-dashed-rule {
+  border-top: 1px dashed color-mix(in srgb, var(--color-ink) 20%, transparent);
+}
+
+.ot-date-strip,
+.ot-slot-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ot-date-strip::-webkit-scrollbar,
+.ot-slot-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.ot-grid-bg {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-ink) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 4%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.ot-hero-customer {
+  background:
+    radial-gradient(ellipse at 8% 0%, #e9c9b0 0%, transparent 48%),
+    radial-gradient(ellipse at 96% 16%, #e3d5b4 0%, transparent 42%),
+    linear-gradient(135deg, #f7ecdc 0%, #f1e3d0 100%);
+}
+
+.ot-calendar-block {
+  transition:
+    filter 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.ot-calendar-block:hover,
+.ot-calendar-block:focus-visible {
+  filter: saturate(1.12) brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -12px rgba(18, 21, 26, 0.4);
+}
+
+.ot-live-dot {
+  position: relative;
+}
+
+.ot-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0.35;
+  animation: ot-live-pulse 2.4s ease-out infinite;
+}
+
+@keyframes ot-live-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.ot-demo-bar select {
+  color-scheme: dark;
+}
+
+.ot-demo-bar select option {
+  color: #12151a;
+  background: #ffffff;
+}
+
+.ot-shimmer {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--color-hairline) 50%, transparent) 20%,
+    color-mix(in srgb, var(--color-surface) 90%, transparent) 40%,
+    color-mix(in srgb, var(--color-hairline) 50%, transparent) 60%
+  );
+  background-size: 220% 100%;
+  animation: ot-shimmer 1.6s linear infinite;
+}
+
+@keyframes ot-shimmer {
+  to {
+    background-position-x: -220%;
+  }
+}
+
+.ot-table-tile {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.ot-table-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px -28px rgba(18, 21, 26, 0.5);
+}
+
+.ot-scroll-x {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline-strong) transparent;
+}
+
+.ot-scroll-x::-webkit-scrollbar {
+  height: 8px;
+}
+
+.ot-scroll-x::-webkit-scrollbar-thumb {
+  background: var(--color-hairline-strong);
+  border-radius: 999px;
+}
+
+.ot-pass-dark {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(196, 163, 90, 0.34), transparent 42%),
+    radial-gradient(circle at 12% 88%, rgba(196, 92, 38, 0.32), transparent 48%),
+    #21130d;
+}
+
+.ot-reveal {
+  animation: ot-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ot-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ot-heat-cell {
+  transition: transform 120ms ease;
+}
+
+.ot-heat-cell:hover {
+  transform: scale(1.08);
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ot-modal-panel,
+  .ot-reveal,
+  .ot-shimmer,
+  .ot-live-dot::after {
+    animation: none !important;
+  }
+
+  .ot-calendar-block,
+  .ot-table-tile,
+  .ot-heat-cell {
+    transition: none !important;
+  }
+}
