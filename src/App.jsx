@@ -37,6 +37,7 @@ const LoyaltyProgram = lazy(() => import("./pages/LoyaltyProgram"));
 const WifiModuleGate = lazy(() => import("./components/WifiModuleGate"));
 const DemoHub = lazy(() => import("./pages/DemoHub"));
 const DemoApp = lazy(() => import("./pages/DemoApp"));
+const OmnitapsDemo = lazy(() => import("./pages/OmnitapsDemo"));
 const QrDemo = lazy(() => import("./pages/QrDemo"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -91,6 +92,8 @@ export default function App() {
             <Route path="/menu-prisma/:tenantId" element={<MenuPublic />} />
             <Route path="/demo" element={<DemoHub />} />
             <Route path="/demo/app" element={<DemoApp />} />
+            <Route path="/demo/omnitaps" element={<OmnitapsDemo />} />
+            <Route path="/demo/omnitaps/operations" element={<OmnitapsDemo />} />
             <Route path="/demo/qr" element={<QrDemo />} />
             <Route path="/demo/wallet" element={<WalletDemo />} />
             <Route path="/demo/loyalty" element={<LoyaltyDemo />} />

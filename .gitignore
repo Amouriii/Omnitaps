@@ -24,3 +24,10 @@ public/*.ico
 
 # Local verification captures from live-preview checks
 screenshots/
+
+# Native test-build output (ios-build/build: .app bundles, www, slices)
+ios-build/build/
+ios-build/dist/
+ios-build/ios/*.xcodeproj/
+# Locally downloaded XcodeGen (see ios-build/README.md)
+ios-build/tools/

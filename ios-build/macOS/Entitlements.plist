@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Intentionally empty for the ad-hoc "local download only" build.
+         get-task-allow is a RESTRICTED entitlement on macOS: an ad-hoc
+         signature carrying it is rejected at launch with
+         "Code has restricted entitlements, but the validation of its code
+         signature failed." App Sandbox is off by default when absent, which
+         is what a local, non-store bundle needs. If you instead sign with an
+         Apple Development identity + provisioning profile, you may re-add
+         get-task-allow here for debugging. -->
+</dict>
+</plist>
