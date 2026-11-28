@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, CalendarPlus, Compass, Ticket } from "lucide-react";
+import { Bell, CalendarPlus, Compass, Ticket, User } from "lucide-react";
 import { customerNotifications, useDemo } from "../store";
 import { cn } from "../ui";
+import AccountOverview from "./AccountOverview";
 import BookingFlow from "./BookingFlow";
 import Discover from "./Discover";
 import MyReservations from "./MyReservations";
 import Updates from "./Updates";
 
-type CustomerTab = "discover" | "book" | "reservations" | "updates";
+type CustomerTab = "discover" | "book" | "reservations" | "updates" | "account";
 
 const TABS: Array<{
   id: CustomerTab;
@@ -18,6 +19,7 @@ const TABS: Array<{
   { id: "book", label: "Reserve", icon: CalendarPlus },
   { id: "reservations", label: "My reservations", icon: Ticket },
   { id: "updates", label: "Updates", icon: Bell },
+  { id: "account", label: "My account", icon: User },
 ];
 
 export default function CustomerPov() {
@@ -135,6 +137,7 @@ export default function CustomerPov() {
         {tab === "updates" ? (
           <Updates onViewReservations={() => setTab("reservations")} />
         ) : null}
+        {tab === "account" ? <AccountOverview /> : null}
       </main>
     </div>
   );
