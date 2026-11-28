@@ -17,8 +17,9 @@ import Insights from "./Insights";
 import OpsReservationModal from "./OpsReservationModal";
 import Overview from "./Overview";
 import ReservationQueue from "./ReservationQueue";
+import PersonalizedDashboard from "./PersonalizedDashboard";
 
-export type OpsView = "overview" | "queue" | "calendar" | "floor" | "insights";
+export type OpsView = "overview" | "queue" | "calendar" | "floor" | "insights" | "dashboard";
 
 const NAV: Array<{ id: OpsView; label: string; icon: typeof LayoutDashboard }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -26,6 +27,7 @@ const NAV: Array<{ id: OpsView; label: string; icon: typeof LayoutDashboard }> =
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "floor", label: "Floor", icon: LayoutGrid },
   { id: "insights", label: "Smart insights", icon: Sparkles },
+  { id: "dashboard", label: "My account", icon: Bell },
 ];
 
 export default function EnterprisePov() {
@@ -62,6 +64,7 @@ export default function EnterprisePov() {
     calendar: undefined,
     floor: state.tables.filter((table) => table.status === "maintenance").length || undefined,
     insights: insights.length || undefined,
+    dashboard: undefined,
   };
 
   return (
@@ -221,6 +224,7 @@ export default function EnterprisePov() {
           {view === "insights" ? (
             <Insights onOpenReservation={openReservation} onNavigate={navigate} />
           ) : null}
+          {view === "dashboard" ? <PersonalizedDashboard /> : null}
         </section>
       </div>
 
